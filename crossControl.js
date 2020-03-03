@@ -29,6 +29,7 @@ let points = {
     X: 0
 };
 
+//Получение информации из выбранной строки
 function getSelectedRowData(table, fullPath, force){
     let forceRow = force;
     let index = (forceRow === undefined) ? $('#' + table).find('tr.success').data('index') : forceRow;
@@ -55,6 +56,7 @@ function getSelectedRowData(table, fullPath, force){
     return rowData;
 }
 
+//Выделение выбранной строки
 function colorizeSelectedRow(table) {
     let index = $('#' + table).find('tr.success').data('index');
 
@@ -78,6 +80,7 @@ function colorizeSelectedRow(table) {
     return;
 }
 
+//Функция для проверки возможности редактирования
 function checkEdit() {
     if(localStorage.getItem('maintab') === 'closed') window.close();
     $.ajax({
@@ -214,6 +217,7 @@ $(document).ready(function () {
         });
     });
 
+    //Функционирование кнопки с выводом информации о проверке
     $(".trigger").click(function(){
         $(".panel").toggle("fast");
         $(this).toggleClass("active");
@@ -223,22 +227,26 @@ $(document).ready(function () {
     //Первая загрузка страницы
     $('#reloadButton').trigger('click');
 
-    //Функционал конопок на вкладке ПК
+//Функционал кнопок на вкладке ПК
+    //Кнопка для копирования строки
     $('#pkCopyButton').on('click', function() {
         let selected = $('#pkSelect').val();
         copyArray = Object.assign({}, setDK[selected]);
     });
 
+    //Кнопка для перезаписи строки
     $('#pkPasteButton').on('click', function() {
         let selected = $('#pkSelect').val();
         setDK[selected] = Object.assign({}, copyArray);
         pkTabFill('pkTable');
     });
 
+    //Кнопка для возвращения исходных данных
     $('#pkReloadButton').on('click', function() {
         pkTabFill2(unmodifiedData, false);
     });
 
+    //Кнопка для копирования всей информации выбранного ПК
     $('#switchCopy').on('click', function() {
         let index = $('#pkTable').find('tr.success').data('index');
         let selected = $('#pkSelect').val();
@@ -275,6 +283,7 @@ $(document).ready(function () {
         pkTabFill('pkTable');
     })
 
+    //Кнопка для перезаписи всей информации выбранного ПК
     $('#switchDel').on('click', function() {
         let index = $('#pkTable').find('tr.success').data('index');
         let selected = $('#pkSelect').val();
@@ -300,7 +309,8 @@ $(document).ready(function () {
         pkTabFill('pkTable');
     });
 
-    //Функционал конопок на вкладке Суточных карт
+//Функционал конопок на вкладке Суточных карт
+    //Кнопка для вставления новой строки
     $('#skAddButton').on('click', function() {
         let index = $('#skTable').find('tr.success').data('index');
         let selected = $('#mapNum').val();
@@ -325,6 +335,7 @@ $(document).ready(function () {
         newTableFill('skTable', skTableFlag);
     });
 
+    //Кнопка для удаления строки
     $('#skSubButton').on('click', function() {
         let index = $('#skTable').find('tr.success').data('index');
         let selected = $('#mapNum').val();
@@ -350,26 +361,31 @@ $(document).ready(function () {
         newTableFill('skTable', skTableFlag);
     });
 
+    //Кнопка для копирования суточной карты
     $('#skCopyButton').on('click', function() {
         let selected = $('#mapNum').val();
         copyArray = Object.assign({}, daySets[selected]);
     });
 
+    //Кнопка для перезаписи суточной карты
     $('#skPasteButton').on('click', function() {
         let selected = $('#mapNum').val();
         daySets[selected] = Object.assign({}, copyArray);
         newTableFill('skTable', skTableFlag);
     });
 
+    //Кнопка для загрузки исходных данных
     $('#skReloadButton').on('click', function() {
         skTabFill(unmodifiedData, false);
     });
 
-    //Функционал конопок на вкладке Недельных карт
+//Функционал конопок на вкладке Недельных карт
+    //Кнопка для копирования строки
     $('#nkCopyButton').on('click', function() {
         copyArray = getSelectedRowData('nkTable', 'days').slice();
     });
 
+    //Кнопка для перезаписи строки
     $('#nkPasteButton').on('click', function() {
         let index = $('#nkTable').find('tr.success').data('index');
         if (getSelectedRowData('nkTable', 'days') === undefined) return;
@@ -377,15 +393,18 @@ $(document).ready(function () {
         tableFill(weekSets, 'nkTable', nkTableFlag);
     });
 
+    //Кнопка для загрузки исходных данных
     $('#nkReloadButton').on('click', function() {
         nkTabFill(unmodifiedData);
     });
 
-    //Функционал конопок на вкладке Годовой карты
+//Функционал конопок на вкладке Годовой карты
+    //Кнопка для копирования строки
     $('#gkCopyButton').on('click', function() {
         copyArray = getSelectedRowData('gkTable', 'days').slice();
     });
 
+    //Кнопка для перезаписи строки
     $('#gkPasteButton').on('click', function() {
         let index = $('#gkTable').find('tr.success').data('index');
         if (getSelectedRowData('gkTable', 'days') === undefined) return;
@@ -393,41 +412,39 @@ $(document).ready(function () {
         tableFill(monthSets, 'gkTable', gkTableFlag);
     });
 
+    //Кнопка для загрузки исходных данных
     $('#gkReloadButton').on('click', function() {
         gkTabFill(unmodifiedData);
     });
 
-//-------------------------
-
-
+    //Выбор строк в таблицах по клику
     $('#pkTable').on('click-row.bs.table', function (e, row, $element) {
         $('.success').removeClass('success');
         $($element).addClass('success');
-        colorizeSelectedRow('pkTable');//, 'arrays.SetDK.dk.sts');
+        colorizeSelectedRow('pkTable');
     });
     $('#skTable').on('click-row.bs.table', function (e, row, $element) {
         $('.success').removeClass('success');
         $($element).addClass('success');
-        colorizeSelectedRow('skTable');//, 'arrays.DaySets.daysets.lines');
+        colorizeSelectedRow('skTable');
     });
     $('#nkTable').on('click-row.bs.table', function (e, row, $element) {
         $('.success').removeClass('success');
         $($element).addClass('success');
-        colorizeSelectedRow('nkTable');//, 'arrays.WeekSets.wsets.days');
+        colorizeSelectedRow('nkTable');
     });
     $('#gkTable').on('click-row.bs.table', function (e, row, $element) {
         $('.success').removeClass('success');
         $($element).addClass('success');
-        colorizeSelectedRow('gkTable');//, 'arrays.MonthSets.monthset.days');
+        colorizeSelectedRow('gkTable');
     });
     $('#kvTable').on('click-row.bs.table', function (e, row, $element) {
         $('.success').removeClass('success');
         $($element).addClass('success');
-        colorizeSelectedRow('kvTable');//, 'arrays.SetCtrl.Stage');
+        colorizeSelectedRow('kvTable');
     });
 
-//-------------------------
-
+    //Функционирование выбора СК и ПК
     $('#mapNum').on('change keyup', function(){
         newTableFill('skTable', skTableFlag);
     });
@@ -436,7 +453,7 @@ $(document).ready(function () {
         pkTabFill('pkTable');
     });
 
-
+    //Функционирование карты для выбора координат
     ymaps.ready(function () {
         //Создание и первичная настройка карты
         var map = new ymaps.Map('map', {
@@ -504,6 +521,7 @@ function loadData(newData, firstLoadFlag) {
     kvTabFill();
 }
 
+//Заполнение вкладки "Основные"
 function mainTabFill(data, dstate, firstLoadFlag){
     let state = dstate;
     for (let area in data.areaMap){
@@ -535,20 +553,22 @@ function mainTabFill(data, dstate, firstLoadFlag){
     anotherTableFill('table', mainTableFlag);
 }
 
+//Заполнение вкладки "ПК"
 function pkTabFill2(newData, firstLoadFlag) {
     setDK = JSON.parse(JSON.stringify(newData)).state.arrays.SetDK.dk;
 
-    if(firstLoadFlag) setChange('tc', 'input', 'arrays.SetDK.dk', numberFlag, longPathFlag)
-    if(firstLoadFlag) setChange('twot', 'checkbox', 'arrays.SetDK.dk', !numberFlag,  longPathFlag);
-    if(firstLoadFlag) setChange('shift', 'input', 'arrays.SetDK.dk', numberFlag, longPathFlag)
-    if(firstLoadFlag) setChange('tpu', 'select', 'arrays.SetDK.dk', !numberFlag, longPathFlag);
-    if(firstLoadFlag) setChange('razlen', 'checkbox', 'arrays.SetDK.dk', !numberFlag, longPathFlag);
-
+    if(firstLoadFlag) {
+        setChange('tc', 'input', 'arrays.SetDK.dk', numberFlag, longPathFlag)
+        setChange('twot', 'checkbox', 'arrays.SetDK.dk', !numberFlag,  longPathFlag);
+        setChange('shift', 'input', 'arrays.SetDK.dk', numberFlag, longPathFlag)
+        setChange('tpu', 'select', 'arrays.SetDK.dk', !numberFlag, longPathFlag);
+        setChange('razlen', 'checkbox', 'arrays.SetDK.dk', !numberFlag, longPathFlag);
+    }
     pkTabFill('pkTable');
 }
 
+//Заполнение вкладки "Сут. карты"
 function skTabFill(newData, firstLoadFlag) {
-//    daySets = JSON.parse(JSON.stringify(newData)).state.arrays.DaySets.daysets;
     daySets = newData.state.arrays.DaySets.daysets;
     daySets.forEach(daySet => {
         if(firstLoadFlag) $('#mapNum').append(new Option(daySet.num, daySet.num-1));
@@ -557,16 +577,19 @@ function skTabFill(newData, firstLoadFlag) {
     newTableFill('skTable', skTableFlag);
 }
 
+//Заполнение вкладки "Нед. карты"
 function nkTabFill(newData) {
     weekSets = newData.state.arrays.WeekSets.wsets;
     tableFill(weekSets, 'nkTable', nkTableFlag);
 }
 
+//Заполнение вкладки "Карты года"
 function gkTabFill(newData) {
     monthSets = newData.state.arrays.MonthSets.monthset;
     tableFill(monthSets, 'gkTable', gkTableFlag);
 }
 
+//Заполнение вкладки "Внеш. входы"
 function vvTabFill(firstLoadFlag) {
     anotherTableFill('vvTable', vvTableFlag);
 
@@ -578,6 +601,7 @@ function vvTabFill(firstLoadFlag) {
     tableFill([0], 'vv2Table', vv2TableFlag);
 }
 
+//Заполнение вкладки "Контроль входов"
 function kvTabFill() {
     stageSets = data.state.arrays.SetCtrl.Stage;
     newTableFill('kvTable', kvTableFlag);
@@ -925,7 +949,7 @@ function pkTableChange(table, currPK) {
         });
         setDK[selected] = currPK;
 //        console.log(data.state.arrays.SetDK.dk[selected].sts);
-//        data.state.arrays.SetDK.dk[selected] = setDK[selected];
+        data.state.arrays.SetDK.dk[selected] = setDK[selected];
     })
     pkFlag = false;
 }
@@ -986,6 +1010,7 @@ function setChange(element, type, fullPath, numFlag, hardFlag) {
     }
 }
 
+//Отображение кнопки для выбора координат и разблокирование кнопки создания нового перекрёстка
 function checkNew() {
     let buttonClass = $('#addButton')[0].className.toString();
     if ((Number($('#id').val()) !== unmodifiedData.state.id) && (Number($('#idevice').val()) !== unmodifiedData.state.idevice)) {
@@ -1002,6 +1027,7 @@ function checkNew() {
     $('#addButton')[0].className = buttonClass;
 }
 
+//Открытие карты с выбором координат
 function chooseCoordinates() {
     $('#chooseCoordinates').on('click', function() {
         $('#myModal').attr('style', 'display : block;');
@@ -1016,7 +1042,4 @@ function chooseCoordinates() {
           $('#myModal').attr('style', 'display : none;');
         }
     }
-//    $('#chooseCoordinates').on('click', function() {
-//
-//    })
 }

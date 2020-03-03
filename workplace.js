@@ -6,6 +6,7 @@ var statuses = [];
 let regionInfo;
 let areaInfo;
 
+//Функция для открытия вкладки
 function openPage(url) {
 	$.ajax({
 		type: 'GET',
@@ -39,10 +40,12 @@ ymaps.ready(function () {
 
     $('#changeDialog').show();
 
+    //Открытие личного кабинета
     $('#manageButton').on('click', function() {
         openPage('/manage');
     });
 
+    //Смена пароля текущего аккаунта
 	$('#changeButton').on('click', function () {
 	    $('#oldPassword').val('');
 	    $('#newPassword').val('');
@@ -50,10 +53,12 @@ ymaps.ready(function () {
 		$('#changeDialog').dialog('open');
 	});
 
+    //Выбор места для открытия на карте
 	$('#locationButton').on('click', function () {
 		$('#locationDialog').dialog('open');
 	});
 
+    //Выход из аккаунта
     $('#logoutButton').on('click', function() {
         $.ajax({
             type: 'GET',
@@ -70,6 +75,7 @@ ymaps.ready(function () {
         });
     });
 
+    //Проверка валидности пароля
     $('#newPassword').bind('input', function () {
         $('#newPasswordMsg').remove();
         if ($('#newPassword').val().length < 6){
@@ -84,6 +90,7 @@ ymaps.ready(function () {
         }
     });
 
+    //Окно изменения пароля
     $('#changeDialog').dialog({
         autoOpen: false,
     	buttons: {
@@ -391,6 +398,7 @@ var createChipsLayout = function (calculateSize) {
 	return Chips;
 };
 
+//Мастшабирование иконов светофороф на карте
 var calculate = function (zoom) {
 	switch (zoom) {
 //		          case 11:

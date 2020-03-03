@@ -33,13 +33,6 @@ $(document).ready(function() {
             $(window).on("beforeunload", function() {
                 controlSend({id : data.state.idevice, cmd : 4, param : 0});
             })
-//$('#p1').on('click', function() {
-//    this.className = checkButton(this.className.toString(), false);
-//    // Usage!
-//    sleep(2000).then(() => {
-//        this.className = checkButton(this.className.toString(), true);
-//    });
-//})
 
    	        if(data.controlCrossFlag) {
    	            $('#controlButton').show();
@@ -85,14 +78,8 @@ $(document).ready(function() {
             $('select').each(function() {
                 checkSelect($(this), data.controlCrossFlag);
             });
-//            $('a').each(function() {
-//                let id = $(this).attr('id');
-//                $('#' + id).on('click', function() {
-//                    buttonClick(id, data.state.idevice);
-//                })
-//            })
 
-            //Добавление режима движение и подложки, в виде участка карты
+            //Добавление режима движения и подложки в виде участка карты
             $('#img').attr('src', window.location.origin + '/file/cross/' + region + '/' + area + '/' + ID + '/cross.svg');
             $('#img').attr('style', 'background-size: cover; background-image: url('+ window.location.origin + '/file/cross/' + region + '/' + area + '/' + ID + '/map.png' +'); background-repeat: no-repeat;');
 
@@ -151,6 +138,7 @@ $(document).ready(function() {
     }, 1000);
 })
 
+//Функция для обновления данных на странице
 function reload() {
     if (!document.hidden) {
         $.ajax({
@@ -269,6 +257,7 @@ function selectChange(select, id) {
     controlSend(toSend);
 }
 
+//Отправка выбранной команды на сервер
 function controlSend(toSend) {
     $.ajax({
         url: window.location.origin + window.location.pathname + '/DispatchControlButtons',

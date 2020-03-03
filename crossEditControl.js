@@ -16,6 +16,7 @@ $(document).ready(function () {
 
 })
 
+//Загрузка данных о редактируемых ДК в таблицу
 function load($table, firstLoadFlag) {
 	$.ajax({
 		type: 'POST',
@@ -23,10 +24,13 @@ function load($table, firstLoadFlag) {
 		success: function (data) {
 		    dataSave = data;
 		    console.log(data);
-		    if(firstLoadFlag) regionInfo = data.regionInfo;
-		    if(firstLoadFlag) areaInfo = data.areaInfo;
+		    if(firstLoadFlag) {
+                regionInfo = data.regionInfo;
+                areaInfo = data.areaInfo;
+		    }
             let dataArray = [];
             let tempRecord;
+            //Заполнение данных для записи в таблицу
             for (let user in data.CrossEditInfo) {
                 tempRecord = {login : '', engagedARM : ''}
                 tempRecord.login = user.toString();
@@ -63,6 +67,7 @@ function load($table, firstLoadFlag) {
     }
 }
 
+//Отправка на сервер данных для отключения пользователя от редактирования ДК
 function kick($table) {
     let selected = $table.bootstrapTable('getSelections');
     let toSend = {busyArms : []};
@@ -90,11 +95,13 @@ function kick($table) {
     });
 }
 
+//Корректное заполнение описания ДК в таблице
 function buildEngArm(data) {
     let value = ' Регион: ' + getRegionDesc(data.region) + '\n Область: ' + getAreaDesc(data.region, data.area) + '\n Описание: ' + data.description;
     return value;
 }
 
+//Изъятие данных из описания ДК
 function unbuildEngArm(login, description) {
     let data = description.split('\n');
     let tempRecord = {region : '', area : '', id : 0, description : ''};
@@ -112,6 +119,7 @@ function unbuildEngArm(login, description) {
     return tempRecord;
 }
 
+//Возвращение id ДК по описанию
 function findID(login, description) {
     let counter = 0;
     let id = 0;
@@ -122,10 +130,12 @@ function findID(login, description) {
     return id;
 }
 
+//Получение описания региона по номеру
 function getRegionDesc(region) {
     return regionInfo[Number(region)];
 }
 
+//Получение номера региона по описанию
 function getRegionNum(region) {
     let num = 0;
     for (let reg in regionInfo) {
@@ -134,10 +144,12 @@ function getRegionNum(region) {
     return num;
 }
 
+//Получение описания района по номеру
 function getAreaDesc(region, area) {
     return areaInfo[getRegionDesc(region)][Number(area)];
 }
 
+//Получение номера района по описанию
 function getAreaNum(region, area) {
     let num = 0;
     for (let ar in areaInfo[region]) {

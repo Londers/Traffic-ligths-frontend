@@ -154,7 +154,7 @@ $(document).ready(function () {
 		}
 	});
 
-    //Добавление поведения кнопки при нажатии
+    //Добавление нового пользователя
 	$('#appendButton').on('click', function () {
 		$('#login').val('');
 		$('#privileges').val('Viewer');
@@ -163,11 +163,7 @@ $(document).ready(function () {
 		$('#addDialog').dialog('open');
 	});
 
-	$('#logButton').on('click', function () {
-    	openPage('/log');
-	});
-
-    //Добавление поведения кнопки при нажатии
+    //Изменение существующего пользователя
 	$('#updateButton').on('click', function () {
 	    let currPrivileges;
 	    let currRegion;
@@ -210,7 +206,7 @@ $(document).ready(function () {
 		$('#updateDialog').dialog('open');
 	});
 
-    //Добавление поведения кнопки при нажатии
+    //Удаление пользователя
 	$('#deleteButton').on('click', function () {
 	    let login = $.map($table.bootstrapTable('getSelections'), function (row) {
 		    return row.login;
@@ -233,11 +229,21 @@ $(document).ready(function () {
             }
         });
 	});
+
+	//Открытие вкладки с логами
+	$('#logButton').on('click', function () {
+    	openPage('/log');
+	});
+
+    //Открыте вкладки с редактируемыми ДК
+	$('#editControlButton').on('click', function () {
+    	openPage('/crossEditControl');
+	});
     //обновление списка пользовтелей
     getUsers($table);
 });
 
-//Загрузка с сервера списка пользователей
+//Загрузка списка пользователей с сервера
 function getUsers($table) {
 	$.ajax({
 		type: 'POST',
@@ -254,7 +260,7 @@ function getUsers($table) {
                         areas += area.nameArea + ', ';
                     })
                     let info = [];
-                    //заполнение структуры для дальнейшей записи в таблицу
+                    //Заполнение структуры для дальнейшей записи в таблицу
                     info.push({
                         state: false,
                         login: account.login,
