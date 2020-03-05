@@ -15,9 +15,9 @@ function SortByLogin(a, b) {
 $(document).ready(function () {
 
     //Закрытие вкладки при закрытии карты
-    window.setInterval(function () {
-        if(localStorage.getItem('maintab') === 'closed') window.close();
-    }, 1000);
+//    window.setInterval(function () {
+//        if(localStorage.getItem('maintab') === 'closed') window.close();
+//    }, 1000);
 
 	let $table = $('#table');
 
@@ -239,6 +239,12 @@ $(document).ready(function () {
 	$('#editControlButton').on('click', function () {
     	openPage('/crossEditControl');
 	});
+
+    //Открыте вкладки с проверкой БД
+	$('#stateTest').on('click', function () {
+    	openPage('/stateTest');
+	});
+
     //обновление списка пользовтелей
     getUsers($table);
 });

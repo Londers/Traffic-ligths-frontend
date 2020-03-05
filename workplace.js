@@ -199,7 +199,7 @@ ymaps.ready(function () {
 			//Функция для обновления статусов контроллеров в реальном времени
 			//Отрисовываются только контроллеры, попадающие в область видимости
 			window.setInterval(function () {
-
+                localStorage.setItem("maintab", "closed");
     			if (!document.hidden) {
                     var currPoint = map.getBounds(false);
                     var Point00 = {

@@ -7,9 +7,9 @@ let osFlag = false;
 $(document).ready(function() {
 
     //Закрытие вкладки при закрытии карты
-    window.setInterval(function () {
-        if(localStorage.getItem('maintab') === 'closed') window.close();
-    }, 250);
+//    window.setInterval(function () {
+//        if(localStorage.getItem('maintab') === 'closed') window.close();
+//    }, 250);
 
     var $table = $('#table');
     $table.bootstrapTable();
@@ -86,7 +86,7 @@ $(document).ready(function() {
             $('#status').html('Статус: ' + data.cross.tlsost.description);
 
             $('#controlButton').on('click', function () {
-                openPage(window.location.origin + window.location.pathname + '/control' + window.location.search);
+                openPage(window.location.origin + window.location.pathname + '/control' + window.location.search, idevice);
             });
 
             //Проверка существования карт и добавление их выбора
@@ -292,14 +292,15 @@ function checkSelect($select, rights) {
 }
 
 //Функция для открытия новой вкладки
-function openPage(url) {
+function openPage(url, idevice) {
+    controlSend({id : idevice, cmd : 4, param : 0});
 	$.ajax({
 		url: url,
 		type: 'GET',
 		success: function (data) {
-//		    location.href = url;
-            window.open(url);
-            window.close()
+		    location.href = url;
+//            window.open(url);
+//            window.close()
 		},
 		error: function (request) {
 			console.log(request.status + ' ' + request.responseText);

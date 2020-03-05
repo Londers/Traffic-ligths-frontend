@@ -11,7 +11,6 @@
     <!--        <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>-->
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
     <script src="https://unpkg.com/bootstrap-table@1.15.5/dist/bootstrap-table.min.js"></script>
-    <!--    <script src="extensions/editable/bootstrap-table-editable.js"></script>-->
     <script src="/static/crossControl.js" type="text/javascript"></script>
     <script src="https://api-maps.yandex.ru/2.1/?lang=ru_RU&amp;apikey=65162f5f-2d15-41d1-a881-6c1acf34cfa1&lang=ru_RU"
             type="text/javascript"></script>
@@ -21,21 +20,13 @@
 
 <body>
 <!-- The Modal -->
-<div id="myModal" class="modal">
+<div id="mapModal" class="modal">
     <!-- Modal content -->
     <div class="modal-content" style="width: 70%;">
         <span class="close">&times;</span>
         <div class="container-fluid p-2" id="map" style="max-height: 930px; max-width: 930px; min-height: 400px; min-width: 400px; height: 930px; width: 930px;"></div>
     </div>
 </div>
-<!-- The Modal -->
-<!--<div id="verificationModal" class="modal">-->
-    <!-- Modal content -->
-<!--    <div class="modal-content">-->
-<!--        <span class="close">&times;</span>-->
-
-<!--    </div>-->
-<!--</div>-->
 
 <div class="row ">
     <div class="container col-sm-1 position-fixed">
@@ -76,7 +67,7 @@
         </div>
         <div class="row">
             <div class="col-md-12 mt-5">
-                <a class="btn btn-light mt-2 mx-auto border" id="checkButton6" data-toggle="tooltip" role="button" style="width: 100%; display: flex; min-height: 50px;	min-width: 50px; max-width: 60px;	max-height: 60px;">
+                <a class="btn btn-light mt-2 mx-auto border disabled" id="forceSendButton" data-toggle="tooltip" role="button" style="width: 100%; display: flex; min-height: 50px;	min-width: 50px; max-width: 60px;	max-height: 60px;">
                     <img src="/file/icons/8.svg" class="img-fluid" style="min-height: 25px;	min-width: 25px; max-width: 40px;	max-height: 40px;">
                 </a>
                 <button type="button" class="btn btn-light justify-content-center mt-5 mx-auto border" id="checkButton" style="display: flex; max-width: 85px;">Проверка</button>
@@ -101,7 +92,7 @@
                     <li class="nav-item">
                     </li>
                     <li class="nav-item">
-                        <a class="btn btn-light ml-4 mr-4 border disabled" id="newButton" data-toggle="tooltip" role="button">
+                        <a class="btn btn-light ml-4 mr-4 border" id="mainReloadButton" data-toggle="tooltip" role="button">
                             <img src="/file/icons/2.svg" class="img-fluid" style="	max-width: 40px;	max-height: 40px;">
                         </a>
                     </li>
@@ -675,7 +666,6 @@
         </div>
     </div>
     <div class="container col-sm-1 position-fixed">
-<!--        <div class="container-fluid text-center p-2" style="max-height: 900px; max-width: 700px; min-height: 400px; min-width: 400px; height: 900px; width: 700px;">-->
             <div class="panel">
                 <table class="table table-bordered" id="verification" data-toggle="table" data-toolbar="#toolbar" data-single-select="true" data-click-to-select="true" cellspacing="0" data-height="700">
                     <thead>
@@ -691,7 +681,6 @@
                 </table>
             </div>
             <a class="trigger" href="#" style="display: none;">Результат<br>Проверки</a>
-<!--        </div>-->
     </div>
 </div>
 </body>

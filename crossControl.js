@@ -82,7 +82,7 @@ function colorizeSelectedRow(table) {
 
 //Функция для проверки возможности редактирования
 function checkEdit() {
-    if(localStorage.getItem('maintab') === 'closed') window.close();
+//    if(localStorage.getItem('maintab') === 'closed') window.close();
     $.ajax({
         url: window.location.origin + window.location.pathname + '/editable' + window.location.search,
         type: 'GET',
@@ -115,7 +115,7 @@ $(document).ready(function () {
             success: function (data) {
                 console.log(data.message);
                 console.log(data.result);
-//                console.log(data);
+                checkForce();
             },
             data: JSON.stringify(data.state),
             error: function (request) {
@@ -227,7 +227,13 @@ $(document).ready(function () {
     //Первая загрузка страницы
     $('#reloadButton').trigger('click');
 
-//Функционал кнопок на вкладке ПК
+//Функционал кнопок на вкладке "Основные"
+    //Кнопка для возвращения исходных данных
+    $('#mainReloadButton').on('click', function() {
+        mainTabFill(unmodifiedData, false);
+    });
+
+//Функционал кнопок на вкладке "ПК"
     //Кнопка для копирования строки
     $('#pkCopyButton').on('click', function() {
         let selected = $('#pkSelect').val();
@@ -309,7 +315,7 @@ $(document).ready(function () {
         pkTabFill('pkTable');
     });
 
-//Функционал конопок на вкладке Суточных карт
+//Функционал кнопок на вкладке "Сут. карты"
     //Кнопка для вставления новой строки
     $('#skAddButton').on('click', function() {
         let index = $('#skTable').find('tr.success').data('index');
@@ -379,7 +385,7 @@ $(document).ready(function () {
         skTabFill(unmodifiedData, false);
     });
 
-//Функционал конопок на вкладке Недельных карт
+//Функционал кнопок на вкладке "Нед. карты"
     //Кнопка для копирования строки
     $('#nkCopyButton').on('click', function() {
         copyArray = getSelectedRowData('nkTable', 'days').slice();
@@ -398,7 +404,7 @@ $(document).ready(function () {
         nkTabFill(unmodifiedData);
     });
 
-//Функционал конопок на вкладке Годовой карты
+//Функционал кнопок на вкладке "Карта года"
     //Кнопка для копирования строки
     $('#gkCopyButton').on('click', function() {
         copyArray = getSelectedRowData('gkTable', 'days').slice();
@@ -499,8 +505,14 @@ function loadData(newData, firstLoadFlag) {
     $('#vv2Table').bootstrapTable('removeAll');
     $('#kvTable').bootstrapTable('removeAll');
 
+    if(firstLoadFlag) {
+        $('#forceSendButton').on('click', function() {
+            controlSend(newData.state.idevice);
+        });
+    }
+
     //Основная вкладка
-    mainTabFill(data, data.state, firstLoadFlag);
+    mainTabFill(data, firstLoadFlag);
 
     //Вкладка ПК
     pkTabFill2(data, firstLoadFlag);
@@ -522,8 +534,8 @@ function loadData(newData, firstLoadFlag) {
 }
 
 //Заполнение вкладки "Основные"
-function mainTabFill(data, dstate, firstLoadFlag){
-    let state = dstate;
+function mainTabFill(data, firstLoadFlag){
+    let state = data.state;
     for (let area in data.areaMap){
         if(firstLoadFlag) $('#area').append(new Option(data.areaMap[area], area));
     }
@@ -547,7 +559,7 @@ function mainTabFill(data, dstate, firstLoadFlag){
     if(firstLoadFlag) setChange('phone', 'input', '', !numberFlag);
     $('#tz').val(data.state.arrays.timedev.tz);
     if(firstLoadFlag) setChange('tz', 'input', 'arrays.timedev', numberFlag)
-    $('#summer').val(data.state.arrays.timedev.summer);
+    $('#summer').prop('checked', data.state.arrays.timedev.summer);
     if(firstLoadFlag) setChange('summer', 'checkbox', 'arrays.timedev', !numberFlag, !longPathFlag);
 
     anotherTableFill('table', mainTableFlag);
@@ -657,6 +669,7 @@ function tableChange(set, table, daysFlag) {
 
 //Функция для заполнения таблиц параметров ДК и использования внешних входов
 function anotherTableFill(table, tableFlag) {
+    $('#' + table).bootstrapTable('removeAll');
     $('#' + table).bootstrapTable('append', (tableFlag ? data.state.arrays.SetupDK : data.state.arrays.SetTimeUse.uses))
 
     $('#' + table + ' tbody tr').each(function() {
@@ -847,13 +860,13 @@ function pkTabFill(table) {
     }
 
     $('#tc').val(currPK.tc);
-    $('#twot').val(currPK.twot);
+    $('#twot').prop('checked', currPK.twot);
     $('#shift').val(currPK.shift);
     $('#tpu').find('option').each(function() {
         $(this).removeAttr('selected');
     });
     $('#tpu option[value="' + currPK.tpu + '"]').attr('selected', 'selected');
-    $('#razlen').val(currPK.razlen);
+    $('#razlen').prop('checked', currPK.razlen);
 
     currPK.sts.forEach(function () {
         $('#' + table).bootstrapTable('append', '');
@@ -1027,19 +1040,43 @@ function checkNew() {
     $('#addButton')[0].className = buttonClass;
 }
 
+//Отображение кнопки для выбора координат и разблокирование кнопки создания нового перекрёстка
+function checkForce() {
+    let buttonClass = $('#forceSendButton')[0].className.toString();
+    if(buttonClass.indexOf('disabled') !== -1)  buttonClass = buttonClass.substring(0, buttonClass.length-9);
+    $('#forceSendButton')[0].className = buttonClass;
+}
+
 //Открытие карты с выбором координат
 function chooseCoordinates() {
     $('#chooseCoordinates').on('click', function() {
-        $('#myModal').attr('style', 'display : block;');
+        $('#mapModal').attr('style', 'display : block;');
     });
 
     $('.close').on('click', function() {
-        $('#myModal').attr('style', 'display : none;');
+        $('#mapModal').attr('style', 'display : none;');
     });
 
     window.onclick = function(event) {
-        if (event.target == $('#myModal')) {
-          $('#myModal').attr('style', 'display : none;');
+        if (event.target == $('#mapModal')) {
+          $('#mapModal').attr('style', 'display : none;');
         }
     }
+}
+
+//Отправка выбранной команды на сервер
+function controlSend(id) {
+    $.ajax({
+        url: window.location.origin + window.location.pathname.substring(0, window.location.pathname.length - 8) + '/DispatchControlButtons',
+        type: 'post',
+        dataType: 'json',
+        contentType: 'application/json',
+        success: function (data) {
+            console.log(data);
+        },
+        data: JSON.stringify({id : id, cmd : 1, param : 0}),
+        error: function (request) {
+            console.log(request.status + ' ' + request.responseText);
+        }
+    });
 }

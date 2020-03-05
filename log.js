@@ -4,9 +4,9 @@ $(document).ready(function () {
 
     document.title = 'Просмотр логов';
     //Закрытие вкладки при закрытии карты
-    window.setInterval(function () {
-        if(localStorage.getItem('maintab') === 'closed') window.close();
-    }, 1000);
+//    window.setInterval(function () {
+//        if(localStorage.getItem('maintab') === 'closed') window.close();
+//    }, 1000);
 
 	var $table = $('#table');
 
