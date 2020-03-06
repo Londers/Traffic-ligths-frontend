@@ -32,42 +32,42 @@
     <div class="container col-sm-1 position-fixed">
         <div class="row ">
             <div class="col-md-12">
-                <a class="btn btn-light mt-2 mx-auto border" id="sendButton" data-toggle="tooltip" role="button" style="width: 110%; display: flex; min-height: 50px;	min-width: 50px; max-width: 60px;	max-height: 60px;" data-spy="affix">
+                <a class="btn btn-light mt-2 mx-auto border" id="sendButton" data-toggle="tooltip" title="Отправить изменения на ДК" role="button" style="width: 110%; display: flex; min-height: 50px;	min-width: 50px; max-width: 60px;	max-height: 60px;" data-spy="affix">
                     <img src="/file/icons/1.svg" class="img-fluid" style="min-height: 25px;	min-width: 25px; max-width: 40px;	max-height: 40px;">
                 </a>
             </div>
         </div>
         <div class="row">
             <div class="col-md-12">
-                <a class="btn btn-light mt-2 mx-auto border disabled" id="addButton" data-toggle="tooltip" role="button" style="width: 110%; display: flex; min-height: 50px;	min-width: 50px; max-width: 60px;	max-height: 60px;">
+                <a class="btn btn-light mt-2 mx-auto border disabled" id="addButton" data-toggle="tooltip" title="Создать новый перекрёсток" role="button" style="width: 110%; display: flex; min-height: 50px;	min-width: 50px; max-width: 60px;	max-height: 60px;">
                     <img src="/file/icons/6.svg" class="img-fluid" style="min-height: 25px;	min-width: 25px; max-width: 40px;	max-height: 40px;">
                 </a>
             </div>
         </div>
         <div class="row">
             <div class="col-md-12">
-                <a class="btn btn-light mt-2 mx-auto border" id="reloadButton" data-toggle="tooltip" role="button" style="width: 110%; display: flex; min-height: 50px;	min-width: 50px; max-width: 60px;	max-height: 60px;">
+                <a class="btn btn-light mt-2 mx-auto border" id="reloadButton" data-toggle="tooltip" title="Обновить данные на АРМ" role="button" style="width: 110%; display: flex; min-height: 50px;	min-width: 50px; max-width: 60px;	max-height: 60px;">
                     <img src="/file/icons/3.svg" class="img-fluid" style="min-height: 25px;	min-width: 25px; max-width: 40px;	max-height: 40px;">
                 </a>
             </div>
         </div>
         <div class="row">
             <div class="col-md-12 mt-5">
-                <a class="btn btn-light mt-2 mx-auto border" id="deleteButton" data-toggle="tooltip" role="button" style="width: 110%; display: flex; min-height: 50px;	min-width: 50px; max-width: 60px;	max-height: 60px;">
+                <a class="btn btn-light mt-2 mx-auto border" id="deleteButton" data-toggle="tooltip" title="Удалить перекрёсток" role="button" style="width: 110%; display: flex; min-height: 50px;	min-width: 50px; max-width: 60px;	max-height: 60px;">
                     <img src="/file/icons/5.svg" class="img-fluid" style="min-height: 25px;	min-width: 25px; max-width: 40px;	max-height: 40px;">
                 </a>
             </div>
         </div>
         <div class="row">
             <div class="col-md-12">
-                <a class="btn btn-light mt-2 mx-auto border" id="checkButton5" data-toggle="tooltip" role="button" style="width: 110%; display: flex; min-height: 50px;	min-width: 50px; max-width: 60px;	max-height: 60px;">
+                <a class="btn btn-light mt-2 mx-auto border disabled" id="checkButton5" data-toggle="tooltip" role="button" style="width: 110%; display: flex; min-height: 50px;	min-width: 50px; max-width: 60px;	max-height: 60px;">
                     <img src="/file/icons/7.svg" class="img-fluid" style="min-height: 25px;	min-width: 25px; max-width: 40px;	max-height: 40px;">
                 </a>
             </div>
         </div>
         <div class="row">
             <div class="col-md-12 mt-5">
-                <a class="btn btn-light mt-2 mx-auto border disabled" id="forceSendButton" data-toggle="tooltip" role="button" style="width: 100%; display: flex; min-height: 50px;	min-width: 50px; max-width: 60px;	max-height: 60px;">
+                <a class="btn btn-light mt-2 mx-auto border disabled" id="forceSendButton" data-toggle="tooltip" title="Принудительно обновить контроллер" role="button" style="width: 100%; display: flex; min-height: 50px;	min-width: 50px; max-width: 60px;	max-height: 60px;">
                     <img src="/file/icons/8.svg" class="img-fluid" style="min-height: 25px;	min-width: 25px; max-width: 40px;	max-height: 40px;">
                 </a>
                 <button type="button" class="btn btn-light justify-content-center mt-5 mx-auto border" id="checkButton" style="display: flex; max-width: 85px;">Проверка</button>
@@ -93,7 +93,7 @@
                     </li>
                     <li class="nav-item">
                         <a class="btn btn-light ml-4 mr-4 border" id="mainReloadButton" data-toggle="tooltip" role="button">
-                            <img src="/file/icons/2.svg" class="img-fluid" style="	max-width: 40px;	max-height: 40px;">
+                            <img src="/file/icons/3.svg" class="img-fluid" style="	max-width: 40px;	max-height: 40px;">
                         </a>
                     </li>
                     <li class="nav-item">
@@ -311,6 +311,11 @@
                         </div>
                         <div class="col-sm-1 mr-0" style="">
                             <a class="btn btn-light mx-auto border" id="pkReloadButton" data-toggle="tooltip" role="button" style="width:110%; display: flex; min-height: 50px;	min-width: 50px; max-width: 60px;	max-height: 60px;">
+                                <img src="/file/icons/3.svg" class="img-fluid" style="	min-height: 25px;	min-width: 25px; max-width: 35px;	max-height: 35px;">
+                            </a>
+                        </div>
+                        <div class="col-sm-1 mr-0" style="">
+                            <a class="btn btn-light mx-auto border" id="pkNewButton" data-toggle="tooltip" role="button" style="width:110%; display: flex; min-height: 50px;	min-width: 50px; max-width: 60px;	max-height: 60px;">
                                 <img src="/file/icons/2.svg" class="img-fluid" style="	min-height: 25px;	min-width: 25px; max-width: 35px;	max-height: 35px;">
                             </a>
                         </div>
@@ -358,8 +363,8 @@
                                     <div class="form-group mt-2">
                                         <label for="tpu" class="mr-2">Тип ПУ</label>
                                         <select class="" id="tpu">
-                                            <option value="0">ЛПУ</option>
-                                            <option value="1">ПК</option>
+                                            <option value="0">ПК</option>
+                                            <option value="1">ЛПУ</option>
                                         </select>
                                     </div>
                                 </div>
@@ -426,6 +431,11 @@
                         </div>
                         <div class="col-md-1" style="">
                             <a class="btn btn-light mx-auto border" id="skReloadButton" data-toggle="tooltip" role="button" style="width:110%; display: flex; min-height: 50px;	min-width: 50px; max-width: 60px;	max-height: 60px;">
+                                <img src="/file/icons/3.svg" class="img-fluid" style=" min-height: 25px;	min-width: 25px;	max-width: 35px;	max-height: 35px;">
+                            </a>
+                        </div>
+                        <div class="col-md-1" style="">
+                            <a class="btn btn-light mx-auto border" id="skNewButton" data-toggle="tooltip" role="button" style="width:110%; display: flex; min-height: 50px;	min-width: 50px; max-width: 60px;	max-height: 60px;">
                                 <img src="/file/icons/2.svg" class="img-fluid" style=" min-height: 25px;	min-width: 25px;	max-width: 35px;	max-height: 35px;">
                             </a>
                         </div>
@@ -461,7 +471,7 @@
                         </div>
                         <div class="col-md-1" style="">
                             <a class="btn btn-light mx-auto border" id="nkReloadButton" data-toggle="tooltip" role="button" style="width:110%; display: flex; min-height: 50px;	min-width: 50px; max-width: 60px;	max-height: 60px;">
-                                <img src="/file/icons/2.svg" class="img-fluid" style=" min-height: 25px;	min-width: 25px;	max-width: 35px;	max-height: 35px;">
+                                <img src="/file/icons/3.svg" class="img-fluid" style=" min-height: 25px;	min-width: 25px;	max-width: 35px;	max-height: 35px;">
                             </a>
                         </div>
                     </div>
@@ -500,7 +510,7 @@
                         </div>
                         <div class="col-md-1" style="">
                             <a class="btn btn-light mx-auto border" id="gkReloadButton" data-toggle="tooltip" role="button" style="width:110%; display: flex; min-height: 50px;	min-width: 50px; max-width: 60px;	max-height: 60px;">
-                                <img src="/file/icons/2.svg" class="img-fluid" style=" min-height: 25px;	min-width: 25px;	max-width: 35px;	max-height: 35px;">
+                                <img src="/file/icons/3.svg" class="img-fluid" style=" min-height: 25px;	min-width: 25px;	max-width: 35px;	max-height: 35px;">
                             </a>
                         </div>
                     </div>
@@ -620,29 +630,19 @@
                     <div class="row border pt-2">
                         <div class="col-md-2" style="">
                         </div>
-                        <div class="col-md-1" style="">
-                            <a class="btn btn-light mx-auto border disabled" id="kvAddButton" data-toggle="tooltip" role="button" style="width:110%; display: flex; min-height: 50px;	min-width: 50px; max-width: 60px;	max-height: 60px;">
-                                <img src="/file/icons/11.svg" class="img-fluid" style=" min-height: 25px;	min-width: 25px;	max-width: 35px;	max-height: 35px;">
-                            </a>
-                        </div>
-                        <div class="col-md-1 mr-3" style="">
-                            <a class="btn btn-light mx-auto border disabled" id="kvSubButton" data-toggle="tooltip" role="button" style="width:110%; display: flex; min-height: 50px;	min-width: 50px; max-width: 60px;	max-height: 60px;">
-                                <img src="/file/icons/12.svg" class="img-fluid" style=" min-height: 25px;	min-width: 25px;	max-width: 35px;	max-height: 35px;">
-                            </a>
-                        </div>
                         <div class="col-md-1 ml-3" style="">
-                            <a class="btn btn-light mx-auto border disabled" id="kvCopyButton" data-toggle="tooltip" role="button" style="width:110%; display: flex; min-height: 50px;	min-width: 50px; max-width: 60px;	max-height: 60px;">
+                            <a class="btn btn-light mx-auto border" id="kvCopyButton" data-toggle="tooltip" role="button" style="width:110%; display: flex; min-height: 50px;	min-width: 50px; max-width: 60px;	max-height: 60px;">
                                 <img src="/file/icons/9.svg" class="img-fluid" style=" min-height: 25px;	min-width: 25px;	max-width: 35px;	max-height: 35px;">
                             </a>
                         </div>
                         <div class="col-md-1" style="">
-                            <a class="btn btn-light mx-auto border disabled" id="kvPasteButton" data-toggle="tooltip" role="button" style="width:110%; display: flex; min-height: 50px;	min-width: 50px; max-width: 60px;	max-height: 60px;">
+                            <a class="btn btn-light mx-auto border" id="kvPasteButton" data-toggle="tooltip" role="button" style="width:110%; display: flex; min-height: 50px;	min-width: 50px; max-width: 60px;	max-height: 60px;">
                                 <img src="/file/icons/10.svg" class="img-fluid" style=" min-height: 25px;	min-width: 25px;	max-width: 35px;	max-height: 35px;">
                             </a>
                         </div>
                         <div class="col-md-1" style="">
-                            <a class="btn btn-light mx-auto border disabled" id="kvNewButton" data-toggle="tooltip" role="button" style="width:110%; display: flex; min-height: 50px;	min-width: 50px; max-width: 60px;	max-height: 60px;">
-                                <img src="/file/icons/2.svg" class="img-fluid" style=" min-height: 25px;	min-width: 25px;	max-width: 35px;	max-height: 35px;">
+                            <a class="btn btn-light mx-auto border" id="kvReloadButton" data-toggle="tooltip" role="button" style="width:110%; display: flex; min-height: 50px;	min-width: 50px; max-width: 60px;	max-height: 60px;">
+                                <img src="/file/icons/3.svg" class="img-fluid" style=" min-height: 25px;	min-width: 25px;	max-width: 35px;	max-height: 35px;">
                             </a>
                         </div>
                     </div>

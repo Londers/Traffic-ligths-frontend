@@ -11,18 +11,18 @@ $(document).ready(function() {
 
 function check() {
 
-$('#loginMsg').remove();
-$('#passwordMsg').remove();
+    $('#loginMsg').remove();
+    $('#passwordMsg').remove();
 
-if (($('#login').val() === '') || ($('#password').val() === '')) {
-	if (!($('#loginMsg').length) && ($('#login').val() === '')){
-	    $('#loginForm').append('<div style="color: red;" id="loginMsg"><h5>Введите логин</h5></div>');
+    if (($('#login').val() === '') || ($('#password').val() === '')) {
+        if (!($('#loginMsg').length) && ($('#login').val() === '')){
+            $('#loginForm').append('<div style="color: red;" id="loginMsg"><h5>Введите логин</h5></div>');
+        }
+        if (!($('#passwordMsg').length) && ($('#password').val() === '')){
+            $('#passwordForm').append('<div style="color: red;" id="passwordMsg"><h5>Введите пароль</h5></div>');
+        }
+        return;
     }
-	if (!($('#passwordMsg').length) && ($('#password').val() === '')){
-        $('#passwordForm').append('<div style="color: red;" id="passwordMsg"><h5>Введите пароль</h5></div>');
-    }
-    return;
-}
 
 	var account = {
 		login: $('#login').val(),

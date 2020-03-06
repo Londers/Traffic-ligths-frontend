@@ -17,6 +17,7 @@ function load($table, firstLoadFlag) {
 		url: window.location.href,
 		success: function (data) {
 		    console.log(data);
+		    links = [];
             let dataArray = [];
             let tempRecord;
             //Заполнение данных для записи в таблицу
@@ -43,7 +44,7 @@ function load($table, firstLoadFlag) {
 		}
 	});
 	if(firstLoadFlag) {
-	    $('.fixed-table-toolbar').append('<button id="updateButton" class="btn btn-secondary mr-5">Обновить</button>');
+	    $('.fixed-table-toolbar').append('<button id="updateButton" class="btn btn-secondary mb-2">Обновить</button>');
     }
 }
 
@@ -56,7 +57,7 @@ function makeButtons() {
                 $(this).attr('class', 'text-center');
                 let text = links[counter];
 //                let text = $(this)[0].innerText;
-//                $(this)[0].innerText = '';
+                $(this)[0].innerText = '';
                 $(this).append('<button id="' + text + '" class="btn btn-secondary" onclick="openARM(id)">Открыть</button>');
             }
         })
@@ -65,5 +66,5 @@ function makeButtons() {
 }
 
 function openARM(id) {
-    window.open('https://192.168.115.220:8082/user/' + window.location.pathname.split('/')[2] + '/cross/control' + id);
+    window.open(window.origin + '/user/' + window.location.pathname.split('/')[2] + '/cross/control' + id);
 }
