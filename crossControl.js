@@ -654,8 +654,21 @@ function loadData(newData, firstLoadFlag) {
     //Вкладка контроля входов
     kvTabFill();
 
+    setIDs();
+
+    $('td > input').on('click', function(element) {
+        recentlyClicked = Number(element.target.id);
+    });
+}
+
+function setIDs(table) {
+    if(table === undefined) {
+        table = document;
+    } else {
+        table = $('#nav-tab').find('a[aria-selected=true]')[0].id;
+    }
     let counter = 0;
-    $(document).find('table').each(function() {
+    $(table).find('table').each(function() {
         $(this).find('tbody').find('tr').each(function() {
             $(this).find('td').each(function() {
                 $(this).find('input').each(function() {
@@ -666,10 +679,6 @@ function loadData(newData, firstLoadFlag) {
                 });
             });
         });
-    });
-
-    $('td > input').on('click', function(element) {
-        recentlyClicked = Number(element.target.id);
     });
 }
 
@@ -712,6 +721,9 @@ function handleKeyboard(key) {
 
 function boundsCalc(tab, clicked, key) {
     let retValue = {ret : true, shift : 0};
+    let vvTable = (data.state.arrays.SetTimeUse.uses.length === 8);
+    let min;
+    let max;
     switch(tab) {
         case 'nav-main-tab':
             if(key === 'left') (clicked === 0) ? retValue.ret = true : retValue.ret = false;
@@ -771,7 +783,7 @@ function boundsCalc(tab, clicked, key) {
             if(key === 'left') (clicked === 174) ? retValue.ret = true : retValue.ret = false;
             if(key === 'right') (clicked === 545) ? retValue.ret = true : retValue.ret = false;
             if(key === 'up') {
-                if((clicked > 205)) {
+                if((clicked > 204)) {
                     retValue.ret = false;
                     retValue.shift = 31;
                 }
@@ -784,6 +796,10 @@ function boundsCalc(tab, clicked, key) {
             };
             break;
         case 'nav-vv-tab':
+            max = 586;
+            if(data.state.arrays.SetTimeUse.uses.length === 8) {
+                max += 40;
+            }
             if(key === 'left') (clicked === 546) ? retValue.ret = true : retValue.ret = false;
             if(key === 'right') (clicked === 643) ? retValue.ret = true : retValue.ret = false;
             if(key === 'up') {
@@ -793,23 +809,29 @@ function boundsCalc(tab, clicked, key) {
                 }
             };
             if(key === 'down') {
-                if((clicked < 636)) {
+                if((clicked < max)) {//626
                     retValue.ret = false;
                     retValue.shift = 5;
                 }
             };
             break
         case 'nav-kv-tab':
+            min = 597;
+            max = 622;
+            if(data.state.arrays.SetTimeUse.uses.length === 8) {
+                min += 40;
+                max += 40;
+            }
             if(key === 'left') (clicked === 644) ? retValue.ret = true : retValue.ret = false;
             if(key === 'right') (clicked === 675) ? retValue.ret = true : retValue.ret = false;
             if(key === 'up') {
-                if((clicked > 647)) {
+                if((clicked > min)) {//637
                     retValue.ret = false;
                     retValue.shift = 4;
                 }
             };
             if(key === 'down') {
-                if((clicked < 672)) {
+                if((clicked < max)) {//662
                     retValue.ret = false;
                     retValue.shift = 4;
                 }
@@ -958,7 +980,6 @@ function tableChange(set, table, daysFlag) {
 function anotherTableFill(table, tableFlag) {
     $('#' + table).bootstrapTable('removeAll');
     $('#' + table).bootstrapTable('append', (tableFlag ? data.state.arrays.SetupDK : data.state.arrays.SetTimeUse.uses))
-
     $('#' + table + ' tbody tr').each(function() {
         let counter = 0;
         $(this).find('td').each(function() {
