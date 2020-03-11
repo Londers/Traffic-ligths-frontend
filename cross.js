@@ -4,63 +4,63 @@ let ID = 0;
 let loopFunc;
 let osFlag = false;
 
-$(document).ready(function() {
+$(document).ready(function () {
 
     //Закрытие вкладки при закрытии карты
 //    window.setInterval(function () {
 //        if(localStorage.getItem('maintab') === 'closed') window.close();
 //    }, 250);
 
-    var $table = $('#table');
+    let $table = $('#table');
     $table.bootstrapTable();
 
-    $('#img1').on('click', function() {
+    $('#img1').on('click', function () {
         $('#check').trigger('click');
-    })
+    });
 
     //Получение информации о перекрёстке
-  	$.ajax({
-   		type: 'POST',
-   		url: window.location.href,
-   		success: function (data) {
-   		    let region = data.cross.region.num;
-   		    let area = data.cross.area.num;
-   		    ID = data.cross.ID;
-   		    let idevice = data.state.idevice;
-   		    document.title = 'ДК-' + ID;
-            controlSend({id : data.state.idevice, cmd : 4, param : 1});
+    $.ajax({
+        type: 'POST',
+        url: window.location.href,
+        success: function (data) {
+            let region = data.cross.region.num;
+            let area = data.cross.area.num;
+            ID = data.cross.ID;
+            let idevice = data.state.idevice;
+            document.title = 'ДК-' + ID;
+            controlSend({id: data.state.idevice, cmd: 4, param: 1});
 
-            $(window).on("beforeunload", function() {
-                controlSend({id : data.state.idevice, cmd : 4, param : 0});
-            })
+            $(window).on("beforeunload", function () {
+                controlSend({id: data.state.idevice, cmd: 4, param: 0});
+            });
 
-   	        if(data.controlCrossFlag) {
-   	            $('#controlButton').show();
-   	            $('#p1').show();
-   	            $('#p2').show();
-   	            $('#jm').show();
-   	            $('#os').show();
-   	            $('#lr').show();
-   	            $('#ky').show();
-   	        }
+            if (data.controlCrossFlag) {
+                $('#controlButton').show();
+                $('#p1').show();
+                $('#p2').show();
+                $('#jm').show();
+                $('#os').show();
+                $('#lr').show();
+                $('#ky').show();
+            }
 
             console.log(data);
 
             //Отображение полученных данных на экране АРМа
             $('#description').html(data.cross.description);
 
-            $('a').each(function() {
+            $('a').each(function () {
                 let id = $(this).attr('id');
                 this.className = checkButton(this.className.toString(), data.controlCrossFlag);
-                if(id !== 'os'){
-                    $('#' + id).on('click', function() {
+                if (id !== 'os') {
+                    $('#' + id).on('click', function () {
                         buttonClick(id, data.state.idevice);
                     })
                 }
             });
 
             //OS just because
-            $('#os').on('click', function() {
+            $('#os').on('click', function () {
                 osFlag = osFlag ? false : true;
                 osFlag ? $(this).attr('style', ' background-color: #cccccc;') : $(this).attr('style', ' background-color: #f8f9fa;');
                 if (osFlag) {
@@ -72,16 +72,16 @@ $(document).ready(function() {
                     clearInterval(loopFunc);
                     loopFunc = undefined;
                 }
-            })
+            });
 
 
-            $('select').each(function() {
+            $('select').each(function () {
                 checkSelect($(this), data.controlCrossFlag);
             });
 
             //Добавление режима движения и подложки в виде участка карты
             $('#img').attr('src', window.location.origin + '/file/cross/' + region + '/' + area + '/' + ID + '/cross.svg');
-            $('#img').attr('style', 'background-size: cover; background-image: url('+ window.location.origin + '/file/cross/' + region + '/' + area + '/' + ID + '/map.png' +'); background-repeat: no-repeat;');
+            $('#img').attr('style', 'background-size: cover; background-image: url(' + window.location.origin + '/file/cross/' + region + '/' + area + '/' + ID + '/map.png' + '); background-repeat: no-repeat;');
 
             $('#status').html('Статус: ' + data.cross.tlsost.description);
 
@@ -105,38 +105,38 @@ $(document).ready(function() {
                     $('#sk').append(new Option('CК ' + (counter + 1), counter + 1));
                 }
                 counter++;
-            })
+            });
             $('#sk option[value=' + data.state.ck + ']').attr('selected', 'selected');
 
             counter = 0;
             data.state.arrays.WeekSets.wsets.forEach(rec => {
                 let flag = true;
                 rec.days.forEach(day => {
-                    if(rec.days[day] === 0) flag = false;
+                    if (rec.days[day] === 0) flag = false;
                 })
                 if (flag) $('#nk').append(new Option('НК ' + (counter + 1), counter + 1));
                 counter++;
-            })
+            });
             $('#nk option[value=' + data.state.nk + ']').attr('selected', 'selected');
 
-            $('#pk').on('change keyup', function(){
+            $('#pk').on('change keyup', function () {
                 selectChange('#pk', data.state.idevice);
             });
-            $('#sk').on('change keyup', function(){
+            $('#sk').on('change keyup', function () {
                 selectChange('#sk', data.state.idevice);
             });
-            $('#nk').on('change keyup', function(){
+            $('#nk').on('change keyup', function () {
                 selectChange('#nk', data.state.idevice);
             });
-  		},
-   		error: function (request, errorMsg) {
+        },
+        error: function (request, errorMsg) {
             console.log(request.status + ' ' + request.responseText);
-   		}
-	});
+        }
+    });
     window.setInterval(function () {
         reload();
     }, 1000);
-})
+});
 
 //Функция для обновления данных на странице
 function reload() {
@@ -147,13 +147,13 @@ function reload() {
             success: function (data) {
                 $('#description').html(data.cross.description);
                 $('#status').html('Статус: ' + data.cross.tlsost.description);
-                $('#pk').find('option').each(function() {
+                $('#pk').find('option').each(function () {
                     $(this).removeAttr('selected');
                 });
-                $('#sk').find('option').each(function() {
+                $('#sk').find('option').each(function () {
                     $(this).removeAttr('selected');
                 });
-                $('#nk').find('option').each(function() {
+                $('#nk').find('option').each(function () {
                     $(this).removeAttr('selected');
                 });
                 $('#pk option[value=' + data.state.pk + ']').attr('selected', 'selected');
@@ -166,14 +166,14 @@ function reload() {
                 //Обработка таблицы
                 let $table = $('#table');
                 let dataArr = $table.bootstrapTable('getData');
-                let toWrite = {phaseNum : data.device.DK.fdk, tPr : '', tMain : '', duration : ''};
+                let toWrite = {phaseNum: data.device.DK.fdk, tPr: '', tMain: '', duration: ''};
                 let checkDup = false;
                 let index = 0;
                 (data.device.DK.pdk) ? toWrite.tPr = data.device.DK.tdk : toWrite.tMain = data.device.DK.tdk;
                 dataArr.forEach(rec => {
                     (rec.phaseNum === data.device.DK.fdk) ? checkDup = true : index++;
-                })
-                if(!checkDup) {
+                });
+                if (!checkDup) {
                     toWrite.duration = toWrite.tMain + toWrite.tPr;
                     dataArr.push(toWrite);
                     dataArr.sort(compare);
@@ -191,14 +191,14 @@ function reload() {
     }
 }
 
-function compare(a,b) {
+function compare(a, b) {
     if (a.phaseNum > b.phaseNum) return 1;
     if (b.phaseNum > a.phaseNum) return -1;
     return 0;
 }
 
-function buttonClick(button, id){
-    let toSend = {id : id, cmd : 9, param : 0};
+function buttonClick(button, id) {
+    let toSend = {id: id, cmd: 9, param: 0};
     switch (button) {
         case 'lr':
             toSend.param = 0;
@@ -241,7 +241,7 @@ function buttonClick(button, id){
 }
 
 function selectChange(select, id) {
-    let toSend = {id : id, cmd : 0, param : 0};
+    let toSend = {id: id, cmd: 0, param: 0};
     switch (select) {
         case '#pk':
             toSend.cmd = 5;
@@ -275,16 +275,16 @@ function controlSend(toSend) {
 }
 
 function checkButton(buttonClass, rights) {
-    if(rights) {
-        if(buttonClass.indexOf('disabled') !== -1) return buttonClass.substring(0, buttonClass.length-9);
+    if (rights) {
+        if (buttonClass.indexOf('disabled') !== -1) return buttonClass.substring(0, buttonClass.length - 9);
     } else {
-        if(buttonClass.indexOf('disabled') === -1) return buttonClass.concat(' disabled');
+        if (buttonClass.indexOf('disabled') === -1) return buttonClass.concat(' disabled');
     }
     return buttonClass;
 }
 
 function checkSelect($select, rights) {
-    if(rights) {
+    if (rights) {
         $select.prop('disabled', false);
     } else {
         $select.prop('disabled', true);
@@ -293,18 +293,18 @@ function checkSelect($select, rights) {
 
 //Функция для открытия новой вкладки
 function openPage(url, idevice) {
-    controlSend({id : idevice, cmd : 4, param : 0});
-	$.ajax({
-		url: url,
-		type: 'GET',
-		success: function (data) {
-		    location.href = url;
+    controlSend({id: idevice, cmd: 4, param: 0});
+    $.ajax({
+        url: url,
+        type: 'GET',
+        success: function (data) {
+            location.href = url;
 //            window.open(url);
 //            window.close()
-		},
-		error: function (request) {
-			console.log(request.status + ' ' + request.responseText);
+        },
+        error: function (request) {
+            console.log(request.status + ' ' + request.responseText);
 //			location.href = window.location.origin;
-		}
-	});
+        }
+    });
 }

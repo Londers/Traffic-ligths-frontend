@@ -8,7 +8,7 @@ $(document).ready(function () {
 //        if(localStorage.getItem('maintab') === 'closed') window.close();
 //    }, 1000);
 
-	var $table = $('#table');
+	let $table = $('#table');
 
 	$.ajax({
 		type: 'POST',
@@ -26,7 +26,7 @@ $(document).ready(function () {
 		}
 	});
 
-})
+});
 
 //Функция для получения логов
 function getLog(logName, $table) {

@@ -4,10 +4,10 @@ $(document).ready(function() {
     $('#password').on('keyup', function(event) {
         if (event.keyCode === 13) {
             event.preventDefault();
-            $('#submit').click();
+            $('#submit').trigger('click');
         }
     });
-})
+});
 
 function check() {
 
@@ -24,7 +24,7 @@ function check() {
         return;
     }
 
-	var account = {
+	let account = {
 		login: $('#login').val(),
 		password: $('#password').val()
 	};
@@ -48,4 +48,4 @@ function check() {
             console.log(request.status + ' ' + request.responseText);
 		}
 	});
-};
+}

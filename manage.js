@@ -46,7 +46,7 @@ $(document).ready(function () {
                         areas.push({
                             num: area
                         });
-                    })
+                    });
 
                     //Сбор данных для отправки на сервер
                     let toSend = {
@@ -113,7 +113,7 @@ $(document).ready(function () {
                         areas.push({
                             num: area
                         });
-                    })
+                    });
 
                     //Сбор данных для отправки на сервер
                     let toSend = {
@@ -187,7 +187,7 @@ $(document).ready(function () {
                 currRegion = user.region.num;
                 currAreas = user.area;
                 currWorkTime = user.wtime;
-            };
+            }
         });
 
         //костыль для супера
@@ -264,7 +264,7 @@ function getUsers($table) {
                     let areas = '';
                     account.area.forEach(area => {
                         areas += area.nameArea + ', ';
-                    })
+                    });
                     let info = [];
                     //Заполнение структуры для дальнейшей записи в таблицу
                     info.push({
@@ -287,7 +287,7 @@ function getUsers($table) {
                 for (let reg in regionInfo) {
                     $('#region').append(new Option(regionInfo[reg], reg));
                     $('#updateRegion').append(new Option(regionInfo[reg], reg));
-                };
+                }
 
                 fillAreas();
 
@@ -320,8 +320,8 @@ function fillAreas() {
 			if (regAreaJson === $('#updateRegion').find(':selected').text()) {
 				$('#updateArea').append(new Option(areaInfo[regAreaJson][areaJson], areaJson));
 			}
-		};
-	};
+		}
+	}
 }
 
 //Функция для открытия новой вкладки

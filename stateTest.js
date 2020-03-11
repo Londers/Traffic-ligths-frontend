@@ -8,7 +8,7 @@ $(document).ready(function () {
 	$('#updateButton').on('click', function() {
 	    load($table, false);
 	});
-})
+});
 
 //Загрузка данных о редактируемых ДК в таблицу
 function load($table, firstLoadFlag) {
@@ -23,7 +23,7 @@ function load($table, firstLoadFlag) {
             //Заполнение данных для записи в таблицу
             for (let tflight in data.arms) {
                 let dk = data.arms[tflight];
-                tempRecord = {description : '', open : ''}
+                tempRecord = {description : '', open : ''};
                 tempRecord.description = dk.description;
                 links.push('?Region=' + dk.region + '&Area=' + dk.area + '&ID=' + dk.ID);
 //                tempRecord.open = '?Region=' + dk.region + '&Area=' + dk.area + '&ID=' + dk.ID;
@@ -60,7 +60,7 @@ function makeButtons() {
                 $(this)[0].innerText = '';
                 $(this).append('<button id="' + text + '" class="btn btn-secondary" onclick="openARM(id)">Открыть</button>');
             }
-        })
+        });
         counter++;
     });
 }

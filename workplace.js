@@ -1,8 +1,8 @@
 'use strict';
 
-var currnum = -1;
-var IDs = [];
-var statuses = [];
+let currnum = -1;
+let IDs = [];
+let statuses = [];
 let regionInfo;
 let areaInfo;
 
@@ -36,7 +36,7 @@ ymaps.ready(function () {
     window.onbeforeunload = function() {
         localStorage.setItem("maintab", "closed");
         sleep(500);
-    }
+    };
 
     $('#changeDialog').show();
 
@@ -108,7 +108,7 @@ ymaps.ready(function () {
     				return;
     			}
 
-                var toSend = {
+                let toSend = {
                     oldPW: $('#oldPassword').val(),
                     newPW: $('#newPassword').val()
                 };
@@ -158,12 +158,12 @@ ymaps.ready(function () {
             //Заполнение поля выбора регионов для создания пользователя
             for (let reg in regionInfo) {
                 $('#region').append(new Option(regionInfo[reg], reg));
-            };
+            }
             fillAreas();
 		    if(data.manageFlag) $('#manageButton').show();
 
 		    //Создание и первичная настройка карты
-			var map = new ymaps.Map('map', {
+			let map = new ymaps.Map('map', {
 				center: [54.9912, 73.3685],
 				zoom: 19,
 			});
@@ -181,7 +181,7 @@ ymaps.ready(function () {
 				IDs.push(trafficLight.region.num + '-' + trafficLight.area.num + '-' + trafficLight.ID);
 				statuses.push(currnum);
 				//Создание меток контроллеров на карте
-				var placemark = new ymaps.Placemark([trafficLight.points.Y, trafficLight.points.X], {
+				let placemark = new ymaps.Placemark([trafficLight.points.Y, trafficLight.points.X], {
 					hintContent: trafficLight.description
 				}, {
 					iconLayout: createChipsLayout(function (zoom) {
@@ -192,7 +192,7 @@ ymaps.ready(function () {
 				//Функция для вызова АРМ через клик по контроллеру
                 placemark.events.add('click', function() {
                     window.open(window.location.href + '/cross?Region=' + trafficLight.region.num + '&Area='+ trafficLight.area.num + '&ID=' + trafficLight.ID);
-                })
+                });
                 //Добавление метки контроллера на карту
 				map.geoObjects.add(placemark);
 			});
@@ -201,16 +201,16 @@ ymaps.ready(function () {
 			window.setInterval(function () {
                 localStorage.setItem("maintab", "closed");
     			if (!document.hidden) {
-                    var currPoint = map.getBounds(false);
-                    var Point00 = {
+                    let currPoint = map.getBounds(false);
+                    let Point00 = {
                         Y: currPoint["0"]["0"],
                         X: currPoint["0"]["1"]
                     };
-                    var Point01 = {
+                    let Point01 = {
                         Y: currPoint["1"]["0"],
                         X: currPoint["1"]["1"]
                     };
-                    var point = {
+                    let point = {
                         Point0: Point00,
                         Point1: Point01
                     };
@@ -234,7 +234,7 @@ ymaps.ready(function () {
                                         currnum = trafficLight.tlsost.num;
                                         IDs.push(trafficLight.region.num + '-' + trafficLight.area.num + '-' + id);
                                         statuses.push(currnum);
-                                        var placemark = new ymaps.Placemark([trafficLight.points.Y, trafficLight.points.X], {
+                                        let placemark = new ymaps.Placemark([trafficLight.points.Y, trafficLight.points.X], {
                                             hintContent: trafficLight.description
                                         }, {
                                             iconLayout: createChipsLayout(function (zoom) {
@@ -244,13 +244,13 @@ ymaps.ready(function () {
                                         });
                                         placemark.events.add('click', function() {
                                             window.open(window.location.href + '/cross?Region=' + trafficLight.region.num + '&Area='+ trafficLight.area.num + '&ID=' + trafficLight.ID);
-                                        })
+                                        });
                                         //Добавление контроллеров, которые ранее не попадали в область видимости
                                         map.geoObjects.add(placemark);
                                     } else if(statuses[index] != num) {
                                         statuses[index] = num;
                                         currnum = num;
-                                        var placemark = new ymaps.Placemark([trafficLight.points.Y, trafficLight.points.X], {
+                                        let placemark = new ymaps.Placemark([trafficLight.points.Y, trafficLight.points.X], {
                                             hintContent: trafficLight.description
                                         }, {
                                             iconLayout: createChipsLayout(function (zoom) {
@@ -260,7 +260,7 @@ ymaps.ready(function () {
                                         });
                                         placemark.events.add('click', function() {
                                             window.open(window.location.href + '/cross?Region=' + trafficLight.region.num + '&Area='+ trafficLight.area.num + '&ID=' + trafficLight.ID);
-                                        })
+                                        });
                                         //Замена метки контроллера со старым состоянием на метку с новым
                                         map.geoObjects.splice(index, 1, placemark);
                                     }
@@ -287,11 +287,11 @@ ymaps.ready(function () {
                                 }
                                 return;
                             }
-                            var selectedAreas = $('#area option:selected').toArray().map(item => item.value);
-                            var areas = [];
+                            let selectedAreas = $('#area option:selected').toArray().map(item => item.value);
+                            let areas = [];
 
                             //Сбор данных для отправки на сервер
-                            var toSend = {
+                            let toSend = {
                                 region: $('#region option:selected').val(),
                                 area: selectedAreas
                             };
@@ -340,41 +340,41 @@ ymaps.ready(function () {
 function fillAreas() {
 	$('#area').empty();
 //	$('#updateArea').empty();
-	for (var regAreaJson in areaInfo) {
-		for (var areaJson in areaInfo[regAreaJson]) {
+	for (let regAreaJson in areaInfo) {
+		for (let areaJson in areaInfo[regAreaJson]) {
 			if (regAreaJson === $('#region').find(':selected').text()) {
 				$('#area').append(new Option(areaInfo[regAreaJson][areaJson], areaJson));
 			}
-		};
-	};
+		}
+	}
 }
 
-var createChipsLayout = function (calculateSize) {
+let createChipsLayout = function (calculateSize) {
     if(currnum === 0) {
         console.log('Возвращен несуществующий статус');
         return null;
     }
 	// Создадим макет метки.
-	var Chips = ymaps.templateLayoutFactory.createClass(
-		'<div class="placemark"  style="background-image:url(\'' + window.location.origin + '/file/img/trafficLights/' + currnum + '.svg\'); background-size: 100%"></div>', {
-			build: function () {
+	let Chips = ymaps.templateLayoutFactory.createClass(
+        '<div class="placemark"  style="background-image:url(\'' + window.location.origin + '/file/img/trafficLights/' + currnum + '.svg\'); background-size: 100%"></div>', {
+            build: function () {
 				Chips.superclass.build.call(this);
-				var map = this.getData().geoObject.getMap();
+				let map = this.getData().geoObject.getMap();
 				if (!this.inited) {
 					this.inited = true;
 					// Получим текущий уровень зума.
-					var zoom = map.getZoom();
+					let zoom = map.getZoom();
 					// Подпишемся на событие изменения области просмотра карты.
 					map.events.add('boundschange', function () {
 						// Запустим перестраивание макета при изменении уровня зума.
-						var currentZoom = map.getZoom();
-						if (currentZoom != zoom) {
+						let currentZoom = map.getZoom();
+						if (currentZoom !== zoom) {
 							zoom = currentZoom;
 							this.rebuild();
 						}
 					}, this);
 				}
-				var options = this.getData().options,
+				let options = this.getData().options,
 					// Получим размер метки в зависимости от уровня зума.
 					size = calculateSize(map.getZoom()),
 					element = this.getParentElement().getElementsByClassName('placemark')[0],
@@ -399,37 +399,27 @@ var createChipsLayout = function (calculateSize) {
 };
 
 //Мастшабирование иконов светофороф на карте
-var calculate = function (zoom) {
+let calculate = function (zoom) {
 	switch (zoom) {
 //		          case 11:
 //		            return 5;
-//		            break;
 //		          case 12:
 //		            return 10;
-//		            break;
 //		          case 13:
 //		            return 20;
-//		            break;
 		case 14:
 			return 30;
-			break;
 		case 15:
 			return 35;
-			break;
 		case 16:
 			return 50;
-			break;
-		case 17:;
+		case 17:
 			return 60;
-			break;
 		case 18:
 			return 80;
-			break;
 		case 19:
 			return 130;
-			break;
 		default:
 			return 25;
 	}
-}
-
+};

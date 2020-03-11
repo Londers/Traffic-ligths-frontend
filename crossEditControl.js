@@ -14,7 +14,7 @@ $(document).ready(function () {
         kick($table);
     });
 
-})
+});
 
 //Загрузка данных о редактируемых ДК в таблицу
 function load($table, firstLoadFlag) {
@@ -32,7 +32,7 @@ function load($table, firstLoadFlag) {
             let tempRecord;
             //Заполнение данных для записи в таблицу
             for (let user in data.CrossEditInfo) {
-                tempRecord = {login : '', engagedARM : ''}
+                tempRecord = {login : '', engagedARM : ''};
                 tempRecord.login = user.toString();
                 let counter = 0;
                 data.CrossEditInfo[user].forEach(dk => {
@@ -77,7 +77,7 @@ function kick($table) {
     selected.forEach(arm => {
         tempRecord = unbuildEngArm(arm.login, arm.engagedARM);
         toSendArray.push(Object.assign({}, tempRecord));
-    })
+    });
     toSend.busyArms = toSendArray;
 
     $.ajax({
@@ -97,8 +97,7 @@ function kick($table) {
 
 //Корректное заполнение описания ДК в таблице
 function buildEngArm(data) {
-    let value = ' Регион: ' + getRegionDesc(data.region) + '\n Область: ' + getAreaDesc(data.region, data.area) + '\n Описание: ' + data.description;
-    return value;
+    return ' Регион: ' + getRegionDesc(data.region) + '\n Область: ' + getAreaDesc(data.region, data.area) + '\n Описание: ' + data.description;
 }
 
 //Изъятие данных из описания ДК
@@ -126,7 +125,7 @@ function findID(login, description) {
     dataSave.CrossEditInfo[login].forEach(rec => {
         if (rec.description === description) id = dataSave.CrossEditInfo[login][counter].ID;
         counter++;
-    })
+    });
     return id;
 }
 
@@ -159,7 +158,7 @@ function getAreaNum(region, area) {
 }
 
 function sort(a, b) {
-	var aName = a.login.toLowerCase();
-	var bName = b.login.toLowerCase();
+	let aName = a.login.toLowerCase();
+	let bName = b.login.toLowerCase();
 	return ((aName < bName) ? -1 : ((aName > bName) ? 1 : 0));
 }
