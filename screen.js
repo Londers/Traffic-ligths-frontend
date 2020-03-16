@@ -39,7 +39,7 @@ function check() {
 		    if (!data.status) return;
             document.cookie = ('Authorization=Bearer ' + data.token);
             //В случае успешного логина, перенаправление на участок карты данного пользователя
-		    location.href = window.location.href + 'user/' + $('#login').val();
+		    location.href = window.location.href + 'user/' + $('#login').val() + '/map';
 		},
 		error: function (request) {
 			if (!($('#passwordMsg').length)){

@@ -36,7 +36,7 @@ function getSelectedRowData(table, fullPath, force) {
 //    let forceRow = force;
     let index = (force === undefined) ? $('#' + table).find('tr.success').data('index') : force;
     if (force === undefined) tempIndex = index;
-    let path = fullPath.split('.');
+    let path = (fullPath !== undefined) ? fullPath.split('.') : undefined;
     let rowData = [];
     if (index === undefined) return;
     if (table === 'pkTable') {
@@ -55,7 +55,6 @@ function getSelectedRowData(table, fullPath, force) {
     }
     if (table === 'kvTable') {
         rowData = JSON.parse(JSON.stringify(stageSets[index]));
-//        rowData = data.state[path[0]][path[1]][path[2]][index];
     }
     return rowData;
 }
@@ -104,6 +103,8 @@ function checkEdit() {
         },
         error: function (request) {
             console.log(request.status + ' ' + request.responseText);
+            alert(request.status + ' ' + request.responseText);
+            window.location.href = window.location.origin;
         }
     });
 }
@@ -127,7 +128,8 @@ $(document).ready(function () {
             success: function (data) {
                 console.log(data.message);
                 console.log(data.result);
-                checkForce();
+                disableControl('forceSendButton', true);
+                disableControl('sendButton', false);
             },
             data: JSON.stringify(data.state),
             error: function (request) {
@@ -176,25 +178,27 @@ $(document).ready(function () {
 
     //Кнопка для удаления перекрёстка
     $('#deleteButton').on('click', function () {
-        $.ajax({
-            url: window.location.origin + window.location.pathname + '/deleteButton',
-            type: 'post',
-            dataType: 'json',
-            contentType: 'application/json',
-            success: function (data) {
-                console.log(data);
-                if (data.status) {
-                    alert('Перекрёсток удалён, вкладка будет закрыта');
-                    window.close();
-                } else {
-                    alert('Ожидание ответа сервера, попробуйте еще раз');
+        if (confirm('Вы уверены? Перекрёсток будет безвозвратно удалён.')) {
+            $.ajax({
+                url: window.location.origin + window.location.pathname + '/deleteButton',
+                type: 'post',
+                dataType: 'json',
+                contentType: 'application/json',
+                success: function (data) {
+                    console.log(data);
+                    if (data.status) {
+                        alert('Перекрёсток удалён, вкладка будет закрыта');
+                        window.close();
+                    } else {
+                        alert('Ожидание ответа сервера, попробуйте еще раз');
+                    }
+                },
+                data: JSON.stringify(data.state),
+                error: function (request) {
+                    console.log(request.status + ' ' + request.responseText);
                 }
-            },
-            data: JSON.stringify(data.state),
-            error: function (request) {
-                console.log(request.status + ' ' + request.responseText);
-            }
-        });
+            });
+        }
     });
 
     //Кнопка для проверки валидности заполненных данных
@@ -207,6 +211,7 @@ $(document).ready(function () {
             success: function (data) {
                 let counter = 0;
                 let flag = false;
+                disableControl('sendButton', data.status);
                 $('#verification').bootstrapTable('removeAll');
                 data.result.forEach(function () {
                     if (data.result[counter].includes('Проверка')) {
@@ -236,7 +241,7 @@ $(document).ready(function () {
     });
 
     //Функционирование кнопки с выводом информации о проверке
-    $(".trigger").click(function () {
+    $(".trigger").on('click', function () {
         $(".panel").toggle("fast");
         $(this).toggleClass("active");
         return false;
@@ -295,9 +300,9 @@ $(document).ready(function () {
 
         $('#pkTable tbody tr').each(function () {
             oldData.push(getSelectedRowData('pkTable', 'sts', counter));
-        // });
-        // counter = 0;
-        // $('#pkTable tbody tr').each(function () {
+            // });
+            // counter = 0;
+            // $('#pkTable tbody tr').each(function () {
             if (counter++ === index) {
                 let selectPosition = 0;
                 $(this).find('td').each(function () {
@@ -305,7 +310,7 @@ $(document).ready(function () {
                 })
             }
         });
-        $.counter = 0;
+        counter = 0;
         oldData.splice(index, 0, JSON.parse(JSON.stringify(oldData[index])));
         oldData.pop();
         oldData.forEach(rec => {
@@ -466,89 +471,23 @@ $(document).ready(function () {
 
 //Функционал кнопок на вкладке "Контроль входов"
 
+    //Кнопка для копирования строки
+    $('#kvCopyButton').on('click', function () {
+        copyArray = Object.assign({}, getSelectedRowData('kvTable'));
+    });
 
-    //Кнопка для добавления новой строки
+    //Кнопка для перезаписи строки
     $('#kvPasteButton').on('click', function () {
         let index = $('#kvTable').find('tr.success').data('index');
-//        let selected = $('#mapNum').val();
-        let oldData = [];
-        let counter = 0;
-
-        if (getSelectedRowData('kvTable', 'lines') === undefined) return;
-
-        $('#kvTable tbody tr').each(function () {
-            oldData.push(getSelectedRowData('kvTable', '', counter++));
-        });
-
-        counter = 0;
-        oldData.splice(index, 0, Object.assign({}, oldData[index]));
-        oldData.pop();
-        oldData.forEach(rec => {
-            rec.line = ++counter;
-        });
-
-        stageSets = oldData;
-
+        if (getSelectedRowData('kvTable') === undefined) return;
+        stageSets[index] = Object.assign({}, copyArray);
         newTableFill('kvTable', kvTableFlag);
     });
 
-    /*
-  //Функционал кнопок на вкладке "Сут. карты"
-      //Кнопка для добавления новой строки
-      $('#skAddButton').on('click', function() {
-          let index = $('#skTable').find('tr.success').data('index');
-          let selected = $('#mapNum').val();
-          let oldData = [];
-          let counter = 0;
-
-          if (getSelectedRowData('skTable', 'lines') === undefined) return;
-
-          $('#skTable tbody tr').each(function() {
-              oldData.push(getSelectedRowData('skTable', 'lines', counter++));
-          })
-
-          counter = 0;
-          oldData.splice(index, 0, Object.assign({}, oldData[index]));
-          oldData.pop();
-          oldData.forEach(rec => {
-              rec.line = ++counter;
-          })
-
-          daySets[selected].lines = oldData;
-
-          newTableFill('skTable', skTableFlag);
-      });
-
-      //Кнопка для удаления строки
-      $('#skSubButton').on('click', function() {
-          let index = $('#skTable').find('tr.success').data('index');
-          let selected = $('#mapNum').val();
-          let oldData = [];
-          let counter = 0;
-          let emptyRow = {npk : 0, hour : 0, min : 0, line : 12};
-
-          if (getSelectedRowData('skTable', 'lines') === undefined) return;
-
-          $('#skTable tbody tr').each(function() {
-              oldData.push(getSelectedRowData('skTable', 'lines', counter++));
-          })
-
-          counter = 0;
-          oldData.splice(index, 1);
-          oldData.push(emptyRow);
-          oldData.forEach(rec => {
-              rec.line = ++counter;
-          })
-
-          daySets[selected].lines = oldData;
-
-          newTableFill('skTable', skTableFlag);
-      });
-
-      //Кнопка для загрузки исходных данных
-      $('#skReloadButton').on('click', function() {
-          skTabFill(unmodifiedData, false);
-      });  */
+    //Кнопка для загрузки исходных данных
+    $('#kvReloadButton').on('click', function () {
+        kvTabFill(unmodifiedData);
+    });
 
     //Выбор строк в таблицах по клику
     $('#pkTable').on('click-row.bs.table', function (e, row, $element) {
@@ -589,14 +528,14 @@ $(document).ready(function () {
     //Функционирование карты для выбора координат
     ymaps.ready(function () {
         //Создание и первичная настройка карты
-        var map = new ymaps.Map('map', {
+        let map = new ymaps.Map('map', {
             center: [points.Y, points.X],
             zoom: 18
         });
 
         map.events.add('click', function (e) {
             if (!map.balloon.isOpen()) {
-                var coords = e.get('coords');
+                let coords = e.get('coords');
                 points.Y = coords[0].toPrecision(9);
                 points.X = coords[1].toPrecision(9);
                 map.balloon.open(coords, {
@@ -634,6 +573,7 @@ function loadData(newData, firstLoadFlag) {
     if (firstLoadFlag) {
         $('#forceSendButton').on('click', function () {
             controlSend(newData.state.idevice);
+            disableControl('forceSendButton', false);
         });
     }
 
@@ -726,15 +666,12 @@ function handleKeyboard(key) {
 
 function boundsCalc(tab, clicked, key) {
     let retValue = {ret: true, shift: 0};
-    let vvTable = (data.state.arrays.SetTimeUse.uses.length === 8);
     let min;
     let max;
     switch (tab) {
         case 'nav-main-tab':
             if (key === 'left') (clicked === 0) ? retValue.ret = true : retValue.ret = false;
             if (key === 'right') (clicked === 5) ? retValue.ret = true : retValue.ret = false;
-            // if(key === 'up') retValue;
-            // if(key === 'down') retValue;
             break;
         case 'nav-pk-tab':
             if (key === 'left') (clicked === 6) ? retValue.ret = true : retValue.ret = false;
@@ -982,7 +919,7 @@ function tableChange(set, table, daysFlag) {
 //Функция для заполнения таблиц параметров ДК и использования внешних входов
 function anotherTableFill(table, tableFlag) {
     $('#' + table).bootstrapTable('removeAll')
-                        .bootstrapTable('append', (tableFlag ? data.state.arrays.SetupDK : data.state.arrays.SetTimeUse.uses));
+        .bootstrapTable('append', (tableFlag ? data.state.arrays.SetupDK : data.state.arrays.SetTimeUse.uses));
     $('#' + table + ' tbody tr').each(function () {
         let counter = 0;
         $(this).find('td').each(function () {
@@ -1017,7 +954,7 @@ function anotherTableChange(table, tableFlag) {
                     data.state.arrays.SetupDK[names[++counter]] = Number(value);
                 } else {
                     data.state.arrays.SetTimeUse.uses[recCounter][names[++counter]] = ((counter === 0) || (counter === 4)) ? value : Number(value);
-                };
+                }
             });
             recCounter++;
         });
@@ -1066,10 +1003,10 @@ function newTableFill(table, tableFlag) {
                     break;
                 case 2 :
                     $(this).append(
-                        '<div class="container"><div class="row"><input class="form-control border-0 col-md-5"' +
+                        '<div class="container"><div class="row"><input class="form-control border-0 col-md-5" ' +
                         'style="max-width: 45px;" name="number" type="number" value="' +
                         handsomeNumbers((tableFlag ? currArr.hour : currArr.end.hour)) + '" required/> ' + '<div style="margin-top: 6px;">:</div>' +
-                        '<input class="form-control border-0 col-md-5" style="max-width: 45px;" name="number"' +
+                        '<input class="form-control border-0 col-md-5" style="max-width: 45px;" name="number" ' +
                         'type="number" value="' + handsomeNumbers((tableFlag ? currArr.min : currArr.end.min)) +
                         '" required/></div></div>'
                     );
@@ -1086,10 +1023,10 @@ function newTableFill(table, tableFlag) {
                         'style="max-width: 50px;" value="' + currArr.lenMGR + '"/>'
                     );
                     break;
-            };
+            }
         });
     });
-    renewal(table);
+    tableFlag ? renewal(table) : renewal(table, true);
 }
 
 //Функция для сохранения изменений в таблице суточных карт, а также заполнение столбца "T начала"
@@ -1153,11 +1090,11 @@ function kvTableChange(table) {
             variable.end.min = tableData[counter][4];
             variable.lenTVP = tableData[counter][5];
             variable.lenMGR = tableData[counter++][6];
-        })
+        });
         data.state.arrays.SetCtrl.Stage = stageSets;
         newTableFill(table, false);
         console.log(data.state);
-    })
+    });
     kvFlag = false;
 }
 
@@ -1240,7 +1177,7 @@ function pkTabFill(table) {
                         'style="max-width: 70px;" value="' + (record.plus ? '+' : '') + '"/>'
                     );
                     break;
-            };
+            }
         });
     });
     renewal(table);
@@ -1271,7 +1208,7 @@ function pkTableChange(table, currPK) {
                     case 5 :
                         currPK.sts[counter].plus = ($(this).find('input').val() === '+');
                         break;
-                };
+                }
             });
         });
         setDK[selected] = currPK;
@@ -1301,7 +1238,7 @@ function setChange(element, type, fullPath, numFlag, hardFlag) {
                     data.state[path[0]][path[1]][element] = $('#' + element).val();
                 }
             });
-        };
+        }
         if (type === 'select') {
             $('#' + element).on('change keyup', function () {
                 hardFlag ? data.state[path[0]][path[1]][path[2]][$('#pkSelect').val()][element] = Number($('#' + element + ' option:selected').val())
@@ -1323,7 +1260,7 @@ function setChange(element, type, fullPath, numFlag, hardFlag) {
                     data.state[element] = $('#' + element).val();
                 }
             });
-        };
+        }
         if (type === 'select') {
             $('#' + element).on('change keyup', function () {
                 data.state[element] = Number($('#' + element + ' option:selected').val());
@@ -1355,10 +1292,14 @@ function checkNew() {
 }
 
 //Отображение кнопки для выбора координат и разблокирование кнопки создания нового перекрёстка
-function checkForce() {
-    let buttonClass = $('#forceSendButton')[0].className.toString();
-    if (buttonClass.indexOf('disabled') !== -1) buttonClass = buttonClass.substring(0, buttonClass.length - 9);
-    $('#forceSendButton')[0].className = buttonClass;
+function disableControl(button, status) {
+    let buttonClass = $('#' + button)[0].className.toString();
+    if (status) {
+        if (buttonClass.indexOf('disabled') !== -1) buttonClass = buttonClass.substring(0, buttonClass.length - 9);
+    } else {
+        if (buttonClass.indexOf('disabled') === -1) buttonClass = buttonClass.concat(' disabled');
+    }
+    $('#' + button)[0].className = buttonClass;
 }
 
 //Открытие карты с выбором координат

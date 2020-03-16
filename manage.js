@@ -53,7 +53,7 @@ $(document).ready(function () {
                     	login: $('#login').val(),
                     	wtime: parseInt($('#workTime option:selected').text()),
                     	password: $('#password').val(),
-                    	role: $('#privileges option:selected').text(),
+                    	role: {name : $('#privileges option:selected').text(), permissions : []},//TODO make permissions chose
                     	region: {num : $('#region option:selected').val() },
                     	area: areas
                     };
@@ -118,7 +118,7 @@ $(document).ready(function () {
                     //Сбор данных для отправки на сервер
                     let toSend = {
                     	login: login[0],
-                    	role: $('#updatePrivileges option:selected').text(),
+                    	role: {name : $('#updatePrivileges option:selected').text(), permissions : []},//TODO make permissions chose
                     	region: {num : $('#updateRegion option:selected').val() },
                     	area: areas,
                     	wtime: parseInt($('#updateWorkTime option:selected').text())
@@ -191,7 +191,7 @@ $(document).ready(function () {
         });
 
         //костыль для супера
-        if((currPrivileges === 'Admin')&&(!window.location.href.includes('Super'))) {
+        if((currPrivileges.name === 'Admin')&&(!window.location.href.includes('Super'))) {
             if(!($('#updateMsg').length)) {
                 $('#toolbar').append('<div style="color: red;" id="updateMsg"><h5>Невозможно изменить администратора</h5></div>');
             }
@@ -270,7 +270,7 @@ function getUsers($table) {
                     info.push({
                         state: false,
                         login: account.login,
-                        privileges: account.role,
+                        privileges: account.role.name,
                         region: account.region.nameRegion,
                         area: (areas !== '') ? areas.substring(0, areas.length - 2) : areas,
                         workTime: account.wtime

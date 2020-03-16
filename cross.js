@@ -2,9 +2,10 @@
 
 let ID = 0;
 let loopFunc;
-let osFlag = false;
+let phaseFlags = [];
+let deviceFlag = false;
 
-$(document).ready(function () {
+$(function () {
 
     //Закрытие вкладки при закрытии карты
 //    window.setInterval(function () {
@@ -35,13 +36,10 @@ $(document).ready(function () {
             });
 
             if (data.controlCrossFlag) {
+                $('a').each(function () {
+                    $(this).show();
+                });
                 $('#controlButton').show();
-                $('#p1').show();
-                $('#p2').show();
-                $('#jm').show();
-                $('#os').show();
-                $('#lr').show();
-                $('#ky').show();
             }
 
             console.log(data);
@@ -52,36 +50,43 @@ $(document).ready(function () {
             $('a').each(function () {
                 let id = $(this).attr('id');
                 this.className = checkButton(this.className.toString(), data.controlCrossFlag);
-                if (id !== 'os') {
+                if (!id.includes('p')) {
                     $('#' + id).on('click', function () {
                         buttonClick(id, data.state.idevice);
                     })
                 }
             });
 
-            //OS just because
-            $('#os').on('click', function () {
-                osFlag = osFlag ? false : true;
-                osFlag ? $(this).attr('style', ' background-color: #cccccc;') : $(this).attr('style', ' background-color: #f8f9fa;');
-                if (osFlag) {
-                    buttonClick('os', data.state.idevice);
-                    loopFunc = window.setInterval(function () {
-                        buttonClick('os', data.state.idevice);
-                    }, 60000);
-                } else {
+            //Начало и остановка отправки фаз на контроллер
+            let counter = 0;
+            $('a').each(function () {
+                phaseFlags.push(false);
+                counter++;
+                $(this).on('click', function () {
+                    let id = $(this)[0].id;
+                    stopSendingCommands(id);
+                    if (!id.includes('p')) return;
+                    phaseFlags[Number(id.substring(1)) - 1] = !phaseFlags[Number(id.substring(1)) - 1];
+                    let flag = phaseFlags[Number(id.substring(1)) - 1];
+                    flag ? $(this).attr('style', ' background-color: #cccccc;') : $(this).attr('style', ' background-color: #f8f9fa;');
                     clearInterval(loopFunc);
                     loopFunc = undefined;
-                }
+                    if (flag) {
+                        buttonClick(id, data.state.idevice);
+                        loopFunc = window.setInterval(function () {
+                            buttonClick(id, data.state.idevice);
+                        }, 60000);
+                    }
+                });
             });
-
 
             $('select').each(function () {
                 checkSelect($(this), data.controlCrossFlag);
             });
 
             //Добавление режима движения и подложки в виде участка карты
-            $('#img').attr('src', window.location.origin + '/file/cross/' + region + '/' + area + '/' + ID + '/cross.svg');
-            $('#img').attr('style', 'background-size: cover; background-image: url(' + window.location.origin + '/file/cross/' + region + '/' + area + '/' + ID + '/map.png' + '); background-repeat: no-repeat;');
+            $('#img').attr('src', window.location.origin + '/file/cross/' + region + '/' + area + '/' + ID + '/cross.svg')
+                .attr('style', 'background-size: cover; background-image: url(' + window.location.origin + '/file/cross/' + region + '/' + area + '/' + ID + '/map.png' + '); background-repeat: no-repeat;');
 
             $('#status').html('Статус: ' + data.cross.tlsost.description);
 
@@ -90,7 +95,7 @@ $(document).ready(function () {
             });
 
             //Проверка существования карт и добавление их выбора
-            let counter = 0;
+            counter = 0;
             data.state.arrays.SetDK.dk.forEach(tab => {
                 if (tab.sts[0].stop !== 0) {
                     $('#pk').append(new Option('ПК ' + (counter + 1), counter + 1));
@@ -113,12 +118,11 @@ $(document).ready(function () {
                 let flag = true;
                 rec.days.forEach(day => {
                     if (rec.days[day] === 0) flag = false;
-                })
+                });
                 if (flag) $('#nk').append(new Option('НК ' + (counter + 1), counter + 1));
                 counter++;
             });
             $('#nk option[value=' + data.state.nk + ']').attr('selected', 'selected');
-
             $('#pk').on('change keyup', function () {
                 selectChange('#pk', data.state.idevice);
             });
@@ -136,7 +140,16 @@ $(document).ready(function () {
     window.setInterval(function () {
         reload();
     }, 1000);
+    $('#verification').bootstrapTable('removeAll');
 });
+
+//Остановка отправки фаз на контроллер
+function stopSendingCommands(id) {
+    $('a[style^=" background-color: #cccccc;"]').each(function () {
+        if (id !== $(this)[0].id) $(this).trigger('click');
+    });
+}
+
 
 //Функция для обновления данных на странице
 function reload() {
@@ -145,7 +158,9 @@ function reload() {
             type: 'POST',
             url: window.location.href,
             success: function (data) {
+                let statusChanged = false;
                 $('#description').html(data.cross.description);
+                if($('#status')[0].innerText.substring(8) !== data.cross.tlsost.description) statusChanged = true;
                 $('#status').html('Статус: ' + data.cross.tlsost.description);
                 $('#pk').find('option').each(function () {
                     $(this).removeAttr('selected');
@@ -156,39 +171,70 @@ function reload() {
                 $('#nk').find('option').each(function () {
                     $(this).removeAttr('selected');
                 });
-                $('#pk option[value=' + data.state.pk + ']').attr('selected', 'selected');
-                $('#sk option[value=' + data.state.ck + ']').attr('selected', 'selected');
-                $('#nk option[value=' + data.state.nk + ']').attr('selected', 'selected');
+                $('#pk option[value=' + data.state.pk + ']').attr('selected', 'selected').val(data.state.pk);
+                $('#sk option[value=' + data.state.ck + ']').attr('selected', 'selected').val(data.state.ck);
+                $('#nk option[value=' + data.state.nk + ']').attr('selected', 'selected').val(data.state.nk);
 
-                if (data.device === undefined) return;
-                if (data.device.DK.fdk === 0) return;
-
-                //Обработка таблицы
-                let $table = $('#table');
-                let dataArr = $table.bootstrapTable('getData');
-                let toWrite = {phaseNum: data.device.DK.fdk, tPr: '', tMain: '', duration: ''};
-                let checkDup = false;
-                let index = 0;
-                (data.device.DK.pdk) ? toWrite.tPr = data.device.DK.tdk : toWrite.tMain = data.device.DK.tdk;
-                dataArr.forEach(rec => {
-                    (rec.phaseNum === data.device.DK.fdk) ? checkDup = true : index++;
-                });
-                if (!checkDup) {
-                    toWrite.duration = toWrite.tMain + toWrite.tPr;
-                    dataArr.push(toWrite);
-                    dataArr.sort(compare);
-                } else {
-                    toWrite.phaseNum = dataArr[index].phaseNum;
-                    (data.device.DK.pdk) ? toWrite.tMain = dataArr[index].tMain : toWrite.tPr = dataArr[index].tPr;
-                    toWrite.duration = toWrite.tMain + toWrite.tPr;
-                    $table.bootstrapTable('updateRow', {index: index, row: toWrite});
-                }
+                deviceRequest(data.state.idevice, statusChanged);
             },
             error: function (request) {
                 console.log(request.status + ' ' + request.responseText);
+                if (!status) {
+                    alert(request.status + ' ' + request.responseText);
+                    window.location.href = window.location.origin;
+                }
             }
         });
     }
+}
+
+function deviceRequest(idevice, statusChanged) {
+    if(!statusChanged) {
+        if(deviceFlag) return;
+    }
+    // if (deviceFlag && statusChanged) return;
+    $.ajax({
+        type: 'POST',
+        url: window.location.origin + window.location.pathname + '/dev?idevice=' + idevice,
+        success: function (data) {
+            deviceFlag = false;
+            if (!data.status) {
+                deviceFlag = true;
+                return;
+            }
+            if (data.device === undefined) return;
+            if (data.device.DK.fdk === 0) return;
+
+            //Обработка таблицы
+            let $table = $('#table');
+            let dataArr = $table.bootstrapTable('getData');
+            let toWrite = {phaseNum: data.device.DK.fdk, tPr: '', tMain: '', duration: ''};
+            let checkDup = false;
+            let index = 0;
+            $('#phase')[0].innerText = 'Фаза: ' + toWrite.phaseNum;
+            (data.device.DK.pdk) ? toWrite.tPr = data.device.DK.tdk : toWrite.tMain = data.device.DK.tdk;
+            dataArr.forEach(rec => {
+                (rec.phaseNum === data.device.DK.fdk) ? checkDup = true : index++;
+            });
+            if (!checkDup) {
+                toWrite.duration = toWrite.tMain + toWrite.tPr;
+                dataArr.push(toWrite);
+                dataArr.sort(compare);
+            } else {
+                toWrite.phaseNum = dataArr[index].phaseNum;
+                (data.device.DK.pdk) ? toWrite.tMain = dataArr[index].tMain : toWrite.tPr = dataArr[index].tPr;
+                toWrite.duration = toWrite.tMain + toWrite.tPr;
+                $table.bootstrapTable('updateRow', {index: index, row: toWrite});
+            }
+        },
+        error: function (request) {
+            console.log(request.status + ' ' + request.responseText);
+            if (!status) {
+                alert(request.status + ' ' + request.responseText);
+                window.location.href = window.location.origin;
+            }
+        }
+    });
 }
 
 function compare(a, b) {
@@ -252,24 +298,69 @@ function selectChange(select, id) {
         case '#nk':
             toSend.cmd = 7;
             break;
-    };
+    }
     toSend.param = Number($(select).val());
     controlSend(toSend);
 }
 
+function getDescription(toSend) {
+    if (toSend.cmd === 4) {
+        if (toSend.param === 1) {
+            return 'Отправлен запрос на смену фаз';
+        } else {
+            return 'Отключить запрос на смену фаз';
+        }
+    }
+    switch (toSend.param) {
+        case 0:
+            return 'Отправлена команда "Локальный режим"';
+        case 9:
+            return 'Отправлена команда "Координированное управление"';
+        case 10:
+            return 'Отправлена команда "Включить жёлтое мигание"';
+        case 11:
+            return 'Отправлена команда "Отключить светофоры"';
+    }
+    return 'Отправлена команда "Включить фазу №"' + toSend.param;
+}
+
 //Отправка выбранной команды на сервер
 function controlSend(toSend) {
+    let time;
     $.ajax({
         url: window.location.origin + window.location.pathname + '/DispatchControlButtons',
         type: 'post',
         dataType: 'json',
         contentType: 'application/json',
         success: function (data) {
+            let message = getDescription(toSend);
+            time = new Date();
+            let strTime = '';
+            strTime += (time.getHours().toString().length === 2) ? time.getHours() : '0' + time.getHours();
+            strTime += (':');
+            strTime += (time.getMinutes().toString().length === 2) ? time.getMinutes() : '0' + time.getMinutes();
+            strTime += (':');
+            strTime += (time.getSeconds().toString().length === 2) ? time.getSeconds() : '0' + time.getSeconds();
             console.log(data);
+            // $('#logs')[0].innerText += data.message + '\n';
+            $('#verification').bootstrapTable('prepend', {
+                status: message,
+                time: strTime
+            });
+            $('#verification').bootstrapTable('scrollTo', 'top');
         },
         data: JSON.stringify(toSend),
         error: function (request) {
+            time = new Date();
             console.log(request.status + ' ' + request.responseText);
+            // $('#logs')[0].innerText += request.status + ' ' + request.responseText + '\n';
+            $('#verification').bootstrapTable('prepend', {
+                status: request.status + ' ' + request.responseText,
+                time: time.getHours() + ':' + time.getMinutes() + ':' + time.getSeconds()
+            });
+            let dataArray = $('#verification').bootstrapTable('getData');
+            dataArray.sort(compare);
+            $('#verification').bootstrapTable('scrollTo', 'top');
         }
     });
 }

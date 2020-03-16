@@ -15,7 +15,7 @@ function openPage(url) {
 		},
 		url: window.location.href + url,
 		success: function (data) {
-		    window.open(window.location.href + url);
+		    window.open(window.location.href.substring(0, window.location.href.length - 4) + url);
 		},
 		error: function (request) {
 			console.log(request.status + ' ' + request.responseText);
@@ -189,9 +189,9 @@ ymaps.ready(function () {
 						return calculate(zoom);
 					}),
 				});
-				//Функция для вызова АРМ через клик по контроллеру
+				//Функция для вызова АРМ нажатием на контроллер
                 placemark.events.add('click', function() {
-                    window.open(window.location.href + '/cross?Region=' + trafficLight.region.num + '&Area='+ trafficLight.area.num + '&ID=' + trafficLight.ID);
+                    window.open(window.location.href.substring(0, window.location.href.length - 4) + '/cross?Region=' + trafficLight.region.num + '&Area='+ trafficLight.area.num + '&ID=' + trafficLight.ID);
                 });
                 //Добавление метки контроллера на карту
 				map.geoObjects.add(placemark);
@@ -243,7 +243,7 @@ ymaps.ready(function () {
                                             })
                                         });
                                         placemark.events.add('click', function() {
-                                            window.open(window.location.href + '/cross?Region=' + trafficLight.region.num + '&Area='+ trafficLight.area.num + '&ID=' + trafficLight.ID);
+                                            window.open(window.location.href.substring(0, window.location.href.length - 4) + '/cross?Region=' + trafficLight.region.num + '&Area='+ trafficLight.area.num + '&ID=' + trafficLight.ID);
                                         });
                                         //Добавление контроллеров, которые ранее не попадали в область видимости
                                         map.geoObjects.add(placemark);
@@ -259,7 +259,7 @@ ymaps.ready(function () {
                                             })
                                         });
                                         placemark.events.add('click', function() {
-                                            window.open(window.location.href + '/cross?Region=' + trafficLight.region.num + '&Area='+ trafficLight.area.num + '&ID=' + trafficLight.ID);
+                                            window.open(window.location.href.substring(0, window.location.href.length - 4) + '/cross?Region=' + trafficLight.region.num + '&Area='+ trafficLight.area.num + '&ID=' + trafficLight.ID);
                                         });
                                         //Замена метки контроллера со старым состоянием на метку с новым
                                         map.geoObjects.splice(index, 1, placemark);
