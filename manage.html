@@ -34,7 +34,7 @@
     <button id="appendButton" class="btn btn-secondary">Добавить</button>
     <button id="updateButton" class="btn btn-secondary">Изменить</button>
     <button id="deleteButton" class="btn btn-secondary">Удалить</button>
-    <button id="logButton" class="btn btn-secondary ml-5">Логи</button>
+    <button id="serverLogButton" class="btn btn-secondary ml-5">Логи сервера</button>
     <button id="editControlButton" class="btn btn-secondary ml-5">Список редактируемых ДК</button>
     <button id="stateTest" class="btn btn-secondary ml-5">Проверка БД</button>
 </div>
@@ -64,7 +64,7 @@
             <label for="login">Логин</label>
             <input type="text" class="form-control" id="login" placeholder="Введите логин" name="login" required>
         </div>
-        <div class="form-group">
+        <div class="form-group" id="privilegesForm">
             <label for="privileges">Права пользователя</label>
             <select id="privileges" class="form-control">
             </select>
@@ -95,7 +95,7 @@
 </div>
 <div id="updateDialog" title="Изменение пользователя">
     <form class="needs-validated">
-        <div class="form-group">
+        <div class="form-group" id="updatePrivilegesForm">
             <label for="updatePrivileges">Права пользователя</label>
             <select id="updatePrivileges" class="form-control">
             </select>

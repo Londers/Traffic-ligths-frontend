@@ -45,6 +45,11 @@ ymaps.ready(function () {
         openPage('/manage');
     });
 
+    //Открытие вкладки с логами устройств
+    $('#deviceLogButton').on('click', function () {
+        openPage('/map/deviceLog');
+    });
+
     //Смена пароля текущего аккаунта
 	$('#changeButton').on('click', function () {
 	    $('#oldPassword').val('');
@@ -114,13 +119,15 @@ ymaps.ready(function () {
                 };
 
                 $.ajax({
-                    url: window.location.href + '/changepw',
-                    type: 'post',
+                    url: window.location.href.substring(0, window.location.href.length - 4) + '/manage/changepw',
+                    type: 'POST',
                     dataType: 'json',
                     contentType: 'application/json',
                     success: function (data) {
-                        console.log(data.msg);
+                        console.log(data.message);
                         $('#changeDialog').dialog('close');
+                        alert('Пожалуйста, войдите в систему снова');
+                        window.location.href = window.location.origin;
                     },
                     data: JSON.stringify(toSend),
                     error: function (request) {
@@ -161,6 +168,7 @@ ymaps.ready(function () {
             }
             fillAreas();
 		    if(data.manageFlag) $('#manageButton').show();
+            if(data.logDeviceFlag) $('#deviceLogButton').show();
 
 		    //Создание и первичная настройка карты
 			let map = new ymaps.Map('map', {
@@ -299,11 +307,11 @@ ymaps.ready(function () {
                             //Отправка данных на сервер
                             $.ajax({
                                 url: window.location.href + '/locationButton',
-                                type: 'post',
+                                type: 'POST',
                                 dataType: 'json',
                                 contentType: 'application/json',
                                 success: function (data) {
-                                    console.log(data.msg);
+                                    console.log(data.message);
                                     map.setBounds([
                                         [data.boxPoint.point0.Y, data.boxPoint.point0.X],
                                         [data.boxPoint.point1.Y, data.boxPoint.point1.X]

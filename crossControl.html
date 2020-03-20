@@ -24,7 +24,8 @@
     <!-- Modal content -->
     <div class="modal-content" style="width: 70%;">
         <span class="close">&times;</span>
-        <div class="container-fluid p-2" id="map" style="max-height: 930px; max-width: 930px; min-height: 400px; min-width: 400px; height: 930px; width: 930px;"></div>
+        <div class="container-fluid p-2" id="map"
+             style="max-height: 930px; max-width: 930px; min-height: 400px; min-width: 400px; height: 930px; width: 930px;"></div>
     </div>
 </div>
 
@@ -32,73 +33,106 @@
     <div class="container col-sm-1 position-fixed">
         <div class="row ">
             <div class="col-md-12">
-                <a class="btn btn-light mt-2 mx-auto border disabled" id="sendButton" data-toggle="tooltip" title="Отправить изменения на ДК" role="button" style="width: 110%; display: flex; min-height: 50px;	min-width: 50px; max-width: 60px;	max-height: 60px;" data-spy="affix">
-                    <img src="/file/icons/1.svg" class="img-fluid" style="min-height: 25px;	min-width: 25px; max-width: 40px;	max-height: 40px;">
+                <a class="btn btn-secondary mt-2 mx-auto border disabled" id="sendButton" data-toggle="tooltip"
+                   title="Отправить изменения на ДК" role="button"
+                   style="width: 110%; display: flex; min-height: 50px;	min-width: 50px; max-width: 60px;	max-height: 60px;"
+                   data-spy="affix">
+                    <img src="/file/icons/1.svg" class="img-fluid"
+                         style="min-height: 25px;	min-width: 25px; max-width: 40px;	max-height: 40px;">
                 </a>
             </div>
         </div>
         <div class="row">
             <div class="col-md-12">
-                <a class="btn btn-light mt-2 mx-auto border disabled" id="addButton" data-toggle="tooltip" title="Создать новый перекрёсток" role="button" style="width: 110%; display: flex; min-height: 50px;	min-width: 50px; max-width: 60px;	max-height: 60px;">
-                    <img src="/file/icons/6.svg" class="img-fluid" style="min-height: 25px;	min-width: 25px; max-width: 40px;	max-height: 40px;">
+                <a class="btn btn-secondary mt-2 mx-auto border disabled" id="addButton" data-toggle="tooltip"
+                   title="Создать новый перекрёсток" role="button"
+                   style="width: 110%; display: flex; min-height: 50px;	min-width: 50px; max-width: 60px;	max-height: 60px;">
+                    <img src="/file/icons/6.svg" class="img-fluid"
+                         style="min-height: 25px;	min-width: 25px; max-width: 40px;	max-height: 40px;">
                 </a>
             </div>
         </div>
         <div class="row">
             <div class="col-md-12">
-                <a class="btn btn-light mt-2 mx-auto border" id="reloadButton" data-toggle="tooltip" title="Обновить данные на АРМ" role="button" style="width: 110%; display: flex; min-height: 50px;	min-width: 50px; max-width: 60px;	max-height: 60px;">
-                    <img src="/file/icons/3.svg" class="img-fluid" style="min-height: 25px;	min-width: 25px; max-width: 40px;	max-height: 40px;">
+                <a class="btn btn-secondary mt-2 mx-auto border" id="reloadButton" data-toggle="tooltip"
+                   title="Обновить данные на АРМ" role="button"
+                   style="width: 110%; display: flex; min-height: 50px;	min-width: 50px; max-width: 60px;	max-height: 60px;">
+                    <img src="/file/icons/3.svg" class="img-fluid"
+                         style="min-height: 25px;	min-width: 25px; max-width: 40px;	max-height: 40px;">
                 </a>
             </div>
         </div>
         <div class="row">
             <div class="col-md-12 mt-5">
-                <a class="btn btn-light mt-2 mx-auto border" id="deleteButton" data-toggle="tooltip" title="Удалить перекрёсток" role="button" style="width: 110%; display: flex; min-height: 50px;	min-width: 50px; max-width: 60px;	max-height: 60px;">
-                    <img src="/file/icons/5.svg" class="img-fluid" style="min-height: 25px;	min-width: 25px; max-width: 40px;	max-height: 40px;">
+                <a class="btn btn-secondary mt-2 mx-auto border" id="deleteButton" data-toggle="tooltip"
+                   title="Удалить перекрёсток" role="button"
+                   style="width: 110%; display: flex; min-height: 50px;	min-width: 50px; max-width: 60px;	max-height: 60px;">
+                    <img src="/file/icons/5.svg" class="img-fluid"
+                         style="min-height: 25px;	min-width: 25px; max-width: 40px;	max-height: 40px;">
                 </a>
             </div>
         </div>
         <div class="row">
             <div class="col-md-12">
-                <a class="btn btn-light mt-2 mx-auto border disabled" id="checkButton5" data-toggle="tooltip" role="button" style="width: 110%; display: flex; min-height: 50px;	min-width: 50px; max-width: 60px;	max-height: 60px;">
-                    <img src="/file/icons/7.svg" class="img-fluid" style="min-height: 25px;	min-width: 25px; max-width: 40px;	max-height: 40px;">
+                <a class="btn btn-secondary mt-2 mx-auto border disabled" id="checkButton5" data-toggle="tooltip"
+                   role="button"
+                   style="width: 110%; display: flex; min-height: 50px;	min-width: 50px; max-width: 60px;	max-height: 60px;">
+                    <img src="/file/icons/7.svg" class="img-fluid"
+                         style="min-height: 25px;	min-width: 25px; max-width: 40px;	max-height: 40px;">
                 </a>
             </div>
         </div>
         <div class="row">
             <div class="col-md-12 mt-5">
-                <a class="btn btn-light mt-2 mx-auto border disabled" id="forceSendButton" data-toggle="tooltip" title="Принудительно обновить контроллер" role="button" style="width: 100%; display: flex; min-height: 50px;	min-width: 50px; max-width: 60px;	max-height: 60px;">
-                    <img src="/file/icons/8.svg" class="img-fluid" style="min-height: 25px;	min-width: 25px; max-width: 40px;	max-height: 40px;">
+                <a class="btn btn-secondary mt-2 mx-auto border disabled" id="forceSendButton" data-toggle="tooltip"
+                   title="Принудительно обновить контроллер" role="button"
+                   style="width: 100%; display: flex; min-height: 50px;	min-width: 50px; max-width: 60px;	max-height: 60px;">
+                    <img src="/file/icons/8.svg" class="img-fluid"
+                         style="min-height: 25px;	min-width: 25px; max-width: 40px;	max-height: 40px;">
                 </a>
-                <button type="button" class="btn btn-light justify-content-center mt-5 mx-auto border" id="checkButton" style="display: flex; max-width: 85px;">Проверка</button>
+                <button type="button" class="btn btn-secondary justify-content-center mt-5 mx-auto border" id="checkButton"
+                        style="display: flex; max-width: 85px;">Проверка
+                </button>
             </div>
         </div>
     </div>
     <div class="container col-sm-10 border" id="main">
         <nav>
             <div class="nav nav-tabs" id="nav-tab" role="tablist">
-                <a class="nav-item nav-link active" id="nav-main-tab" data-toggle="tab" href="#nav-main" role="tab" aria-controls="nav-main" aria-selected="true">Основные</a>
-                <a class="nav-item nav-link" id="nav-pk-tab" data-toggle="tab" href="#nav-pk" role="tab" aria-controls="nav-pk" aria-selected="false" >ПК</a>
-                <a class="nav-item nav-link" id="nav-sk-tab" data-toggle="tab" href="#nav-sk" role="tab" aria-controls="nav-sk" aria-selected="false">Сут. карты</a>
-                <a class="nav-item nav-link" id="nav-nk-tab" data-toggle="tab" href="#nav-nk" role="tab" aria-controls="nav-nk" aria-selected="false">Нед. карты</a>
-                <a class="nav-item nav-link" id="nav-gk-tab" data-toggle="tab" href="#nav-gk" role="tab" aria-controls="nav-gk" aria-selected="false">Карта года</a>
-                <a class="nav-item nav-link" id="nav-vv-tab" data-toggle="tab" href="#nav-vv" role="tab" aria-controls="nav-vv" aria-selected="false">Внеш. входы</a>
-                <a class="nav-item nav-link" id="nav-kv-tab" data-toggle="tab" href="#nav-kv" role="tab" aria-controls="nav-kv" aria-selected="false">Контроль входов</a>
+                <a class="nav-item nav-link active" id="nav-main-tab" data-toggle="tab" href="#nav-main" role="tab"
+                   aria-controls="nav-main" aria-selected="true">Основные</a>
+                <a class="nav-item nav-link" id="nav-pk-tab" data-toggle="tab" href="#nav-pk" role="tab"
+                   aria-controls="nav-pk" aria-selected="false">ПК</a>
+                <a class="nav-item nav-link" id="nav-sk-tab" data-toggle="tab" href="#nav-sk" role="tab"
+                   aria-controls="nav-sk" aria-selected="false">Сут. карты</a>
+                <a class="nav-item nav-link" id="nav-nk-tab" data-toggle="tab" href="#nav-nk" role="tab"
+                   aria-controls="nav-nk" aria-selected="false">Нед. карты</a>
+                <a class="nav-item nav-link" id="nav-gk-tab" data-toggle="tab" href="#nav-gk" role="tab"
+                   aria-controls="nav-gk" aria-selected="false">Карта года</a>
+                <a class="nav-item nav-link" id="nav-vv-tab" data-toggle="tab" href="#nav-vv" role="tab"
+                   aria-controls="nav-vv" aria-selected="false">Внеш. входы</a>
+                <a class="nav-item nav-link" id="nav-kv-tab" data-toggle="tab" href="#nav-kv" role="tab"
+                   aria-controls="nav-kv" aria-selected="false">Контроль входов</a>
             </div>
         </nav>
         <div class="tab-content" id="nav-tabContent">
-            <div class="tab-pane fade active show" id="nav-main" role="tabpanel" aria-labelledby="nav-main-tab" style="	max-width: 1090px;">
+            <div class="tab-pane fade active show" id="nav-main" role="tabpanel" aria-labelledby="nav-main-tab"
+                 style="	max-width: 1090px;">
                 <ul class="nav nav-pills mt-2">
                     <li class="nav-item">
                     </li>
                     <li class="nav-item">
-                        <a class="btn btn-light ml-4 mr-4 border" id="mainReloadButton" data-toggle="tooltip" role="button">
-                            <img src="/file/icons/3.svg" class="img-fluid" style="	max-width: 40px;	max-height: 40px;">
+                        <a class="btn btn-light ml-4 mr-4 border" id="mainReloadButton" data-toggle="tooltip"
+                           role="button">
+                            <img src="/file/icons/3.svg" class="img-fluid"
+                                 style="	max-width: 40px;	max-height: 40px;">
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="btn btn-light mr-4 border disabled" id="timeButton" data-toggle="tooltip" role="button">
-                            <img src="/file/icons/4.svg" class="img-fluid" style="	max-width: 40px;	max-height: 40px;">
+                        <a class="btn btn-light mr-4 border disabled" id="timeButton" data-toggle="tooltip"
+                           role="button">
+                            <img src="/file/icons/4.svg" class="img-fluid"
+                                 style="	max-width: 40px;	max-height: 40px;">
                         </a>
                     </li>
                 </ul>
@@ -118,7 +152,8 @@
                                     <label for="id">№</label>
                                 </div>
                                 <div class="col-xs-11 ml-1">
-                                    <input type="number" class="form-control" id="id" required="" style="	max-width: 100px;	max-height: 30px;">
+                                    <input type="number" class="form-control" id="id" required=""
+                                           style="	max-width: 100px;	max-height: 30px;">
                                 </div>
                             </div>
                         </div>
@@ -128,7 +163,8 @@
                                     <label for="idevice">№ модема</label>
                                 </div>
                                 <div class="col-xs-10 ml-1">
-                                    <input type="number" class="form-control" id="idevice" required="" style="	max-width: 200px;	max-height: 30px;">
+                                    <input type="number" class="form-control" id="idevice" required=""
+                                           style="	max-width: 200px;	max-height: 30px;">
                                 </div>
                             </div>
                         </div>
@@ -143,7 +179,8 @@
                                     <label for="subarea">№ подрайона</label>
                                 </div>
                                 <div class="col-xs-2 ml-1">
-                                    <input type="number" class="form-control" id="subarea" required="" style="	max-width: 100px;	max-height: 30px;">
+                                    <input type="number" class="form-control" id="subarea" required=""
+                                           style="	max-width: 100px;	max-height: 30px;">
                                 </div>
                             </div>
                         </div>
@@ -153,7 +190,8 @@
                             <label for="name" class="">Место размещения</label>
                         </div>
                         <div class="col-md-6 w-100">
-                            <div class="form-group"><input type="text" class="form-control" id="name" required="" style="	max-height: 30px;"></div>
+                            <div class="form-group"><input type="text" class="form-control" id="name" required=""
+                                                           style="	max-height: 30px;"></div>
                         </div>
                     </div>
                     <div class="row my-2 ml-0" style="">
@@ -161,7 +199,8 @@
                             <label for="phone" class="">№ телефона, IP lan и т.д.</label>
                         </div>
                         <div class="col-md-6" style="max-width: 400px;">
-                            <div class="form-group"><input type="text" class="form-control" required="" id="phone" style="	max-height: 30px;"></div>
+                            <div class="form-group"><input type="text" class="form-control" required="" id="phone"
+                                                           style="	max-height: 30px;"></div>
                         </div>
                     </div>
                     <div class="form-group row w-100 ml-0 mt-3 mb-2" style="">
@@ -174,7 +213,8 @@
                                     <label for="tz">Часовой пояс</label>
                                 </div>
                                 <div class="col-xs-11 ml-1">
-                                    <input type="number" class="form-control" id="tz" required="" style="	max-width: 75px;	max-height: 30px;">
+                                    <input type="number" class="form-control" id="tz" required=""
+                                           style="	max-width: 75px;	max-height: 30px;">
                                 </div>
                             </div>
                         </div>
@@ -183,7 +223,8 @@
                                 <div class="col-xs-10 ml-1 pt-1">
                                     <div class="form-check">
                                         <label class="form-check-label">
-                                            <input type="checkbox" class="form-check-input" id="summer" value="">Сезонное время</label>
+                                            <input type="checkbox" class="form-check-input" id="summer" value="">Сезонное
+                                            время</label>
                                     </div>
                                 </div>
                             </div>
@@ -194,7 +235,8 @@
                                     <label for="waitAnsw">Ожидание ответа</label>
                                 </div>
                                 <div class="col-xs-10 ml-1">
-                                    <input type="number" class="form-control" id="waitAnsw" required="" style="	max-width: 75px;	max-height: 30px;">
+                                    <input type="number" class="form-control" id="waitAnsw" required=""
+                                           style="	max-width: 75px;	max-height: 30px;">
                                 </div>
                             </div>
                         </div>
@@ -210,7 +252,8 @@
                                 <div class="col-xs-1 mt-1 col-md-12">
                                     <div class="form-check">
                                         <label class="form-check-label">
-                                            <input type="checkbox" class="form-check-input" id="prohInsub" value="">Запрет Неподчинение</label>
+                                            <input type="checkbox" class="form-check-input" id="prohInsub" value="">Запрет
+                                            Неподчинение</label>
                                     </div>
                                 </div>
                             </div>
@@ -220,7 +263,8 @@
                                 <div class="col-xs-10 ml-1">
                                     <div class="form-check pt-1">
                                         <label class="form-check-label">
-                                            <input type="checkbox" class="form-check-input" id="zChPeLa" value="">Запр. част. перег. ламг</label>
+                                            <input type="checkbox" class="form-check-input" id="zChPeLa" value="">Запр.
+                                            част. перег. ламг</label>
                                     </div>
                                 </div>
                             </div>
@@ -230,21 +274,24 @@
                                 <div class="col-xs-10 ml-1 col-md-12">
                                     <div class="form-check pt-1">
                                         <label class="form-check-label">
-                                            <input type="checkbox" class="form-check-input" id="old3Ind" value="">старый 3-цв. инд.</label>
+                                            <input type="checkbox" class="form-check-input" id="old3Ind" value="">старый
+                                            3-цв. инд.</label>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                     <div class="form-group row w-100 ml-0 mt-1 mb-2" style="">
-                        <div class="col-xs-2 pt-2 mt-5 col-md-2" style=""><label for="table" class="">Параметры ДК</label>
+                        <div class="col-xs-2 pt-2 mt-5 col-md-2" style=""><label for="table" class="">Параметры
+                            ДК</label>
                         </div>
                         <div class="col-xs-2 pt-2" style="">
                             <div class="form-group row ml-2 mr-1">
                                 <div class="col-xs-10 ml-1">
                                     <div class="form-check">
                                         <label class="form-check-label">
-                                            <input type="checkbox" class="form-check-input" id="magTrans" value="">Передача журнала</label>
+                                            <input type="checkbox" class="form-check-input" id="magTrans" value="">Передача
+                                            журнала</label>
                                     </div>
                                 </div>
                             </div>
@@ -254,14 +301,16 @@
                                 <div class="col-xs-10 ml-1 col-md-12">
                                     <div class="form-check">
                                         <label class="form-check-label">
-                                            <input type="checkbox" class="form-check-input" id="magGprs" value="">Журнал. Запрет GPRS</label>
+                                            <input type="checkbox" class="form-check-input" id="magGprs" value="">Журнал.
+                                            Запрет GPRS</label>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                     <div class="row">
-                        <table class="table table-bordered" id="table" data-toggle="table" data-toolbar="#toolbar" data-single-select="true" data-click-to-select="true" cellspacing="0">
+                        <table class="table table-bordered" id="table" data-toggle="table" data-toolbar="#toolbar"
+                               data-single-select="true" data-click-to-select="true" cellspacing="0">
                             <thead>
                             <tr style="">
                                 <th data-field="dkn">№ ДК</th>
@@ -278,7 +327,8 @@
                     </div>
                 </div>
             </div>
-            <div class="tab-pane fade pt-2" id="nav-pk" role="tabpanel" aria-labelledby="nav-pk-tab" style="	max-width: 1090px;">
+            <div class="tab-pane fade pt-2" id="nav-pk" role="tabpanel" aria-labelledby="nav-pk-tab"
+                 style="	max-width: 1090px;">
                 <div class="container ml-0" style="	max-width: 1100px;">
                     <div class="row border">
                         <div class="col-sm-1 mr-4" style="">
@@ -300,32 +350,47 @@
                             </div>
                         </div>
                         <div class="col-sm-1" style="">
-                            <a class="btn btn-light mx-auto border" id="pkCopyButton" data-toggle="tooltip" role="button" style="width:110%; display: flex; min-height: 50px;	min-width: 50px; max-width: 60px;	max-height: 60px;">
-                                <img src="/file/icons/9.svg" class="img-fluid" style=" min-height: 25px;	min-width: 25px;	max-width: 35px;	max-height: 35px;">
+                            <a class="btn btn-light mx-auto border" id="pkCopyButton" data-toggle="tooltip"
+                               role="button"
+                               style="width:110%; display: flex; min-height: 50px;	min-width: 50px; max-width: 60px;	max-height: 60px;">
+                                <img src="/file/icons/9.svg" class="img-fluid"
+                                     style=" min-height: 25px;	min-width: 25px;	max-width: 35px;	max-height: 35px;">
                             </a>
                         </div>
                         <div class="col-sm-1" style="">
-                            <a class="btn btn-light mx-auto border" id="pkPasteButton" data-toggle="tooltip" role="button" style="width:110%; display: flex; min-height: 50px;	min-width: 50px; max-width: 60px;	max-height: 60px;">
-                                <img src="/file/icons/10.svg" class="img-fluid" style="	min-height: 25px;	min-width: 25px; max-width: 35px;	max-height: 35px;">
+                            <a class="btn btn-light mx-auto border" id="pkPasteButton" data-toggle="tooltip"
+                               role="button"
+                               style="width:110%; display: flex; min-height: 50px;	min-width: 50px; max-width: 60px;	max-height: 60px;">
+                                <img src="/file/icons/10.svg" class="img-fluid"
+                                     style="	min-height: 25px;	min-width: 25px; max-width: 35px;	max-height: 35px;">
                             </a>
                         </div>
                         <div class="col-sm-1 mr-0" style="">
-                            <a class="btn btn-light mx-auto border" id="pkReloadButton" data-toggle="tooltip" role="button" style="width:110%; display: flex; min-height: 50px;	min-width: 50px; max-width: 60px;	max-height: 60px;">
-                                <img src="/file/icons/3.svg" class="img-fluid" style="	min-height: 25px;	min-width: 25px; max-width: 35px;	max-height: 35px;">
+                            <a class="btn btn-light mx-auto border" id="pkReloadButton" data-toggle="tooltip"
+                               role="button"
+                               style="width:110%; display: flex; min-height: 50px;	min-width: 50px; max-width: 60px;	max-height: 60px;">
+                                <img src="/file/icons/3.svg" class="img-fluid"
+                                     style="	min-height: 25px;	min-width: 25px; max-width: 35px;	max-height: 35px;">
                             </a>
                         </div>
                         <div class="col-sm-1 mr-0" style="">
-                            <a class="btn btn-light mx-auto border" id="pkNewButton" data-toggle="tooltip" role="button" style="width:110%; display: flex; min-height: 50px;	min-width: 50px; max-width: 60px;	max-height: 60px;">
-                                <img src="/file/icons/2.svg" class="img-fluid" style="	min-height: 25px;	min-width: 25px; max-width: 35px;	max-height: 35px;">
+                            <a class="btn btn-light mx-auto border" id="pkNewButton" data-toggle="tooltip" role="button"
+                               style="width:110%; display: flex; min-height: 50px;	min-width: 50px; max-width: 60px;	max-height: 60px;">
+                                <img src="/file/icons/2.svg" class="img-fluid"
+                                     style="	min-height: 25px;	min-width: 25px; max-width: 35px;	max-height: 35px;">
                             </a>
                         </div>
                     </div>
                     <div class="row mt-2">
                         <div class="col-md-4" style="">
-                            <button type="button" class="btn-lg btn-light mx-5 justify-content-center disabled" id="switchCopy" style=""> Вставить перекл. </button>
+                            <button type="button" class="btn-lg btn-light mx-5 justify-content-center disabled"
+                                    id="switchCopy" style=""> Вставить перекл.
+                            </button>
                         </div>
                         <div class="col-md-4" style="">
-                            <button type="button" class="btn-lg btn-light mx-5 justify-content-center disabled" id="switchDel" style=""> Удалить перекл. </button>
+                            <button type="button" class="btn-lg btn-light mx-5 justify-content-center disabled"
+                                    id="switchDel" style=""> Удалить перекл.
+                            </button>
                         </div>
                     </div>
                     <div class="form-group row w-100 ml-0 mt-1 mb-3" style="">
@@ -335,7 +400,8 @@
                                     <label for="tc">Время цикла</label>
                                 </div>
                                 <div class="col-xs-11 ml-1">
-                                    <input type="number" class="form-control" id="tc" required="" style="	max-width: 70px;	max-height: 30px;">
+                                    <input type="number" class="form-control" id="tc" required=""
+                                           style="	max-width: 70px;	max-height: 30px;">
                                 </div>
                             </div>
                         </div>
@@ -354,7 +420,8 @@
                                 <label for="shift">Сдвиг</label>
                             </div>
                             <div class="col-xs-11 ml-1">
-                                <input type="number" class="form-control" id="shift" required="" style="	max-width: 100px;	max-height: 30px;">
+                                <input type="number" class="form-control" id="shift" required=""
+                                       style="	max-width: 100px;	max-height: 30px;">
                             </div>
                         </div>
                         <div class="col-md-2 mt-1 ml-3" style="">
@@ -375,14 +442,16 @@
                                 <div class="col-xs-10 ml-1 col-md-12">
                                     <div class="form-check pt-1">
                                         <label class="form-check-label">
-                                            <input type="checkbox" class="form-check-input" id="razlen" value="">разн длит</label>
+                                            <input type="checkbox" class="form-check-input" id="razlen" value="">разн
+                                            длит</label>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                     <div class="row">
-                        <table class="table table-bordered" id="pkTable" data-toggle="table" data-toolbar="#toolbar" data-single-select="true" data-click-to-select="true">
+                        <table class="table table-bordered" id="pkTable" data-toggle="table" data-toolbar="#toolbar"
+                               data-single-select="true" data-click-to-select="true">
                             <thead>
                             <tr style="">
                                 <th data-field="line">№перекл.</th>
@@ -399,7 +468,8 @@
                     </div>
                 </div>
             </div>
-            <div class="tab-pane fade" id="nav-sk" role="tabpanel" aria-labelledby="nav-sk-tab" style="max-width: 1090px;">
+            <div class="tab-pane fade" id="nav-sk" role="tabpanel" aria-labelledby="nav-sk-tab"
+                 style="max-width: 1090px;">
                 <div class="container col-sm-11 ml-0">
                     <div class="row border pt-2">
                         <div class="col-md-4" style="">
@@ -410,38 +480,54 @@
                             </div>
                         </div>
                         <div class="col-md-1" style="">
-                            <a class="btn btn-light mx-auto border" id="skAddButton" data-toggle="tooltip" role="button" style="width:110%; display: flex; min-height: 50px;	min-width: 50px; max-width: 60px;	max-height: 60px;">
-                                <img src="/file/icons/11.svg" class="img-fluid" style=" min-height: 25px;	min-width: 25px;	max-width: 35px;	max-height: 35px;">
+                            <a class="btn btn-light mx-auto border" id="skAddButton" data-toggle="tooltip" role="button"
+                               style="width:110%; display: flex; min-height: 50px;	min-width: 50px; max-width: 60px;	max-height: 60px;">
+                                <img src="/file/icons/11.svg" class="img-fluid"
+                                     style=" min-height: 25px;	min-width: 25px;	max-width: 35px;	max-height: 35px;">
                             </a>
                         </div>
                         <div class="col-md-1 mr-3" style="">
-                            <a class="btn btn-light mx-auto border" id="skSubButton" data-toggle="tooltip" role="button" style="width:110%; display: flex; min-height: 50px;	min-width: 50px; max-width: 60px;	max-height: 60px;">
-                                <img src="/file/icons/12.svg" class="img-fluid" style=" min-height: 25px;	min-width: 25px;	max-width: 35px;	max-height: 35px;">
+                            <a class="btn btn-light mx-auto border" id="skSubButton" data-toggle="tooltip" role="button"
+                               style="width:110%; display: flex; min-height: 50px;	min-width: 50px; max-width: 60px;	max-height: 60px;">
+                                <img src="/file/icons/12.svg" class="img-fluid"
+                                     style=" min-height: 25px;	min-width: 25px;	max-width: 35px;	max-height: 35px;">
                             </a>
                         </div>
                         <div class="col-md-1 ml-3" style="">
-                            <a class="btn btn-light mx-auto border" id="skCopyButton" data-toggle="tooltip" role="button" style="width:110%; display: flex; min-height: 50px;	min-width: 50px; max-width: 60px;	max-height: 60px;">
-                                <img src="/file/icons/9.svg" class="img-fluid" style=" min-height: 25px;	min-width: 25px;	max-width: 35px;	max-height: 35px;">
+                            <a class="btn btn-light mx-auto border" id="skCopyButton" data-toggle="tooltip"
+                               role="button"
+                               style="width:110%; display: flex; min-height: 50px;	min-width: 50px; max-width: 60px;	max-height: 60px;">
+                                <img src="/file/icons/9.svg" class="img-fluid"
+                                     style=" min-height: 25px;	min-width: 25px;	max-width: 35px;	max-height: 35px;">
                             </a>
                         </div>
                         <div class="col-md-1" style="">
-                            <a class="btn btn-light mx-auto border" id="skPasteButton" data-toggle="tooltip" role="button" style="width:110%; display: flex; min-height: 50px;	min-width: 50px; max-width: 60px;	max-height: 60px;">
-                                <img src="/file/icons/10.svg" class="img-fluid" style=" min-height: 25px;	min-width: 25px;	max-width: 35px;	max-height: 35px;">
+                            <a class="btn btn-light mx-auto border" id="skPasteButton" data-toggle="tooltip"
+                               role="button"
+                               style="width:110%; display: flex; min-height: 50px;	min-width: 50px; max-width: 60px;	max-height: 60px;">
+                                <img src="/file/icons/10.svg" class="img-fluid"
+                                     style=" min-height: 25px;	min-width: 25px;	max-width: 35px;	max-height: 35px;">
                             </a>
                         </div>
                         <div class="col-md-1" style="">
-                            <a class="btn btn-light mx-auto border" id="skReloadButton" data-toggle="tooltip" role="button" style="width:110%; display: flex; min-height: 50px;	min-width: 50px; max-width: 60px;	max-height: 60px;">
-                                <img src="/file/icons/3.svg" class="img-fluid" style=" min-height: 25px;	min-width: 25px;	max-width: 35px;	max-height: 35px;">
+                            <a class="btn btn-light mx-auto border" id="skReloadButton" data-toggle="tooltip"
+                               role="button"
+                               style="width:110%; display: flex; min-height: 50px;	min-width: 50px; max-width: 60px;	max-height: 60px;">
+                                <img src="/file/icons/3.svg" class="img-fluid"
+                                     style=" min-height: 25px;	min-width: 25px;	max-width: 35px;	max-height: 35px;">
                             </a>
                         </div>
                         <div class="col-md-1" style="">
-                            <a class="btn btn-light mx-auto border" id="skNewButton" data-toggle="tooltip" role="button" style="width:110%; display: flex; min-height: 50px;	min-width: 50px; max-width: 60px;	max-height: 60px;">
-                                <img src="/file/icons/2.svg" class="img-fluid" style=" min-height: 25px;	min-width: 25px;	max-width: 35px;	max-height: 35px;">
+                            <a class="btn btn-light mx-auto border" id="skNewButton" data-toggle="tooltip" role="button"
+                               style="width:110%; display: flex; min-height: 50px;	min-width: 50px; max-width: 60px;	max-height: 60px;">
+                                <img src="/file/icons/2.svg" class="img-fluid"
+                                     style=" min-height: 25px;	min-width: 25px;	max-width: 35px;	max-height: 35px;">
                             </a>
                         </div>
                     </div>
                     <div class="row">
-                        <table class="table table-bordered" id="skTable" data-toggle="table" data-toolbar="#toolbar" data-single-select="true" data-click-to-select="true">
+                        <table class="table table-bordered" id="skTable" data-toggle="table" data-toolbar="#toolbar"
+                               data-single-select="true" data-click-to-select="true">
                             <thead>
                             <tr style="">
                                 <th data-field="pageNum">№ стр.</th>
@@ -456,27 +542,38 @@
                     </div>
                 </div>
             </div>
-            <div class="tab-pane fade" id="nav-nk" role="tabpanel" aria-labelledby="nav-nk-tab" style="	max-width: 1090px;">
+            <div class="tab-pane fade" id="nav-nk" role="tabpanel" aria-labelledby="nav-nk-tab"
+                 style="	max-width: 1090px;">
                 <div class="container col-sm-11 ml-0">
                     <div class="row border pt-2">
                         <div class="col-md-1" style="">
-                            <a class="btn btn-light mx-auto border" id="nkCopyButton" data-toggle="tooltip" role="button" style="width:110%; display: flex; min-height: 50px;	min-width: 50px; max-width: 60px;	max-height: 60px;">
-                                <img src="/file/icons/9.svg" class="img-fluid" style=" min-height: 25px;	min-width: 25px;	max-width: 35px;	max-height: 35px;">
+                            <a class="btn btn-light mx-auto border" id="nkCopyButton" data-toggle="tooltip"
+                               role="button"
+                               style="width:110%; display: flex; min-height: 50px;	min-width: 50px; max-width: 60px;	max-height: 60px;">
+                                <img src="/file/icons/9.svg" class="img-fluid"
+                                     style=" min-height: 25px;	min-width: 25px;	max-width: 35px;	max-height: 35px;">
                             </a>
                         </div>
                         <div class="col-md-1" style="">
-                            <a class="btn btn-light mx-auto border" id="nkPasteButton" data-toggle="tooltip" role="button" style="width:110%; display: flex; min-height: 50px;	min-width: 50px; max-width: 60px;	max-height: 60px;">
-                                <img src="/file/icons/10.svg" class="img-fluid" style=" min-height: 25px;	min-width: 25px;	max-width: 35px;	max-height: 35px;">
+                            <a class="btn btn-light mx-auto border" id="nkPasteButton" data-toggle="tooltip"
+                               role="button"
+                               style="width:110%; display: flex; min-height: 50px;	min-width: 50px; max-width: 60px;	max-height: 60px;">
+                                <img src="/file/icons/10.svg" class="img-fluid"
+                                     style=" min-height: 25px;	min-width: 25px;	max-width: 35px;	max-height: 35px;">
                             </a>
                         </div>
                         <div class="col-md-1" style="">
-                            <a class="btn btn-light mx-auto border" id="nkReloadButton" data-toggle="tooltip" role="button" style="width:110%; display: flex; min-height: 50px;	min-width: 50px; max-width: 60px;	max-height: 60px;">
-                                <img src="/file/icons/3.svg" class="img-fluid" style=" min-height: 25px;	min-width: 25px;	max-width: 35px;	max-height: 35px;">
+                            <a class="btn btn-light mx-auto border" id="nkReloadButton" data-toggle="tooltip"
+                               role="button"
+                               style="width:110%; display: flex; min-height: 50px;	min-width: 50px; max-width: 60px;	max-height: 60px;">
+                                <img src="/file/icons/3.svg" class="img-fluid"
+                                     style=" min-height: 25px;	min-width: 25px;	max-width: 35px;	max-height: 35px;">
                             </a>
                         </div>
                     </div>
                     <div class="row mt-2">
-                        <table class="table table-bordered" id="nkTable" data-toggle="table" data-toolbar="#toolbar" data-single-select="true" data-click-to-select="true">
+                        <table class="table table-bordered" id="nkTable" data-toggle="table" data-toolbar="#toolbar"
+                               data-single-select="true" data-click-to-select="true">
                             <thead style="">
                             <tr style="">
                                 <th data-field="pageNNum">N нед. карты</th>
@@ -495,27 +592,39 @@
                     </div>
                 </div>
             </div>
-            <div class="tab-pane fade" id="nav-gk" role="tabpanel" aria-labelledby="nav-gk-tab" style="	max-width: 1090px;">
+            <div class="tab-pane fade" id="nav-gk" role="tabpanel" aria-labelledby="nav-gk-tab"
+                 style="	max-width: 1090px;">
                 <div class="container col-sm-11 ml-0">
                     <div class="row border pt-2" style="">
                         <div class="col-md-1" style="">
-                            <a class="btn btn-light mx-auto border" id="gkCopyButton" data-toggle="tooltip" role="button" style="width:110%; display: flex; min-height: 50px;	min-width: 50px; max-width: 60px;	max-height: 60px;">
-                                <img src="/file/icons/9.svg" class="img-fluid" style=" min-height: 25px;	min-width: 25px;	max-width: 35px;	max-height: 35px;">
+                            <a class="btn btn-light mx-auto border" id="gkCopyButton" data-toggle="tooltip"
+                               role="button"
+                               style="width:110%; display: flex; min-height: 50px;	min-width: 50px; max-width: 60px;	max-height: 60px;">
+                                <img src="/file/icons/9.svg" class="img-fluid"
+                                     style=" min-height: 25px;	min-width: 25px;	max-width: 35px;	max-height: 35px;">
                             </a>
                         </div>
                         <div class="col-md-1" style="">
-                            <a class="btn btn-light mx-auto border" id="gkPasteButton" data-toggle="tooltip" role="button" style="width:110%; display: flex; min-height: 50px;	min-width: 50px; max-width: 60px;	max-height: 60px;">
-                                <img src="/file/icons/10.svg" class="img-fluid" style=" min-height: 25px;	min-width: 25px;	max-width: 35px;	max-height: 35px;">
+                            <a class="btn btn-light mx-auto border" id="gkPasteButton" data-toggle="tooltip"
+                               role="button"
+                               style="width:110%; display: flex; min-height: 50px;	min-width: 50px; max-width: 60px;	max-height: 60px;">
+                                <img src="/file/icons/10.svg" class="img-fluid"
+                                     style=" min-height: 25px;	min-width: 25px;	max-width: 35px;	max-height: 35px;">
                             </a>
                         </div>
                         <div class="col-md-1" style="">
-                            <a class="btn btn-light mx-auto border" id="gkReloadButton" data-toggle="tooltip" role="button" style="width:110%; display: flex; min-height: 50px;	min-width: 50px; max-width: 60px;	max-height: 60px;">
-                                <img src="/file/icons/3.svg" class="img-fluid" style=" min-height: 25px;	min-width: 25px;	max-width: 35px;	max-height: 35px;">
+                            <a class="btn btn-light mx-auto border" id="gkReloadButton" data-toggle="tooltip"
+                               role="button"
+                               style="width:110%; display: flex; min-height: 50px;	min-width: 50px; max-width: 60px;	max-height: 60px;">
+                                <img src="/file/icons/3.svg" class="img-fluid"
+                                     style=" min-height: 25px;	min-width: 25px;	max-width: 35px;	max-height: 35px;">
                             </a>
                         </div>
                     </div>
                     <div class="row mt-2" style="overflow: auto;">
-                        <table class="table table-bordered table-sm" id="gkTable" data-toggle="table" data-toolbar="#toolbar" data-single-select="true" data-click-to-select="true" cellspacing="0" width="100%">
+                        <table class="table table-bordered table-sm" id="gkTable" data-toggle="table"
+                               data-toolbar="#toolbar" data-single-select="true" data-click-to-select="true"
+                               cellspacing="0" width="100%">
                             <thead style="">
                             <tr style="">
                                 <th data-field="month">Месяц</th>
@@ -564,7 +673,8 @@
                         <h5>Использование внешних входов</h5>
                     </div>
                     <div class="row" style="position: relative; height:575px; overflow: auto;">
-                        <table class="table table-bordered" id="vvTable" data-toggle="table" data-toolbar="#toolbar" cellspacing="0">
+                        <table class="table table-bordered" id="vvTable" data-toggle="table" data-toolbar="#toolbar"
+                               cellspacing="0">
                             <thead>
                             <tr>
                                 <th data-field="name">№\Назн.</th>
@@ -586,7 +696,8 @@
                                     <label for="ite">Интервал между TE</label>
                                 </div>
                                 <div class="ml-1">
-                                    <input type="number" class="form-control" id="ite" required="" style="	max-width: 75px;	max-height: 30px;">
+                                    <input type="number" class="form-control" id="ite" required=""
+                                           style="	max-width: 75px;	max-height: 30px;">
                                 </div>
                             </div>
                         </div>
@@ -596,7 +707,8 @@
                                     <label for="tuin">T уср ИН</label>
                                 </div>
                                 <div class="col-xs-10 ml-1">
-                                    <input type="number" class="form-control" id="tuin" required="" style="	max-width: 75px;	max-height: 30px;">
+                                    <input type="number" class="form-control" id="tuin" required=""
+                                           style="	max-width: 75px;	max-height: 30px;">
                                 </div>
                             </div>
                         </div>
@@ -605,7 +717,8 @@
                         <h5>Длительность МГР при неисправности ДТ&nbsp;</h5>
                     </div>
                     <div class="row" style="position:absolute; bottom:0px;">
-                        <table class="table table-bordered" id="vv2Table" data-toggle="table" data-toolbar="#toolbar" data-single-select="true" data-click-to-select="true" cellspacing="0">
+                        <table class="table table-bordered" id="vv2Table" data-toggle="table" data-toolbar="#toolbar"
+                               data-single-select="true" data-click-to-select="true" cellspacing="0">
                             <thead>
                             <tr style="">
                                 <th data-field="enterNum">Назн.\№ ф</th>
@@ -631,23 +744,33 @@
                         <div class="col-md-2" style="">
                         </div>
                         <div class="col-md-1 ml-3" style="">
-                            <a class="btn btn-light mx-auto border" id="kvCopyButton" data-toggle="tooltip" role="button" style="width:110%; display: flex; min-height: 50px;	min-width: 50px; max-width: 60px;	max-height: 60px;">
-                                <img src="/file/icons/9.svg" class="img-fluid" style=" min-height: 25px;	min-width: 25px;	max-width: 35px;	max-height: 35px;">
+                            <a class="btn btn-light mx-auto border" id="kvCopyButton" data-toggle="tooltip"
+                               role="button"
+                               style="width:110%; display: flex; min-height: 50px;	min-width: 50px; max-width: 60px;	max-height: 60px;">
+                                <img src="/file/icons/9.svg" class="img-fluid"
+                                     style=" min-height: 25px;	min-width: 25px;	max-width: 35px;	max-height: 35px;">
                             </a>
                         </div>
                         <div class="col-md-1" style="">
-                            <a class="btn btn-light mx-auto border" id="kvPasteButton" data-toggle="tooltip" role="button" style="width:110%; display: flex; min-height: 50px;	min-width: 50px; max-width: 60px;	max-height: 60px;">
-                                <img src="/file/icons/10.svg" class="img-fluid" style=" min-height: 25px;	min-width: 25px;	max-width: 35px;	max-height: 35px;">
+                            <a class="btn btn-light mx-auto border" id="kvPasteButton" data-toggle="tooltip"
+                               role="button"
+                               style="width:110%; display: flex; min-height: 50px;	min-width: 50px; max-width: 60px;	max-height: 60px;">
+                                <img src="/file/icons/10.svg" class="img-fluid"
+                                     style=" min-height: 25px;	min-width: 25px;	max-width: 35px;	max-height: 35px;">
                             </a>
                         </div>
                         <div class="col-md-1" style="">
-                            <a class="btn btn-light mx-auto border" id="kvReloadButton" data-toggle="tooltip" role="button" style="width:110%; display: flex; min-height: 50px;	min-width: 50px; max-width: 60px;	max-height: 60px;">
-                                <img src="/file/icons/3.svg" class="img-fluid" style=" min-height: 25px;	min-width: 25px;	max-width: 35px;	max-height: 35px;">
+                            <a class="btn btn-light mx-auto border" id="kvReloadButton" data-toggle="tooltip"
+                               role="button"
+                               style="width:110%; display: flex; min-height: 50px;	min-width: 50px; max-width: 60px;	max-height: 60px;">
+                                <img src="/file/icons/3.svg" class="img-fluid"
+                                     style=" min-height: 25px;	min-width: 25px;	max-width: 35px;	max-height: 35px;">
                             </a>
                         </div>
                     </div>
                     <div class="row">
-                        <table class="table table-bordered" id="kvTable" data-toggle="table" data-toolbar="#toolbar" data-single-select="true" data-click-to-select="true">
+                        <table class="table table-bordered" id="kvTable" data-toggle="table" data-toolbar="#toolbar"
+                               data-single-select="true" data-click-to-select="true">
                             <thead>
                             <tr style="">
                                 <th data-field="line">№ стр.</th>
@@ -666,21 +789,22 @@
         </div>
     </div>
     <div class="container col-sm-1 position-fixed">
-            <div class="panel">
-                <table class="table table-bordered" id="verification" data-toggle="table" data-toolbar="#toolbar" data-single-select="true" data-click-to-select="true" cellspacing="0" data-height="700">
-                    <thead>
-                    <tr style="">
-                        <th data-field="left">Проверка</th>
-                        <th data-field="right">Статус</th>
-                    </tr>
-                    </thead>
-                    <tbody style="">
-                    <tr>
-                    </tr>
-                    </tbody>
-                </table>
-            </div>
-            <a class="trigger" href="#" style="display: none;">Результат<br>Проверки</a>
+        <div class="panel">
+            <table class="table table-bordered" id="verification" data-toggle="table" data-toolbar="#toolbar"
+                   data-single-select="true" data-click-to-select="true" cellspacing="0" data-height="700">
+                <thead>
+                <tr style="">
+                    <th data-field="left">Проверка</th>
+                    <th data-field="right">Статус</th>
+                </tr>
+                </thead>
+                <tbody style="">
+                <tr>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+        <a class="trigger" href="#" style="display: none;">Результат<br>Проверки</a>
     </div>
 </div>
 </body>

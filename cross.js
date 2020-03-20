@@ -171,9 +171,10 @@ function reload() {
                 $('#nk').find('option').each(function () {
                     $(this).removeAttr('selected');
                 });
-                $('#pk option[value=' + data.state.pk + ']').attr('selected', 'selected').val(data.state.pk);
-                $('#sk option[value=' + data.state.ck + ']').attr('selected', 'selected').val(data.state.ck);
-                $('#nk option[value=' + data.state.nk + ']').attr('selected', 'selected').val(data.state.nk);
+
+                $('#pk option[value=' + data.state.pk + ']').attr('selected', 'selected');
+                $('#sk option[value=' + data.state.ck + ']').attr('selected', 'selected');
+                $('#nk option[value=' + data.state.nk + ']').attr('selected', 'selected');
 
                 deviceRequest(data.state.idevice, statusChanged);
             },
@@ -302,14 +303,24 @@ function selectChange(select, id) {
     toSend.param = Number($(select).val());
     controlSend(toSend);
 }
-
+//переход на автоматическое регулирование по 0
 function getDescription(toSend) {
-    if (toSend.cmd === 4) {
-        if (toSend.param === 1) {
-            return 'Отправлен запрос на смену фаз';
-        } else {
-            return 'Отключить запрос на смену фаз';
-        }
+    switch (toSend.cmd) {
+        case 4:
+            if (toSend.param === 1) {
+                return 'Отправлен запрос на смену фаз';
+            } else {
+                return 'Отключить запрос на смену фаз';
+            }
+        case 5:
+            if(toSend.param === 0) return 'Отправлена команда "Переход на автоматическое регулирование ПК"';
+            return 'Отправлена команда "Сменить ПК на №' + toSend.param + '"';
+        case 6:
+            if(toSend.param === 0) return 'Отправлена команда "Переход на автоматическое регулирование СК"';
+            return 'Отправлена команда "Сменить CК на №' + toSend.param + '"';
+        case 7:
+            if(toSend.param === 0) return 'Отправлена команда "Переход на автоматическое регулирование НК"';
+            return 'Отправлена команда "Сменить НК на №' + toSend.param + '"';
     }
     switch (toSend.param) {
         case 0:
@@ -327,6 +338,7 @@ function getDescription(toSend) {
 //Отправка выбранной команды на сервер
 function controlSend(toSend) {
     let time;
+    let counter = 0;
     $.ajax({
         url: window.location.origin + window.location.pathname + '/DispatchControlButtons',
         type: 'post',
@@ -343,24 +355,34 @@ function controlSend(toSend) {
             strTime += (time.getSeconds().toString().length === 2) ? time.getSeconds() : '0' + time.getSeconds();
             console.log(data);
             // $('#logs')[0].innerText += data.message + '\n';
-            $('#verification').bootstrapTable('prepend', {
-                status: message,
-                time: strTime
-            });
-            $('#verification').bootstrapTable('scrollTo', 'top');
+            $('#verification')
+                .bootstrapTable('prepend', {
+                    status: message,
+                    time: strTime
+                })
+                .find('tbody').find('tr').find('td').each(function () {
+                    if(Math.abs(counter++ % 2) === 1) {
+                        $(this).attr('class', 'text-left');
+                    }
+                })
+                .bootstrapTable('scrollTo', 'top');
         },
         data: JSON.stringify(toSend),
         error: function (request) {
             time = new Date();
             console.log(request.status + ' ' + request.responseText);
             // $('#logs')[0].innerText += request.status + ' ' + request.responseText + '\n';
-            $('#verification').bootstrapTable('prepend', {
-                status: request.status + ' ' + request.responseText,
-                time: time.getHours() + ':' + time.getMinutes() + ':' + time.getSeconds()
-            });
-            let dataArray = $('#verification').bootstrapTable('getData');
-            dataArray.sort(compare);
-            $('#verification').bootstrapTable('scrollTo', 'top');
+            $('#verification')
+                .bootstrapTable('prepend', {
+                    status: request.status + ' ' + request.responseText,
+                    time: time.getHours() + ':' + time.getMinutes() + ':' + time.getSeconds()
+                })
+                .find('tbody').find('tr').find('td').each(function () {
+                    if(Math.abs(counter++ % 2) === 1) {
+                        $(this).attr('class', 'text-left');
+                    }
+                })
+                .bootstrapTable('scrollTo', 'top');
         }
     });
 }
