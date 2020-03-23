@@ -95,13 +95,18 @@ $(function () {
             if($(this)[0].innerText.includes('ДК')) selected.push($(this)[0].innerText);
         });
 
+        //TODO сделать иначе
         for (let region in mainData) {
             let areas = mainData[region];
             for (let area in areas) {
                 let tflights = areas[area];
                 for (let tflight in tflights) {
-                    if (errors.includes(tflights[tflight].description)) {
-                        console.log($(this).region + ' ' + $(this).area + ' ' + $(this).ID + ' ' + tflights[tflight].description);//TODO just take those fields from tflight
+                    let flag = false;
+                    errors.forEach(error => {
+                        if(error.description === tflights[tflight].description) flag = true;
+                    });
+                    if (flag) {
+                        console.log(tflights[tflight].region.num + ' ' + tflights[tflight].area.num + ' ' + tflights[tflight].ID + ' ' + tflights[tflight].description);
                     }
                 }
             }

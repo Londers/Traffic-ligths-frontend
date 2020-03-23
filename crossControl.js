@@ -109,7 +109,7 @@ function checkEdit() {
     });
 }
 
-$(document).ready(function () {
+$(function () {
 
     checkEdit();
     //Закрытие вкладки при закрытии карты
