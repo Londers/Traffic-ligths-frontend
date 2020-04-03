@@ -4,6 +4,7 @@ let ID = 0;
 let loopFunc;
 let phaseFlags = [];
 let deviceFlag = false;
+let noConnectionStatusArray = [17, 18, 37, 38, 39];
 
 $(function () {
 
@@ -84,10 +85,35 @@ $(function () {
                 checkSelect($(this), data.controlCrossFlag);
             });
 
+            //TODO uncomment
             //Добавление режима движения и подложки в виде участка карты
             $('#img').attr('src', window.location.origin + '/file/cross/' + region + '/' + area + '/' + ID + '/cross.svg')
                 .attr('style', 'background-size: cover; background-image: url(' + window.location.origin + '/file/cross/' + region + '/' + area + '/' + ID + '/map.png' + '); background-repeat: no-repeat;');
-
+            // $('#img').hide();
+            // $.ajax({
+            //     url:  window.location.origin + '/file/cross/' + region + '/' + area + '/' + ID + '/cross.svg',
+            //     type: 'GET',
+            //     success: function (data) {
+            //         console.log(data);
+            //         $('div[class="col-sm-3 text-left mt-3"]').prepend(data.children[0].outerHTML)
+            //             .append('<a class="btn btn-light border" id="p11" data-toggle="tooltip" title="Включить 1 фазу" role="button"\n' +
+            //                 '        onclick="setPhase(randomInt(1, 12))"><img class="img-fluid" src="/file/img/buttons/p1.svg" height="50" alt="1 фаза"></a>');
+            //         let counter = 0;
+            //         $('svg').each(function () {
+            //             $(this).attr('id', 'svg' + counter++);
+            //             // $(this).attr('height', '450');
+            //         });
+            //         $('#svg0').attr('height', '450');
+            //         $('#svg0').attr('width', '450');
+            //
+            //         // $('#svg0').setPhase(1);
+            //
+            //     },
+            //     error: function (request) {
+            //         console.log(request.status + ' ' + request.responseText);
+            //     }
+            // });
+            //---------------------------------------------------------------------------------------------------------------------------------------------------
             $('#status').html('Статус: ' + data.cross.tlsost.description);
 
             $('#controlButton').on('click', function () {
@@ -177,6 +203,28 @@ function reload() {
                 $('#nk option[value=' + data.state.nk + ']').attr('selected', 'selected');
 
                 deviceRequest(data.state.idevice, statusChanged);
+
+                if(noConnectionStatusArray.includes(data.cross.tlsost.num)) {
+                    $('a').each(function () {
+                        this.className = checkButton(this.className.toString(), false);
+                    });
+                    $('select').each(function () {
+                        checkSelect($(this), false);
+                    });
+                    $('#controlButton').hide();
+                    $('#table').hide();
+                    $('#verificationRow').hide();
+                } else {
+                    $('a').each(function () {
+                        this.className = checkButton(this.className.toString(), true);
+                    });
+                    $('select').each(function () {
+                        checkSelect($(this), true);
+                    });
+                    $('#controlButton').show();
+                    $('#table').show();
+                    $('#verificationRow').show();
+                }
             },
             error: function (request) {
                 console.log(request.status + ' ' + request.responseText);
@@ -420,4 +468,10 @@ function openPage(url, idevice) {
 //			location.href = window.location.origin;
         }
     });
+}
+
+//TODO delete this
+
+function randomInt(min, max) {
+    return min + Math.floor((max - min) * Math.random());
 }
