@@ -31,6 +31,9 @@ let points = {
     X: 0
 };
 
+let editFlag = false;
+let login = '';
+
 //Получение информации из выбранной строки
 function getSelectedRowData(table, fullPath, force) {
 //    let forceRow = force;
@@ -99,6 +102,8 @@ function checkEdit() {
         type: 'GET',
         success: function (data) {
 //            console.log(data.editInfo);
+            login = data.editInfo.login;
+            editFlag = data.editInfo.editFlag;
             if (data.editInfo.kick) window.close();
         },
         error: function (request) {
@@ -201,6 +206,15 @@ $(function () {
         }
     });
 
+    //Кнопка для проверки редактирования перекрестка
+    $('#checkEdit').on('click', function () {
+        if (editFlag) {
+            alert('На данном ДК нет других пользователей');
+        } else {
+            alert('На данном ДК работает пользователь ' + login);
+        }
+    });
+
     //Кнопка для проверки валидности заполненных данных
     $('#checkButton').on('click', function () {
         $.ajax({
@@ -228,8 +242,8 @@ $(function () {
                     }
                     counter++;
                 });
-                $('.trigger').show();
-                if ($('.panel').attr('style') !== 'display: block;') $('.trigger').trigger('click');
+                $('#trigger').show();
+                if ($('#panel').attr('style') !== 'display: block;') $('#trigger').trigger('click');
                 $('th[data-field="left"]').attr('style', 'min-width: 346px;');
                 $('th[data-field="right"]').attr('style', 'min-width: 276px;');
             },
@@ -240,6 +254,37 @@ $(function () {
         });
     });
 
+    $('#questionTrigger').on('click', function () {
+        // $('#questionPanel').show();
+        if ($('#questionPanel').attr('style') !== 'display: block;') {
+            $('#questionPanel').show();
+        } else {
+            $('#questionPanel').hide();
+        }
+    });
+
+    $('#markdownTry').on('click', function () {
+        $.ajax({
+            url: 'https://192.168.115.120:8082/file/markdown/crossControl.md',
+            type: 'GET',
+            success: function (data) {
+//            console.log(data.editInfo);
+//                 if (data.editInfo.kick) window.close();
+                let converter = new showdown.Converter(),
+                    text = data,
+                    html = converter.makeHtml(text);
+                html = '<div class="row"><div class="col-md-10">' + html + '</div></div>';
+                $('#questionTrigger').show();
+                if ($('#questionPanel').attr('style') !== 'display: block;') $('#questionTrigger').trigger('click');
+                $('#questionPanel').append(html);
+            },
+            error: function (request) {
+                console.log(request.status + ' ' + request.responseText);
+                alert(request.status + ' ' + request.responseText);
+                window.location.href = window.location.origin;
+            }
+        });
+    });
     //Функционирование кнопки с выводом информации о проверке
     $(".trigger").on('click', function () {
         $(".panel").toggle("fast");

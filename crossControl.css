@@ -148,7 +148,94 @@ display: block;
 a.active.trigger {
 background:#f8f8f8;
 }
+/*--------------------------------------------------------------------------------------------------------------------style="overflow-y: scroll; height:400px;"*/
+.qpanel {
+  position: fixed;
+  top: 50px;
+  right: 0;
+  display: none;
+  background: #ffffff;
+  border:1px solid #999999;
+  -moz-border-radius-topleft: 20px;
+  -webkit-border-top-left-radius: 20px;
+  -moz-border-radius-bottomleft: 20px;
+  -webkit-border-bottom-left-radius: 20px;
+  width: 1000px;
+  height: 900px;
+  padding: 30px 30px 30px 30px;
+  filter: alpha(opacity=85);
+  opacity: 1;
+  overflow-y: scroll;
+}
 
+.qpanel p{
+  margin: 0 0 15px 0;
+  padding: 0;
+  color: #cccccc;
+}
+
+.qpanel a, .qpanel a:visited{
+  margin: 0;
+  padding: 0;
+  color: #9FC54E;
+  text-decoration: none;
+  border-bottom: 1px solid #9FC54E;
+}
+
+.qpanel a:hover, .qpanel a:visited:hover{
+  margin: 0;
+  padding: 0;
+  color: #111111;
+  text-decoration: none;
+  border-bottom: 1px solid #111111;
+}
+
+a.qtrigger{
+  position: fixed;
+  text-decoration: none;
+  top: 180px; right: 0;
+  font-size: 16px;
+  letter-spacing:-1px;
+  font-family: verdana, helvetica, arial, sans-serif;
+  color:#111;
+  padding: 20px 40px 20px 15px;
+  font-weight: 700;
+  background:#f8f8f8;
+  border:1px solid #444444;
+  -moz-border-radius-topleft: 20px;
+  -webkit-border-top-left-radius: 20px;
+  -moz-border-radius-bottomright: 0px;
+  -webkit-border-bottom-right-radius: 0px;
+  -moz-border-radius-bottomleft: 20px;
+  -webkit-border-bottom-left-radius: 20px;
+  display: block;
+}
+
+a.qtrigger:hover{
+  position: fixed;
+  text-decoration: none;
+  top: 180px; right: 0;
+  font-size: 16px;
+  letter-spacing:-1px;
+  font-family: verdana, helvetica, arial, sans-serif;
+  color:#111;
+  padding: 20px 40px 20px 20px;
+  font-weight: 700;
+  background:#f8f8f8;
+  border:1px solid #444444;
+  -moz-border-radius-topleft: 20px;
+  -webkit-border-top-left-radius: 20px;
+  -moz-border-radius-bottomright: 0px;
+  -webkit-border-bottom-right-radius: 0px;
+  -moz-border-radius-bottomleft: 20px;
+  -webkit-border-bottom-left-radius: 20px;
+  display: block;
+}
+
+a.active.qtrigger {
+  background:#f8f8f8;
+}
+/*--------------------------------------------------------------------------------------------------------------------*/
 .columns{
 clear: both;
 width: 330px;
