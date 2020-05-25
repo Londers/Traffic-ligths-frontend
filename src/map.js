@@ -282,7 +282,7 @@ ymaps.ready(function () {
                         }
                     });
 				}
-			}, 5000);
+            }, 5000);
             //Всплывающее окно для создания пользователя /locationButton
             $('#locationDialog').dialog({
                 autoOpen: false,
