@@ -53,10 +53,7 @@ ymaps.ready(function () {
     //Выход из аккаунта
     $('#logoutButton').on('click', function() {
         $.ajax({
-            type: 'GET',
-            beforeSend: function (request) {
-                request.setRequestHeader('Authorization', 'Bearer ' + sessionStorage.getItem('token'));
-            },
+            type: 'POST',
             url: window.location.href + '/logOut',
             success: function (data) {
                location.href = window.location.origin;
@@ -351,7 +348,7 @@ let createChipsLayout = function (calculateSize) {
     }
 	// Создадим макет метки.
 	let Chips = ymaps.templateLayoutFactory.createClass(
-        '<div class="placemark"  style="background-image:url(\'' + window.location.origin + '/file/img/trafficLights/' + currnum + '.svg\'); background-size: 100%"></div>', {
+        '<div class="placemark"  style="background-image:url(\'' + window.location.origin + '/file/static/img/trafficLights/' + currnum + '.svg\'); background-size: 100%"></div>', {
             build: function () {
 				Chips.superclass.build.call(this);
 				let map = this.getData().geoObject.getMap();

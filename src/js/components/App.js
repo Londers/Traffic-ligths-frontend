@@ -3,7 +3,6 @@ import React, {Component} from 'react';
 import './App.css';
 import './static/css/chat_interface.css';
 import './static/css/temporary.css';
-import 'font-awesome/css/font-awesome.min.css';
 
 class SendButton extends Component {
     render() {
@@ -116,7 +115,7 @@ class MessagesContainer extends Component {
     }
 
     createBotMessages() {
-        console.log(this.props.messages);
+        // console.log(this.props.messages);
         return this.props.messages.map((message, index) =>
             <UserMessageBox key={index} message={message["message"]}
                             time={message["time"]} nickname={message["nickname"]}
@@ -125,7 +124,6 @@ class MessagesContainer extends Component {
     }
 
     render() {
-
         return (
             <ul className="messages" ref="scroll">
                 {this.createBotMessages()}
@@ -145,16 +143,22 @@ class UserList extends Component {
         this.props.onRef(this)
     }
 
-    createUsers(users) {
-        console.log("create user");
-        if(users === undefined) return;
-        this.users = users;
-        users.map((user, index) => console.log(user + "---" + index))
-        return users.map((user, index) =>
+    createUsers() {
+        console.log("createUsers");
+        // console.log(this.props.users);
+        if (this.props.users === undefined) {
+            // this.createUsers();
+            return;
+        }
+        // this.props.users.map((user, index) => {
+        //     console.log(user);
+        // });
+        return this.props.users.map((user, index) =>
             <li key={index}>
                 <div>
-                    <h5>
-                        <i className="fa fa-circle offline"/> {user}
+                    <h5 className={"offline"}>
+                        {user.user}
+                        {/*<i className="fa fa-circle offline"/> {user}*/}
                     </h5>
                 </div>
             </li>
@@ -163,24 +167,30 @@ class UserList extends Component {
 
     changeStatus(index, status) {
         let elem = this.myRef.current;
-        console.log("elem");
-        console.log(elem);
-        console.log("index:"+index + " status:"+status);
-        if(elem.children[index] === undefined) return;
+        if (elem === undefined) return;
+
+        if (this.props.users.length <= index) {
+            return false;
+        }
+        // console.log(index + "---" + status);
+        // console.log(this.props.users);
+        // console.log(elem.children.length);
+        console.log("changeStatus");
+        // console.log(elem);
         let child = elem.children[index].innerHTML;
         if (child.includes("offline")) {
             elem.children[index].innerHTML = child.replace("offline", status);
         } else {
             elem.children[index].innerHTML = child.replace("online", status);
         }
-        console.log(child);
-        // return undefined;
+        // console.log(child);
+        return true;
     }
 
     render() {
         return (
             <ul className="users" ref={this.myRef}>
-                {this.createUsers(this.users)}
+                {this.createUsers()}
             </ul>
         )
     }
@@ -189,7 +199,12 @@ class UserList extends Component {
 class ChatApp extends Component {
     constructor(props) {
         super(props);
-        this.state = {"messages": [], "users": [], "user_message": "", "received_message": ""};
+        this.state = {
+            "messages": [],
+            "users": [location.pathname.split('/')[2]],
+            "user_message": "",
+            "received_message": ""
+        };//[location.pathname.split('/')[2]], "user_message": "", "received_message": ""};
         this.handleClick = this.handleClick.bind(this);
         this._handleKeyPress = this._handleKeyPress.bind(this);
         this.onChange = this.onChange.bind(this);
@@ -201,7 +216,7 @@ class ChatApp extends Component {
 
     componentDidMount() {
         let shit = this;
-        shit.ws = new WebSocket('wss://192.168.115.120:8082/user/' + location.pathname.split('/')[2] + '/chatW');
+        shit.ws = new WebSocket('ws://' + location.host + '/user/' + location.pathname.split('/')[2] + '/chatW');
         shit.ws.onopen = function () {
             // on connecting, do nothing but log it to the console
             console.log('connected')
@@ -210,28 +225,60 @@ class ChatApp extends Component {
         shit.ws.onmessage = function (evt) {
             // listen to data sent from the websocket server
             const data = JSON.parse(evt.data);
+            console.log('received ' + data.type);
+            console.log(data);
             switch (data.type) {
                 case "message":
                     shit.state.received_message = data.message;
                     // eslint-disable-next-line no-restricted-globals
-                    shit.user = (data.from === location.pathname.split('/')[2]);
+                    shit.user = (data.from === location.pathname.split('/')[2]);//TODO обработать запрос с messages
                     let date = new Date(data.time.substr(0, data.time.length - 1));
-                    date = new Date(date.getTime() + (date.getTimezoneOffset() * 60 * 1000));
-                    const dateTimeFormat = new Intl.DateTimeFormat('ru', {month: 'short', day: '2-digit'});
-                    const [{value: month}, , {value: day}] = dateTimeFormat.formatToParts(date);
-                    // console.log('received ' + message.message);
+                    date = new Date(date.getTime() - (date.getTimezoneOffset() * 60 * 1000));
+                    const dateTimeFormat = new Intl.DateTimeFormat('ru', { day: "2-digit", month: "long", hour: "2-digit", minute: "2-digit"});
+                    console.log(date);
+                    let fd = dateTimeFormat.format(date);
+                    // console.log(data);
+                    console.log('received ' + data.message + ' ' +  new Date(data.time.substr(0, data.time.length - 1)));
 
-                    shit.addMessageBox((`${month} ${day}, ` + date.getHours() + ':' + date.getMinutes()), (data.from === undefined) ? location.pathname.split('/')[2] : data.from);
+                    shit.addMessageBox(fd, data.from);//(data.from === undefined) ? location.pathname.split('/')[2] : data.from);
+                    break;
+                case "messages":
+                    if(data.messages === null) return;
+                    data.messages.forEach(msg => {
+                        // console.log("VIU2");
+                        // console.log(msg);
+                        shit.state.received_message = msg.message;
+                        // eslint-disable-next-line no-restricted-globals
+                        shit.user = (msg.from === location.pathname.split('/')[2]);
+                        console.log(shit.user);
+                        let date = new Date(msg.time);
+                        const dateTimeFormat = new Intl.DateTimeFormat('ru', { day: "2-digit", month: "long", hour: "2-digit", minute: "2-digit"});
+                        let fd = dateTimeFormat.format(date);
+                        // console.log(data);
+                        // console.log('received ' + msg.message);
+                        console.log("COMPLETE user="+msg.from+", msg="+msg.message);
+
+                        shit.addMessageBox(fd, msg.from);//(msg.from === undefined) ? location.pathname.split('/')[2] : msg.from);
+                    });
                     break;
                 case "users":
-                    console.log(data);
                     shit.state.users = data.users;
-                    shit.child.createUsers(data.users);
-                    console.log(data);
+                    shit.child.props.users = data.users;
+                    console.log("users");
+                    // console.log(data);
+                    // console.log(shit.state.users);
+                    shit.child.createUsers();
+                    shit._handleKeyPress({key:'neEnter'});
+                    data.users.map((user) => {
+                        if (user.status === "online") shit.child.changeStatus(shit.findUser(user.user), "online");
+                    });
                     break;
                 case "status":
-                    console.log(data);
-                    shit.child.changeStatus(shit.state.users.indexOf(data.user), data.status);
+                    console.log("status");
+                    // console.log(data);
+                    // console.log(data.user + " " + data.status);
+                    let index = shit.findUser(data.user);
+                    shit.child.changeStatus(index, data.status);
                     break;
                 case "error":
                     console.log(data.user + " - " + data.error);
@@ -249,11 +296,23 @@ class ChatApp extends Component {
 
     }
 
+    findUser(user) {
+        let counter = 0;
+        let index = -1;
+        this.state.users.map((obj) => {
+            if (obj.user === user) {
+                index = counter;
+            }
+            counter++;
+        });
+        return index;
+    }
+
     addMessageBox(time, nickname, enter = true) {
-        console.log(time + ' ?-? ' + nickname);
+        // console.log(time + ' ?-? ' + nickname);
         let messages = this.state.messages;
         let message = (this.user) ? this.state.user_message : this.state.received_message;
-        console.log(this.state);
+        // console.log(this.state);
         if (message && enter) {
             messages = [...messages, {
                 "message": message,
@@ -278,6 +337,7 @@ class ChatApp extends Component {
     }
 
     handleClick() {
+        if (this.state.user_message === "") return;
         let now = new Date();
         // now = new Date(now.getTime() - (now.getTimezoneOffset() * 60 * 1000));
         let json = {
@@ -299,7 +359,7 @@ class ChatApp extends Component {
     }
 
     _handleKeyPress(e) {
-        if (e.key === "Enter") {
+        if ((e.key === "Enter") && (this.state.user_message !== "")) {
             let now = new Date();
             // now = new Date(now.getTime() - (now.getTimezoneOffset() * 60 * 1000));
             let json = {
@@ -318,20 +378,22 @@ class ChatApp extends Component {
 
     render() {
         return (
-            <div className="chat_window">
-                <MessagesContainer messages={this.state.messages}/>
-                <div className="bottom_wrapper clearfix">
-                    <MessageTextBoxContainer
-                        _handleKeyPress={this._handleKeyPress}
-                        onChange={this.onChange}
-                        message={this.state.user_message}/>
-                    <SendButton handleClick={this.handleClick}/>
+            <div className="row">
+                <div className="chat_window">
+                    <MessagesContainer messages={this.state.messages}/>
+                    <div className="bottom_wrapper clearfix">
+                        <MessageTextBoxContainer
+                            _handleKeyPress={this._handleKeyPress}
+                            onChange={this.onChange}
+                            message={this.state.user_message}/>
+                        <SendButton handleClick={this.handleClick}/>
+                    </div>
                 </div>
                 <div className="user_list">
                     <div>
                         <UserList
-                            // users={this.state.users.users}
-                            onRef={ref => (this.child = ref)} />
+                            users={this.state.users}
+                            onRef={ref => (this.child = ref)}/>
                     </div>
                 </div>
             </div>

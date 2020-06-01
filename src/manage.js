@@ -11,7 +11,7 @@ let firstLoadFlag = true;
 /**
  * @return {number}
  */
-function sortByLogin(a, b) {
+function SortByLogin(a, b) {
     let aName = a.login.toLowerCase();
     let bName = b.login.toLowerCase();
     return ((aName < bName) ? -1 : ((aName > bName) ? 1 : 0));
@@ -284,7 +284,7 @@ function getUsers($table) {
             areaInfo = data.areaInfo;
             // permissionsInfo = data.permInfo;
             if (data.accInfo !== null) {
-                accInfo = data.accInfo.sort(sortByLogin);
+                accInfo = data.accInfo.sort(SortByLogin);
                 accInfo.forEach(account => {
                     let areas = '';
                     account.area.forEach(area => {

@@ -62,13 +62,13 @@ $(function () {
             //     .attr('style', 'background-size: cover; background-image: url(' + window.location.origin + '/file/cross/' + region + '/' + area + '/' + ID + '/map.png' + '); background-repeat: no-repeat;');
             $('#img').hide();
             $.ajax({
-                url: window.location.origin + '/file/cross/' + region + '/' + area + '/' + ID + '/cross.svg',
+                url: window.location.origin + '/file/static/cross/' + region + '/' + area + '/' + ID + '/cross.svg',
                 type: 'GET',
                 success: function (data) {
                     console.log(data);
                     $('div[class="col-sm-3 text-left mt-3"]').prepend(data.children[0].outerHTML)
                         .append('<a class="btn btn-light border" id="secret" data-toggle="tooltip" title="Включить 1 фазу" role="button"\n' +
-                            '        onclick="setPhase(randomInt(1, 12))"><img class="img-fluid" src="/file/img/buttons/p1.svg" height="50" alt="1 фаза"></a>');
+                            '        onclick="setPhase(randomInt(1, 12))"><img class="img-fluid" src="/file/static/img/buttons/p1.svg" height="50" alt="1 фаза"></a>');
                     $('#secret').hide();
                     let counter = 0;
 

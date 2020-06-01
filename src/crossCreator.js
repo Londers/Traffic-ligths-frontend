@@ -95,7 +95,6 @@ $(function () {
             if($(this)[0].innerText.includes('ДК')) selected.push($(this)[0].innerText);
         });
 
-        //TODO сделать иначе
         for (let region in mainData) {
             let areas = mainData[region];
             for (let area in areas) {
