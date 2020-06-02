@@ -63,8 +63,8 @@ class MessageTop extends Component {
                 <h5 style={{float: this.props.appearance}}>{this.props.nickname}</h5>
                 <h5 style={{
                     float: this.props.appearance,
-                    marginRight: 50,
-                    marginLeft: 50
+                    marginRight: 150,
+                    marginLeft: 150
                 }}>{this.props.time}</h5>
             </div>
         );
@@ -222,41 +222,41 @@ class ChatApp extends Component {
             console.log('connected')
         };
 
-        shit.ws.onmessage = function (evt) {
+        shit.ws.onmessage = function (evt) {console.log(evt.data);
             // listen to data sent from the websocket server
-            const data = JSON.parse(evt.data);
+            const dataType = JSON.parse(evt.data);
+            const data = JSON.parse(dataType.data);
             console.log('received ' + data.type);
             console.log(data);
-            switch (data.type) {
+            switch (dataType.type) {
                 case "message":
-                    shit.state.received_message = data.message;
                     // eslint-disable-next-line no-restricted-globals
-                    shit.user = (data.from === location.pathname.split('/')[2]);//TODO обработать запрос с messages
+                    shit.user = (data.from === location.pathname.split('/')[2]);
+                    (shit.user) ? (shit.state.user_message = data.message) : (shit.state.received_message = data.message);
                     let date = new Date(data.time.substr(0, data.time.length - 1));
                     date = new Date(date.getTime() - (date.getTimezoneOffset() * 60 * 1000));
                     const dateTimeFormat = new Intl.DateTimeFormat('ru', { day: "2-digit", month: "long", hour: "2-digit", minute: "2-digit"});
-                    console.log(date);
+                    // console.log(date);
                     let fd = dateTimeFormat.format(date);
                     // console.log(data);
-                    console.log('received ' + data.message + ' ' +  new Date(data.time.substr(0, data.time.length - 1)));
+                    // console.log('received ' + data.message + ' ' +  new Date(data.time.substr(0, data.time.length - 1)));
 
                     shit.addMessageBox(fd, data.from);//(data.from === undefined) ? location.pathname.split('/')[2] : data.from);
                     break;
-                case "messages":
+                case "archive":
                     if(data.messages === null) return;
                     data.messages.forEach(msg => {
                         // console.log("VIU2");
                         // console.log(msg);
-                        shit.state.received_message = msg.message;
-                        // eslint-disable-next-line no-restricted-globals
                         shit.user = (msg.from === location.pathname.split('/')[2]);
-                        console.log(shit.user);
+                        (shit.user) ? (shit.state.user_message = msg.message) : (shit.state.received_message = msg.message);
+                        // console.log(shit.user);
                         let date = new Date(msg.time);
                         const dateTimeFormat = new Intl.DateTimeFormat('ru', { day: "2-digit", month: "long", hour: "2-digit", minute: "2-digit"});
                         let fd = dateTimeFormat.format(date);
                         // console.log(data);
                         // console.log('received ' + msg.message);
-                        console.log("COMPLETE user="+msg.from+", msg="+msg.message);
+                        // console.log("COMPLETE user="+msg.from+", msg="+msg.message);
 
                         shit.addMessageBox(fd, msg.from);//(msg.from === undefined) ? location.pathname.split('/')[2] : msg.from);
                     });
@@ -274,7 +274,7 @@ class ChatApp extends Component {
                     });
                     break;
                 case "status":
-                    console.log("status");
+                    // console.log("status");
                     // console.log(data);
                     // console.log(data.user + " " + data.status);
                     let index = shit.findUser(data.user);
@@ -312,7 +312,6 @@ class ChatApp extends Component {
         // console.log(time + ' ?-? ' + nickname);
         let messages = this.state.messages;
         let message = (this.user) ? this.state.user_message : this.state.received_message;
-        // console.log(this.state);
         if (message && enter) {
             messages = [...messages, {
                 "message": message,
@@ -379,6 +378,7 @@ class ChatApp extends Component {
     render() {
         return (
             <div className="row">
+
                 <div className="chat_window">
                     <MessagesContainer messages={this.state.messages}/>
                     <div className="bottom_wrapper clearfix">

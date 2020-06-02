@@ -6,9 +6,19 @@ let areaInfo;
 // let timeStart = '';
 // let timeEnd = '';
 
+function dateFormat(date) {
+    date = date.replace(', ', 'T');
+    let time = date.substr(date.length - 9);
+    date = date.substr(0, date.length - 9);
+    let year = date.substr(date.length - 4);
+    let month = date.substr(3, date.length - 8);
+    let day = date.substr(0, 2);
+    return year + "-" + month + "-" + day + time;
+}
+
 function sortByTime(a, b) {
-    let aName = a.time.toLowerCase();
-    let bName = b.time.toLowerCase();
+    let aName = Date.parse(dateFormat(a.time));
+    let bName = Date.parse(dateFormat(b.time));
     return ((aName < bName) ? 1 : ((aName > bName) ? -1 : 0));
 }
 
@@ -52,11 +62,11 @@ $(function () {
                 .append('<button id="getLog" class="btn btn-secondary ml-4 mt-2">6 часов</button>')
                 .append('<button id="timeButton2" class="btn btn-secondary ml-4 mt-2">Выбранное время</button>')
                 .append('<div class="row mt-3">' +
-                        '   <label class="col-md-1" for="timeStart">С</label>\n' +
-                        '   <div class="col-md-4 mr-3"><input id="timeStart" type="datetime-local"></div>' +
-                        '   <label class="col-md-1 ml-3" for="timeEnd"> до</label>\n' +
-                        '   <div class="col-md-4"><input id="timeEnd" type="datetime-local"></div>' +
-                        '</div>');
+                    '   <label class="col-md-1" for="timeStart">С</label>\n' +
+                    '   <div class="col-md-4 mr-3"><input id="timeStart" type="datetime-local"></div>' +
+                    '   <label class="col-md-1 ml-3" for="timeEnd"> до</label>\n' +
+                    '   <div class="col-md-4"><input id="timeEnd" type="datetime-local"></div>' +
+                    '</div>');
             let now = new Date();
             now = new Date(now.getTime() - (now.getTimezoneOffset() * 60 * 1000));
             $('#timeStart').attr('value', (now.toISOString().substring(0, now.toISOString().length - 1)));

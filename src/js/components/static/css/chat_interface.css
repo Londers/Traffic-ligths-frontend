@@ -25,7 +25,8 @@ body {
   box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
   background-color: #f8f8f8;
   overflow: hidden;
-  height: calc(100vh - 120px);
+  /*height: calc(100vh - 150px);*/
+  margin-bottom: 70px;
 }
 
 .top_menu {
@@ -64,7 +65,7 @@ body {
 .top_menu .title {
   text-align: center;
   color: #337ab7;
-  font-size: 20px;
+  font-size: 10px;
 }
 
 .messages {
@@ -169,7 +170,7 @@ body {
 }
 
 .messages .message .text_wrapper .text {
-  font-size: 18px;
+  font-size: 12px;
   font-weight: 300;
 }
 
@@ -222,7 +223,7 @@ body {
 }
 
 .bottom_wrapper .send_message .text {
-  font-size: 18px;
+  font-size: 12px;
   font-weight: 300;
   display: inline-block;
   line-height: 48px;
@@ -243,7 +244,7 @@ body {
   width: 20%;
   /*float:right;*/
   min-height: 200px;
-  min-width: 150px;
+  min-width: 100px;
   max-width: 800px;
   /*height: 500px;*/
   border-radius: 10px;
@@ -268,12 +269,22 @@ body {
 /*  grid-row: 2;*/
 /*}*/
 
+.row {
+  display: inherit;
+  margin-right: 5px;
+  margin-left: 5px;
+}
+
 ul {
   list-style-type: none;
 }
 
 li {
   margin-top: 10px;
+}
+
+h5 {
+  font-size: 10px;
 }
 
 h5[class*="online"]{

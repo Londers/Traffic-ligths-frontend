@@ -57,9 +57,9 @@ $(function () {
             });
 
             //TODO uncomment
-            // //Добавление режима движения и подложки в виде участка карты
-            // $('#img').attr('src', window.location.origin + '/file/cross/' + region + '/' + area + '/' + ID + '/cross.svg')
-            //     .attr('style', 'background-size: cover; background-image: url(' + window.location.origin + '/file/cross/' + region + '/' + area + '/' + ID + '/map.png' + '); background-repeat: no-repeat;');
+            //Добавление режима движения и подложки в виде участка карты
+            // $('#img').attr('src', window.location.origin + '/file/static/cross/' + region + '/' + area + '/' + ID + '/cross.svg')
+            //     .attr('style', 'background-size: cover; background-image: url(' + window.location.origin + '/file/static/cross/' + region + '/' + area + '/' + ID + '/map.png' + '); background-repeat: no-repeat;');
             $('#img').hide();
             $.ajax({
                 url: window.location.origin + '/file/static/cross/' + region + '/' + area + '/' + ID + '/cross.svg',
@@ -295,9 +295,9 @@ function deviceRequest(idevice, statusChanged) {
     $.ajax({
         type: 'POST',
         url: window.location.origin + window.location.pathname + '/dev?idevice=' + idevice,
-        success: function (data) {
+        success: function (data, text, xhr) {
             deviceFlag = false;
-            if (!data.status) {
+            if (xhr.status !== 200) {
                 deviceFlag = true;
                 return;
             }
@@ -508,7 +508,6 @@ function checkSelect($select, rights) {
 
 //Функция для открытия новой вкладки
 function openPage(url, idevice) {
-    controlSend({id: idevice, cmd: 4, param: 0});
     $.ajax({
         url: url,
         type: 'GET',

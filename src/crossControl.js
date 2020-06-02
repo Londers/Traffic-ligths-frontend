@@ -189,9 +189,9 @@ $(function () {
                 type: 'post',
                 dataType: 'json',
                 contentType: 'application/json',
-                success: function (data) {
+                success: function (data, text, xhr) {
                     console.log(data);
-                    if (data.status) {
+                    if (xhr.status === 200) {
                         alert('Перекрёсток удалён, вкладка будет закрыта');
                         window.close();
                     } else {
@@ -265,7 +265,7 @@ $(function () {
 
     $('#markdownTry').on('click', function () {
         $.ajax({
-            url: 'https://192.168.115.120:8082/file/markdown/crossControl.md',
+            url: location.origin + '/file/static/markdown/crossControl.md',
             type: 'GET',
             success: function (data) {
 //            console.log(data.editInfo);
@@ -835,15 +835,18 @@ function mainTabFill(data, firstLoadFlag) {
         if (firstLoadFlag) $('#area').append(new Option(data.areaMap[area], area));
     }
     $('#id').val(data.state.id).on('change', function () {
+        if($('#id').val() > 255) $('#id').val(255);
         checkNew();
     });
     if (firstLoadFlag) setChange('id', 'input', '', numberFlag);
+    if (firstLoadFlag) setChange('idevice', 'input', '', numberFlag);
     $('#idevice').val(data.state.idevice).on('change', function () {
         checkNew();
     });
-    if (firstLoadFlag) setChange('idevice', 'input', '', numberFlag);
-    $('#area option[value=' + data.state.area + ']').attr('selected', 'selected');
     if (firstLoadFlag) setChange('area', 'select', '');
+    $('#area option[value=' + data.state.area + ']').attr('selected', 'selected');
+    if (firstLoadFlag) setChange('type', 'select', 'arrays');
+    $('#type option[value=' + data.state.arrays.type + ']').attr('selected', 'selected');
     $('#subarea').val(data.state.subarea);
     if (firstLoadFlag) setChange('subarea', 'input', '', numberFlag);
     $('#name').val(data.state.name);
@@ -1307,9 +1310,15 @@ function setChange(element, type, fullPath, numFlag, hardFlag) {
             });
         }
         if (type === 'select') {
-            $('#' + element).on('change keyup', function () {
-                data.state[element] = Number($('#' + element + ' option:selected').val());
-            });
+            if(fullPath === '') {
+                $('#' + element).on('change keyup', function () {
+                    data.state[element] = Number($('#' + element + ' option:selected').val());
+                });
+            } else {
+                $('#' + element).on('change keyup', function () {
+                    data.state[fullPath][element] = Number($('#' + element + ' option:selected').val());
+                });
+            }
         }
         if (type === 'checkbox') {
             $('#' + element).on('change', function () {

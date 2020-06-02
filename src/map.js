@@ -15,6 +15,16 @@ function sleep (time) {
   return new Promise((resolve) => setTimeout(resolve, time));
 }
 
+function openForm() {
+    document.getElementById("myForm").style.display = "block";
+    document.getElementsByClassName("open-button")[0].style.display = "none";
+}
+
+function closeForm() {
+    document.getElementById("myForm").style.display = "none";
+    document.getElementsByClassName("open-button")[0].style.display = "block";
+}
+
 ymaps.ready(function () {
 
     //Для управления закладками
