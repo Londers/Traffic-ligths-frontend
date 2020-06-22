@@ -145,9 +145,10 @@ class UserList extends Component {
 
     createUsers() {
         console.log("createUsers");
-        // console.log(this.props.users);
+        console.log(this.props.users);
         if (this.props.users === undefined) {
             // this.createUsers();
+            // console.log("??????????????");
             return;
         }
         // this.props.users.map((user, index) => {
@@ -201,7 +202,7 @@ class ChatApp extends Component {
         super(props);
         this.state = {
             "messages": [],
-            "users": [location.pathname.split('/')[2]],
+            "users": [localStorage.getItem('login')],//location.pathname.split('/')[2]],
             "user_message": "",
             "received_message": ""
         };//[location.pathname.split('/')[2]], "user_message": "", "received_message": ""};
@@ -216,7 +217,10 @@ class ChatApp extends Component {
 
     componentDidMount() {
         let shit = this;
-        shit.ws = new WebSocket('ws://' + location.host + '/user/' + location.pathname.split('/')[2] + '/chatW');
+        shit.ws = new WebSocket('ws://' + location.host + '/user/' + localStorage.getItem('login') /*location.pathname.split('/')[2]*/ + '/chatW');
+        $(window).on("beforeunload", function () {
+            shit.ws.close(1000);
+        });
         shit.ws.onopen = function () {
             // on connecting, do nothing but log it to the console
             console.log('connected')
@@ -225,13 +229,13 @@ class ChatApp extends Component {
         shit.ws.onmessage = function (evt) {console.log(evt.data);
             // listen to data sent from the websocket server
             const dataType = JSON.parse(evt.data);
-            const data = JSON.parse(dataType.data);
-            console.log('received ' + data.type);
+            const data = dataType.data;
+            console.log('received ' + dataType.type);
             console.log(data);
             switch (dataType.type) {
                 case "message":
                     // eslint-disable-next-line no-restricted-globals
-                    shit.user = (data.from === location.pathname.split('/')[2]);
+                    shit.user = (data.from === localStorage.getItem('login'));//(data.from === location.pathname.split('/')[2]);
                     (shit.user) ? (shit.state.user_message = data.message) : (shit.state.received_message = data.message);
                     let date = new Date(data.time.substr(0, data.time.length - 1));
                     date = new Date(date.getTime() - (date.getTimezoneOffset() * 60 * 1000));
@@ -244,11 +248,11 @@ class ChatApp extends Component {
                     shit.addMessageBox(fd, data.from);//(data.from === undefined) ? location.pathname.split('/')[2] : data.from);
                     break;
                 case "archive":
-                    if(data.messages === null) return;
-                    data.messages.forEach(msg => {
+                    if(data.archive.messages === null) return;
+                    data.archive.messages.forEach(msg => {
                         // console.log("VIU2");
                         // console.log(msg);
-                        shit.user = (msg.from === location.pathname.split('/')[2]);
+                        shit.user = (msg.from === localStorage.getItem('login'));//location.pathname.split('/')[2]);
                         (shit.user) ? (shit.state.user_message = msg.message) : (shit.state.received_message = msg.message);
                         // console.log(shit.user);
                         let date = new Date(msg.time);
@@ -342,7 +346,7 @@ class ChatApp extends Component {
         let json = {
             type: "message",
             // eslint-disable-next-line no-restricted-globals
-            from: location.pathname.split('/')[2],
+            from: localStorage.getItem('login'),//location.pathname.split('/')[2],
             to: 'Global',
             message: this.state.user_message,
             time: now.toISOString()
@@ -363,13 +367,13 @@ class ChatApp extends Component {
             // now = new Date(now.getTime() - (now.getTimezoneOffset() * 60 * 1000));
             let json = {
                 type: "message",
-                // eslint-disable-next-line no-restricted-globals
-                from: location.pathname.split('/')[2],
+                from: localStorage.getItem('login'),//location.pathname.split('/')[2],
                 to: 'Global',
                 message: this.state.user_message,
                 time: now.toISOString()
             };
             this.ws.send(JSON.stringify(json));
+            e.preventDefault();
         } else {
             this.addMessageBox(undefined, undefined, false)
         }

@@ -61,26 +61,37 @@ $(function () {
             $('#toolbar0').append('<button id="timeButton1" class="btn btn-secondary ml-4 mt-2">30 минут</button>')
                 .append('<button id="getLog" class="btn btn-secondary ml-4 mt-2">6 часов</button>')
                 .append('<button id="timeButton2" class="btn btn-secondary ml-4 mt-2">Выбранное время</button>')
-                .append('<div class="row mt-3">' +
-                    '   <label class="col-md-1" for="timeStart">С</label>\n' +
-                    '   <div class="col-md-4 mr-3"><input id="timeStart" type="datetime-local"></div>' +
-                    '   <label class="col-md-1 ml-3" for="timeEnd"> до</label>\n' +
-                    '   <div class="col-md-4"><input id="timeEnd" type="datetime-local"></div>' +
+                // .append('<input class="row" type="checkbox" id="selection">Показать изменения режима</input>')
+                .append('                                    <div class="form-check mt-3">\n' +
+                    '                                        <label class="form-check-label">\n' +
+                    '                                            <input type="checkbox" class="form-check-input" id="selection" value="">\n' +
+                    '                                            Показать изменения режима\n' +
+                    '                                        </label>\n' +
+                    '                                    </div>')
+                .append('<div class="row mt-3" style="max-width: 760px; text-align: center">' +
+                    '   <label class="col-md-1" for="dateStart">С</label>\n' +
+                    '   <div class="col-md-5"><input type="date" id="dateStart" name="date"/>' +
+                    '   <input type="time" id="timeStart" name="time"/></div>' +
+                    '   <label class="col-md-1" for="dateEnd"> до</label>\n' +
+                    '   <div class="col-md-5"><input type="date" id="dateEnd" name="date"/>' +
+                    '   <input type="time" id="timeEnd" name="time"/></div>' +
                     '</div>');
             let now = new Date();
-            now = new Date(now.getTime() - (now.getTimezoneOffset() * 60 * 1000));
-            $('#timeStart').attr('value', (now.toISOString().substring(0, now.toISOString().length - 1)));
-            $('#timeEnd').attr('value', (now.toISOString().substring(0, now.toISOString().length - 1)));
+            $('#dateEnd').attr('value', (now.toISOString().slice(0, 10)));
+            $('#timeEnd').attr('value', (prettyNumbers(now.getHours()) + ':' + prettyNumbers(now.getMinutes())));
+            now = new Date(now.getTime() - (60 * 60 * 1000)); // - (now.getTimezoneOffset() * 60 * 1000));
+            $('#dateStart').attr('value', (now.toISOString().slice(0, 10)));
+            $('#timeStart').attr('value', (prettyNumbers(now.getHours()) + ':' + prettyNumbers(now.getMinutes())));
             $('#getLog').on('click', function () {
-                // let now = new Date();
-                // now = new Date(now.getTime() - (now.getTimezoneOffset() * 60 * 1000));
+                let now = new Date();
+                now = new Date(now.getTime() - (now.getTimezoneOffset() * 60 * 1000));
                 let timeStart = timeCalc(now, 360 * 60);
                 let timeEnd = now.toISOString();
                 getLogs(timeStart, timeEnd);
             });
             $('#timeButton1').on('click', function () {
-                // let now = new Date();
-                // now = new Date(now.getTime() - (now.getTimezoneOffset() * 60 * 1000));
+                let now = new Date();
+                now = new Date(now.getTime() - (now.getTimezoneOffset() * 60 * 1000));
                 let timeStart = timeCalc(now, 30 * 60);
                 let timeEnd = now.toISOString();
                 getLogs(timeStart, timeEnd);
@@ -88,9 +99,9 @@ $(function () {
             $('#timeButton2').on('click', function () {
                 // let now = new Date();
                 // now = new Date(now.getTime() - (now.getTimezoneOffset() * 60 * 1000));
-                let timeStart = $('#timeStart')[0].value;
-                let timeEnd = $('#timeEnd')[0].value;
-                getLogs(timeStart + 'Z', timeEnd + 'Z');
+                let timeStart = $('#dateStart')[0].value + 'T' + $('#timeStart')[0].value;
+                let timeEnd = $('#dateEnd')[0].value + 'T' + $('#timeEnd')[0].value;
+                getLogs(timeStart + ':00Z', timeEnd + ':00Z');
             });
         },
         // data: JSON.stringify(data.state),
@@ -103,7 +114,7 @@ $(function () {
 
 function getLogs(start, end) {
     // {ID: '', area: '', region: ''}
-    console.log('start:' + start + '   end' + end);
+    // console.log('start:' + start + '   end' + end);
     let toSend = {devices: [], timeStart: start, timeEnd: end};
     let selected = $('#table').bootstrapTable('getSelections');
     selected.forEach(cross => {
@@ -128,8 +139,9 @@ function getLogs(start, end) {
         data: JSON.stringify(toSend),
         dataType: 'json',
         success: function (data) {
-            console.log(data);
+            // console.log(data);
             let allData = [];
+            let sortedData = [];
             data.deviceLogs.forEach(log => {
                 let date = new Date(log.time);
                 // date = new Date(date.getTime() + (date.getTimezoneOffset() * 60 * 1000));
@@ -140,8 +152,19 @@ function getLogs(start, end) {
                 allData.push(add);
             });
             allData.sort(sortByTime);
+            if ($('#selection').prop('checked')) {
+                $.each(allData, function (i, el) {
+                    if (el.message.startsWith('Режим')) {
+                        if (sortedData.length === 0) {
+                            sortedData = [allData[i]];
+                        } else if (sortedData[sortedData.length - 1].message !== el.message) sortedData.push(el);
+                    }
+                    // if($.inArray(el.message, sortedData) === -1) sortedData.push(el);
+                });
+                console.log(sortedData);
+            }
             $('#logsTable').bootstrapTable('removeAll')
-                .bootstrapTable('append', allData)
+                .bootstrapTable('append', ($('#selection').prop('checked')) ? sortedData : allData)
                 .bootstrapTable('scrollTo', 'top')
                 .bootstrapTable('refresh', {
                     data: allData
@@ -154,6 +177,10 @@ function getLogs(start, end) {
             console.log(request.status + ' ' + request.responseText);
         }
     });
+}
+
+function prettyNumbers(number) {
+    return (number.length === 1) ? '0' + number : number;
 }
 
 function timeCalc(now, offset) {

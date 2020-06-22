@@ -13,8 +13,11 @@ let skFlag = true;
 let kvFlag = true;
 let firstLoad = true;
 
+let map;
+
 let numberFlag = true;
 let longPathFlag = true;
+let coordinatesChangeFlag = false;
 
 let mainTableFlag = true;
 let skTableFlag = true;
@@ -32,7 +35,7 @@ let points = {
 };
 
 let editFlag = false;
-let login = '';
+let ws;
 
 //Получение информации из выбранной строки
 function getSelectedRowData(table, fullPath, force) {
@@ -94,138 +97,64 @@ function colorizeSelectedRow(table) {
     });
 }
 
-//Функция для проверки возможности редактирования
-function checkEdit() {
-//    if(localStorage.getItem('maintab') === 'closed') window.close();
-    $.ajax({
-        url: window.location.origin + window.location.pathname + '/editable' + window.location.search,
-        type: 'GET',
-        success: function (data) {
-//            console.log(data.editInfo);
-            login = data.editInfo.login;
-            editFlag = data.editInfo.editFlag;
-            if (data.editInfo.kick) window.close();
-        },
-        error: function (request) {
-            console.log(request.status + ' ' + request.responseText);
-            alert(request.status + ' ' + request.responseText);
-            window.location.href = window.location.origin;
-        }
-    });
-}
-
 $(function () {
 
-    checkEdit();
-    //Закрытие вкладки при закрытии карты
-    window.setInterval(function () {
-        checkEdit();
-    }, 5000);
-
-//Функционал кнопок управления
-    //Кнопка для отпрвления данных на сервер
-    $('#sendButton').on('click', function () {
-        $.ajax({
-            url: window.location.origin + window.location.pathname + '/sendButton',
-            type: 'post',
-            dataType: 'json',
-            contentType: 'application/json',
-            success: function (data) {
-                console.log(data.message);
-                console.log(data.result);
-                disableControl('forceSendButton', true);
-                disableControl('sendButton', false);
-            },
-            data: JSON.stringify(data.state),
-            error: function (request) {
-                console.log(request.status + ' ' + request.responseText);
-            }
-        });
-    });
-
-    //Кнопка для создания нового перекрёстка
-    $('#addButton').on('click', function () {
-        data.state.dgis = points.Y + ',' + points.X;
-        $.ajax({
-            url: window.location.origin + window.location.pathname + '/createButton',
-            type: 'post',
-            dataType: 'json',
-            contentType: 'application/json',
-            success: function (data) {
-                console.log(data.message);
-                console.log(data.result);
-//                console.log(data);
-            },
-            data: JSON.stringify(data.state),
-            error: function (request) {
-                console.log(request.status + ' ' + request.responseText);
-            }
-        });
-    });
-
-    //Кнопка для обновления данных на АРМе
-    $('#reloadButton').on('click', function () {
-        $.ajax({
-            url: window.location.href,
-            type: 'post',
-            contentType: 'application/json',
-            success: function (data) {
-//                console.log(data);
-                loadData(data, firstLoad);
-                document.title = 'АРМ ДК-' + data.cross.ID;
-                firstLoad = false;
-            },
-            error: function (request) {
-                console.log(request.status + ' ' + request.responseText);
-            }
-        });
-    });
-
-    //Кнопка для удаления перекрёстка
-    $('#deleteButton').on('click', function () {
-        if (confirm('Вы уверены? Перекрёсток будет безвозвратно удалён.')) {
-            $.ajax({
-                url: window.location.origin + window.location.pathname + '/deleteButton',
-                type: 'post',
-                dataType: 'json',
-                contentType: 'application/json',
-                success: function (data, text, xhr) {
-                    console.log(data);
-                    if (xhr.status === 200) {
-                        alert('Перекрёсток удалён, вкладка будет закрыта');
-                        window.close();
-                    } else {
-                        alert('Ожидание ответа сервера, попробуйте еще раз');
-                    }
-                },
-                data: JSON.stringify(data.state),
-                error: function (request) {
-                    console.log(request.status + ' ' + request.responseText);
-                }
-            });
-        }
-    });
-
-    //Кнопка для проверки редактирования перекрестка
-    $('#checkEdit').on('click', function () {
-        if (editFlag) {
-            alert('На данном ДК нет других пользователей');
+    ws = new WebSocket('ws://' + location.host + location.pathname + 'W' + location.search);
+    ws.onopen = function () {
+        console.log('connected');
+    };
+    // ws.onmessage = function (evt) {
+    //     console.log(JSON.parse(evt.data));
+    // };
+    ws.onclose = function (evt) {
+        console.log('disconnected', evt);
+        if (evt.reason !== '') {
+            alert(evt.reason);
         } else {
-            alert('На даннок ДК работает пользователь ' + login);
+            alert('Потеряна связь с сервером');
         }
-    });
-
-    //Кнопка для проверки валидности заполненных данных
-    $('#checkButton').on('click', function () {
-        $.ajax({
-            url: window.location.origin + window.location.pathname + '/checkButton',
-            type: 'post',
-            dataType: 'json',
-            contentType: 'application/json',
-            success: function (data) {
-                let counter = 0;
+        window.close();
+    };
+    ws.onmessage = function (evt) {
+        let allData = JSON.parse(evt.data);
+        let data = allData.data;
+        let counter = 0;
+        console.log(data);
+        switch (allData.type) {
+            case 'sendB':
+                console.log('sendB');
+                if (localStorage.getItem('login') !== data.user) {
+                    loadData(data, false);
+                } else {
+                    disableControl('forceSendButton', true);
+                    disableControl('sendButton', false);
+                }
+                break;
+            case 'createB':
+                console.log('createB');
+                if (data.message === undefined) {
+                    if (data.result[0].includes('занят')) alert(data.result[0]);
+                } else {
+                    location.href = location.pathname + location.search.replace('ID=' + unmodifiedData.state.id, 'ID=' + $('#id').val());
+                }
+                break;
+            case 'controlInfo':
+                console.log('controlInfo');
+                loadData(data, firstLoad);
+                document.title = 'АРМ ДК-' + data.state.id;
+                firstLoad = false;
+                editFlag = data.edit;
+                checkEdit();
+                break;
+            case 'deleteB':
+                (data.message.includes('cross data deleted')) ? window.close() : alert('Не удалось удалить перекрёсток: ' + data.message);
+                break;
+            case 'checkB':
+                console.log('checkB');
+                counter = 0;
                 let flag = false;
-                disableControl('sendButton', data.status);
+                if(editFlag) disableControl('sendButton', data.status);
+                checkNew(data.status);
                 $('#verification').bootstrapTable('removeAll');
                 data.result.forEach(function () {
                     if (data.result[counter].includes('Проверка')) {
@@ -242,16 +171,87 @@ $(function () {
                     }
                     counter++;
                 });
+                $('#trigger')[0].innerHTML = 'Результат<br>Проверки';
                 $('#trigger').show();
                 if ($('#panel').attr('style') !== 'display: block;') $('#trigger').trigger('click');
                 $('th[data-field="left"]').attr('style', 'min-width: 346px;');
                 $('th[data-field="right"]').attr('style', 'min-width: 276px;');
-            },
-            data: JSON.stringify(data.state),
-            error: function (request) {
-                console.log(request.status + ' ' + request.responseText);
-            }
-        });
+                break;
+            case 'changeEdit':
+                console.log('changeEdit');
+                editFlag = data.edit;
+                checkEdit();
+                break;
+            case 'editInfoB':
+                console.log('editInfoB');
+
+                disableControl('sendButton', data.status);
+                checkNew(data.status);
+                $('#work').bootstrapTable('removeAll');
+                data.users.forEach(user => {
+                    $('#work').bootstrapTable('append', {
+                        wleft: user.user,
+                        wright: user.edit ? 'Редактирует' : 'Просматривает'
+                    });
+                });
+                // $('#workTrigger')[0].innerHTML = 'Результат<br>Проверки';
+                $('#workTrigger').show();
+                if ($('#workPanel').attr('style') !== 'display: block;') $('#workTrigger').trigger('click');
+                $('th[data-field="wleft"]').attr('style', 'min-width: 346px;');
+                $('th[data-field="wright"]').attr('style', 'min-width: 276px;');
+
+                // $('#trigger')[0].innerHTML = 'Список<br>Пользователей';
+                // $('#trigger').show();
+                break;
+            case 'error':
+                console.log('error');
+                break;
+            default:
+                console.log('unknown command', allData.type);
+                break;
+        }
+    };
+
+//Функционал кнопок управления
+    //Кнопка для отпрвления данных на сервер
+    $('#sendButton').on('click', function () {
+        ws.send(JSON.stringify({type: 'sendB', state: data.state}));
+    });
+
+    //Кнопка для создания нового перекрёстка
+    $('#addButton').on('click', function () {
+        data.state.dgis = points.Y + ',' + points.X;
+        ws.send(JSON.stringify({type: 'createB', state: data.state}));
+    });
+
+    //Кнопка для обновления данных на АРМе
+    $('#reloadButton').on('click', function () {
+        ws.send(JSON.stringify({type: 'updateB'}));
+    });
+
+    //Кнопка для удаления перекрёстка
+    $('#deleteButton').on('click', function () {
+        if (confirm('Вы уверены? Перекрёсток будет безвозвратно удалён.')) {
+            ws.send(JSON.stringify({type: 'deleteB', state: data.state}));
+        }
+    });
+
+    //Кнопка для проверки возможности редактирования перекрестка
+    $('#checkEdit').on('click', function () {
+        ws.send(JSON.stringify({type: 'editInfoB'}));
+    });
+
+    //Кнопка для проверки валидности заполненных данных
+    $('#checkButton').on('click', function () {
+        ws.send(JSON.stringify({type: 'checkB', state: data.state}));
+    });
+
+    $('#workTrigger').on('click', function () {
+        if ($('#workPanel').attr('style') !== 'display: block;') {
+            $('#workPanel').show();
+        } else {
+            $('#workPanel').hide();
+        }
     });
 
     $('#questionTrigger').on('click', function () {
@@ -263,7 +263,7 @@ $(function () {
         }
     });
 
-    $('#markdownTry').on('click', function () {
+    $('#markdown').on('click', function () {
         $.ajax({
             url: location.origin + '/file/static/markdown/crossControl.md',
             type: 'GET',
@@ -276,7 +276,8 @@ $(function () {
                 html = '<div class="row"><div class="col-md-10">' + html + '</div></div>';
                 $('#questionTrigger').show();
                 if ($('#questionPanel').attr('style') !== 'display: block;') $('#questionTrigger').trigger('click');
-                $('#questionPanel').append(html);
+                $('#questionPanel')[0].innerHTML = html;
+                // $('#questionPanel').append(html);
             },
             error: function (request) {
                 console.log(request.status + ' ' + request.responseText);
@@ -291,9 +292,6 @@ $(function () {
         $(this).toggleClass("active");
         return false;
     });
-
-    //Первая загрузка страницы
-    $('#reloadButton').trigger('click');
 
 //Функционал кнопок на вкладке "Основные"
     //Кнопка для возвращения исходных данных
@@ -573,11 +571,11 @@ $(function () {
     //Функционирование карты для выбора координат
     ymaps.ready(function () {
         //Создание и первичная настройка карты
-        let map = new ymaps.Map('map', {
+        map = new ymaps.Map('map', {
             center: [points.Y, points.X],
-            zoom: 18
+            zoom: 15
         });
-
+        console.log(points);
         map.events.add('click', function (e) {
             if (!map.balloon.isOpen()) {
                 let coords = e.get('coords');
@@ -592,7 +590,10 @@ $(function () {
             }
         });
 
-    })
+        $('#map').on('click', function () {
+            coordinatesChangeFlag = true;
+        })
+    });
 });
 
 //Набор функций корректной работы АРМ
@@ -600,8 +601,10 @@ $(function () {
 //Функция для загрузки данных с сервера
 function loadData(newData, firstLoadFlag) {
 
-    console.log(newData);
-    points = newData.cross.points;
+    // console.log(newData);
+    let coords = newData.state.dgis;
+    points.Y = coords.substring(0, coords.indexOf(','));
+    points.X = coords.substring(coords.indexOf(',') + 1, coords.length);
     data = newData;
     unmodifiedData = JSON.parse(JSON.stringify(data));
 
@@ -648,6 +651,30 @@ function loadData(newData, firstLoadFlag) {
     $('td > input').on('click', function (element) {
         recentlyClicked = Number(element.target.id);
     });
+
+    $('input').each(function () {
+        $(this).on('click', function () {
+            disableUnchecked();
+        });
+        $(this).on('keypress', function () {
+            disableUnchecked();
+        })
+    });
+    $('select').each(function () {
+        $(this).on('click', function () {
+            disableUnchecked();
+        });
+        $(this).on('keypress', function () {
+            disableUnchecked();
+        })
+    });
+}
+
+//Отключает функционал некоторых кнопок, если данные не проверены
+function disableUnchecked() {
+    disableControl('sendButton', false);
+    disableControl('forceSendButton', false);
+    disableControl('addButton', false);
 }
 
 function setIDs(table) {
@@ -835,13 +862,13 @@ function mainTabFill(data, firstLoadFlag) {
         if (firstLoadFlag) $('#area').append(new Option(data.areaMap[area], area));
     }
     $('#id').val(data.state.id).on('change', function () {
-        if($('#id').val() > 255) $('#id').val(255);
-        checkNew();
+        if ($('#id').val() > 255) $('#id').val(255);
+        checkNew(false);
     });
     if (firstLoadFlag) setChange('id', 'input', '', numberFlag);
     if (firstLoadFlag) setChange('idevice', 'input', '', numberFlag);
     $('#idevice').val(data.state.idevice).on('change', function () {
-        checkNew();
+        checkNew(false);
     });
     if (firstLoadFlag) setChange('area', 'select', '');
     $('#area option[value=' + data.state.area + ']').attr('selected', 'selected');
@@ -1310,7 +1337,7 @@ function setChange(element, type, fullPath, numFlag, hardFlag) {
             });
         }
         if (type === 'select') {
-            if(fullPath === '') {
+            if (fullPath === '') {
                 $('#' + element).on('change keyup', function () {
                     data.state[element] = Number($('#' + element + ' option:selected').val());
                 });
@@ -1329,15 +1356,17 @@ function setChange(element, type, fullPath, numFlag, hardFlag) {
 }
 
 //Отображение кнопки для выбора координат и разблокирование кнопки создания нового перекрёстка
-function checkNew() {
+function checkNew(check) {
     let buttonClass = $('#addButton')[0].className.toString();
-    if ((Number($('#id').val()) !== unmodifiedData.state.id) && (Number($('#idevice').val()) !== unmodifiedData.state.idevice)) {
-        if (buttonClass.indexOf('disabled') !== -1) buttonClass = buttonClass.substring(0, buttonClass.length - 9);
+    if (Number($('#id').val()) !== unmodifiedData.state.id && Number($('#idevice').val()) !== unmodifiedData.state.idevice) {
+        if ((buttonClass.indexOf('disabled') !== -1) && (check) && (coordinatesChangeFlag)) buttonClass = buttonClass.substring(0, buttonClass.length - 9);
         if (!$('#chooseCoordinates').length) {
-            $('#forCoordinates').append('<div class="col-xs-8 ml-1">' +
+            $('#forCoordinates').append(
+                '<div class="col-xs-8 ml-1">' +
                 '<button type="button" class="btn btn-light ml-5 justify-content-center border" id="chooseCoordinates" style="">Выберите координаты</button>' +
                 '</div>');
             chooseCoordinates();
+            map.setCenter([points.Y, points.X], 15);
         }
     } else {
         if (buttonClass.indexOf('disabled') === -1) buttonClass = buttonClass.concat(' disabled');
@@ -1375,17 +1404,36 @@ function chooseCoordinates() {
 
 //Отправка выбранной команды на сервер
 function controlSend(id) {
-    $.ajax({
-        url: window.location.origin + window.location.pathname.substring(0, window.location.pathname.length - 8) + '/DispatchControlButtons',
-        type: 'post',
-        dataType: 'json',
-        contentType: 'application/json',
-        success: function (data) {
-            console.log(data);
-        },
-        data: JSON.stringify({id: id, cmd: 1, param: 0}),
-        error: function (request) {
-            console.log(request.status + ' ' + request.responseText);
-        }
+    ws.send(JSON.stringify({type: 'dispatch', id: id, cmd: 1, param: 0}));
+}
+
+function checkButton(buttonClass, rights) {
+    if (rights) {
+        if (buttonClass.indexOf('disabled') !== -1) return buttonClass.substring(0, buttonClass.length - 9);
+    } else {
+        if (buttonClass.indexOf('disabled') === -1) return buttonClass.concat(' disabled');
+    }
+    return buttonClass;
+}
+
+function checkEdit() {
+    let counter = 0;
+    $('a').each(function () {
+        if(counter++ < 7) this.className = checkButton($(this)[0].className.toString(), editFlag);
     });
+    $('#reloadButton').each(function () {
+        this.className = checkButton($(this)[0].className.toString(), true)
+    });
+    $('#sendButton').each(function () {
+        this.className = checkButton($(this)[0].className.toString(), false)
+    });
+    $('#forceSendButton').each(function () {
+        this.className = checkButton($(this)[0].className.toString(), false)
+    });
+    $('#addButton').each(function () {
+        this.className = checkButton($(this)[0].className.toString(), false)
+    });
+    // $('select').each(function () {
+    //     checkSelect($(this), editFlag);
+    // });
 }
