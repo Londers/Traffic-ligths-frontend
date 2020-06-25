@@ -60,7 +60,8 @@ $(function () {
                     password: $('#password').val(),
                     role: {name: $('#privileges option:selected').text(), permissions: permissionControl('a')},
                     region: {num: $('#region option:selected').val()},
-                    area: areas
+                    area: areas,
+                    description: $('#description').val()
                 };
 
                 //Отправка данных на сервер
@@ -126,7 +127,8 @@ $(function () {
                     role: {name: $('#updatePrivileges option:selected').text(), permissions: permissionControl('u')},
                     region: {num: $('#updateRegion option:selected').val()},
                     area: areas,
-                    workTime: parseInt($('#updateWorkTime option:selected').text())
+                    workTime: parseInt($('#updateWorkTime option:selected').text()),
+                    description: $('#updateDescription').val()
                 };
 
                 //Отправка данных на сервер
@@ -156,6 +158,9 @@ $(function () {
         close: function () {
             $('#updateAreasMsg').remove();
             $('#updateMsg').remove();
+            $('#updateArea option:selected').each(function () {
+                $(this).prop('selected', false);
+            })
         }
     });
 
@@ -175,6 +180,7 @@ $(function () {
         let currRegion;
         let currAreas;
         let currWorkTime;
+        let currDescription;
 
         let login = $.map($table.bootstrapTable('getSelections'), function (row) {
             return row.login;
@@ -193,11 +199,12 @@ $(function () {
                 currRegion = user.region.num;
                 currAreas = user.area;
                 currWorkTime = user.workTime;
+                currDescription = user.description;
             }
         });
 
-        //костыль для супера
-        if ((currPrivileges.name === 'Admin') && (!window.location.href.includes('Super'))) {
+        //костыль для TechAutomatic
+        if ((currPrivileges.name === 'Admin') && (localStorage.getItem('login') !== 'TechAutomatic')) {
             if (!($('#updateMsg').length)) {
                 $('#toolbar').append('<div style="color: red;" id="updateMsg"><h5>Невозможно изменить администратора</h5></div>');
             }
@@ -212,8 +219,22 @@ $(function () {
 
         $('#updatePrivileges').val(currPrivileges.name);
         $('#updateRegion').val(currRegion);
-        $('#updateArea').val(currAreas);
+        fillAreas();
+        $.each(currAreas, function (index, element) {
+            $("#updateArea option[value='" + element.num + "']").prop("selected", true);
+        });
         $('#updateWorkTime').val(currWorkTime);
+        $('#updateDescription').val(currDescription);
+
+        if ((currPrivileges.name !== 'User') && (currPrivileges.name !== 'Viewer')) {
+            $('input[id^="u"]').each(function () {
+                $(this).parent().hide();
+            });
+        } else {
+            $('input[id^="u"]').each(function () {
+                $(this).parent().show();
+            });
+        }
 
         $('#updateDialog').dialog('open');
     });
@@ -298,6 +319,7 @@ function getUsers($table) {
                         privileges: account.role.name,
                         region: account.region.nameRegion,
                         area: (areas !== '') ? areas.substring(0, areas.length - 2) : areas,
+                        desc: account.description,
                         workTime: account.workTime
                     });
                     $table.bootstrapTable('append', info);
@@ -362,14 +384,14 @@ function getUsers($table) {
 
 function permissionControl(dialog) {
     let currPrivileges = [];
-    $('input[id*="' + dialog + '"]').each(function () {
+    $('input[id^="' + dialog + '"]').each(function () {
         if ($(this).prop('checked')) {
             currPrivileges.push(Number($(this)[0].id.substring(1)))
         }
     });
 
     currPrivileges.forEach(perm => {
-        $('input[id*="' + perm + '"]').each(function () {
+        $('input[id^="' + dialog + perm + '"]').each(function () {
             let id = Number($(this)[0].id.substring(1));
             let arr = currPrivileges;
             if ($(this).prop('checked')) {
@@ -399,6 +421,21 @@ function fillAreas() {
                 $('#updateArea').append(new Option(areaInfo[regAreaJson][areaJson], areaJson));
             }
         }
+    }
+}
+
+//Заполнение дополнительных привелегий ползователя
+function fillPrivileges(type) {
+    let currPrivileges = '';
+    currPrivileges = (type === 'a') ? $('#privileges option:selected').text() : $('#updatePrivileges option:selected').text();
+    if ((currPrivileges !== 'User') && (currPrivileges !== 'Viewer')) {
+        $('input[id^="' + type + '"]').each(function () {
+            $(this).parent().hide();
+        });
+    } else  if ((currPrivileges !== 'RegAdmin') && (currPrivileges !== 'Admin')){
+        $('input[id^="' + type + '"]').each(function () {
+            $(this).parent().show();
+        });
     }
 }
 

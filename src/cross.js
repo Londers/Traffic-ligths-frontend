@@ -5,12 +5,13 @@ let loopFunc;
 let phaseFlags = [];
 // let deviceFlag = false;
 let editFlag = false;
+let status;
 let idevice = undefined;
 let noConnectionStatusArray = [17, 18, 37, 38, 39];
 let ws;
 
 $(function () {
-    ws = new WebSocket('ws://' + location.host + location.pathname + 'W'+ location.search);
+    ws = new WebSocket('ws://' + location.host + location.pathname + 'W' + location.search);
     ws.onopen = function () {
         console.log('connected');
     };
@@ -170,6 +171,7 @@ $(function () {
                             });
                         });
                         checkEdit();
+                        checkConnection(state.status);
                     },
                     error: function (request) {
                         console.log(request.status + ' ' + request.responseText);
@@ -232,6 +234,7 @@ $(function () {
                 editFlag = data.edit;
                 if (editFlag) controlSend({id: idevice, cmd: 4, param: 1});
                 checkEdit();
+                checkConnection();
                 break;
             case "dispatch":
                 console.log('dispatch', data);
@@ -267,7 +270,7 @@ $(function () {
                     user: message.user
                 }).find('tbody').find('tr').find('td').each(function () {
                     // if (Math.abs(counter++ % 3) === 1) {
-                        $(this).attr('class', 'text-left');
+                    $(this).attr('class', 'text-left');
                     // }
                 }).bootstrapTable('scrollTo', 'top');
                 break;
@@ -288,25 +291,7 @@ $(function () {
                 $('#sk option[value=' + data.state.ck + ']').attr('selected', 'selected');
                 $('#nk option[value=' + data.state.nk + ']').attr('selected', 'selected');
 
-                if (noConnectionStatusArray.includes(data.status.num)) {
-                    $('a').each(function () {
-                        this.className = checkButton(this.className.toString(), false);
-                    });
-                    $('select').each(function () {
-                        checkSelect($(this), false);
-                    });
-                    $('#table').hide();
-                    $('#verificationRow').hide();
-                } else if(editFlag){
-                    $('a').each(function () {
-                        this.className = checkButton(this.className.toString(), true);
-                    });
-                    $('select').each(function () {
-                        checkSelect($(this), true);
-                    });
-                    $('#table').show();
-                    $('#verificationRow').show();
-                }
+                checkConnection(data.status.num);
                 break;
             case 'stateChange':
                 $('#pk').find('option').remove();
@@ -366,7 +351,7 @@ $(function () {
         }
     };
 
-        // },
+    // },
     //     error: function (request, errorMsg) {
     //         console.log(request.status + ' ' + request.responseText);
     //     }
@@ -394,16 +379,41 @@ function buildTable(data) {
     });
     if (!checkDup) {
         toWrite.duration = toWrite.tMain + toWrite.tPr;
+        dataArr = dataArr.slice();
+        $table.bootstrapTable('removeAll');
         dataArr.push(toWrite);
         dataArr.sort(compare);
-        $table.bootstrapTable('updateRow', {index: index, row: toWrite});
-        $table.bootstrapTable('refresh');
+        $table.bootstrapTable('append', dataArr);
     } else {
         toWrite.phaseNum = dataArr[index].phaseNum;
         (data.pdk) ? toWrite.tMain = dataArr[index].tMain : toWrite.tPr = dataArr[index].tPr;
         toWrite.duration = toWrite.tMain + toWrite.tPr;
         $table.bootstrapTable('updateRow', {index: index, row: toWrite});
     }
+}
+
+function checkConnection(connectionFlag) { console.log('checkConnection', connectionFlag);
+    connectionFlag = (connectionFlag === undefined) ? status : connectionFlag;
+    if (noConnectionStatusArray.includes(connectionFlag)) {
+        $('a').each(function () {
+            this.className = checkButton(this.className.toString(), false);
+        });
+        $('select').each(function () {
+            checkSelect($(this), false);
+        });
+        $('#table').hide();
+        $('#verificationRow').hide();
+    } else if (editFlag) {
+        $('a').each(function () {
+            this.className = checkButton(this.className.toString(), true);
+        });
+        $('select').each(function () {
+            checkSelect($(this), true);
+        });
+        $('#table').show();
+        $('#verificationRow').show();
+    }
+    status = connectionFlag;
 }
 
 //Остановка отправки фаз на контроллер
@@ -652,11 +662,11 @@ function checkSelect($select, rights) {
 }
 
 function checkEdit() {
-
+    console.log('checkedit', editFlag);
     // if (editFlag) {
-        $('a').each(function () {
-            this.className = checkButton($(this)[0].className.toString(), editFlag);
-        });
+    $('a').each(function () {
+        this.className = checkButton($(this)[0].className.toString(), editFlag);
+    });
     // $('#controlButton')[0].className = checkButton($('#controlButton')[0].className.toString(), editFlag);
     // } else {
     //     $('a').each(function () {

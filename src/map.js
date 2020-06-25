@@ -22,7 +22,7 @@ function openPage(url) {
 // }
 
 ymaps.ready(function () {
-
+    $('#workPlace').hide();
     createEye();
     $('#password').attr('style', 'position: initial;');
 
@@ -231,6 +231,7 @@ ymaps.ready(function () {
                     map.geoObjects.add(placemark);
                 });
                 authorize();
+                $('#workPlace')[0].innerText = 'Рабочее место: ' + data.description;
                 break;
             case 'tflight':
                 if (data.tflight === null) {
@@ -298,6 +299,7 @@ ymaps.ready(function () {
                 $('#loginDialog').dialog('close');
                 chatFlag = true;
                 authorize();
+                $('#workPlace')[0].innerText = 'Рабочее место: ' + data.description;
                 break;
             case 'logOut':
                 // document.cookie = '';
@@ -406,10 +408,12 @@ function authorize() {
         $('#loginButton').show();
         $('#logoutButton').hide();
         $('#changeButton').hide();
+        $('#workPlace').hide();
     } else {
         $('#loginButton').hide();
         $('#logoutButton').show();
         $('#changeButton').show();
+        $('#workPlace').show();
         if(chatFlag) {
             $('body')[0].appendChild($('#chat')[0].content.cloneNode(true));
             chatFlag = false;
