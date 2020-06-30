@@ -2,13 +2,16 @@
 
 let currnum = -1;
 let IDs = [];
+let areaLayouts = [];
 let statuses = [];
 let regionInfo;
 let areaInfo;
+let areaBox;
 // let login = '';
 let authorizedFlag = false;
 let logDeviceFlag = false;
 let manageFlag = false;
+let techFlag = false;
 let chatFlag = true;
 let ws;
 
@@ -17,13 +20,20 @@ function openPage(url) {
     window.open(location.origin + '/user/' + localStorage.getItem('login') + url);
 }
 
-// function sleep(time) {
-//     return new Promise((resolve) => setTimeout(resolve, time));
-// }
+function getRandomColor() {
+    var letters = '0123456789A';
+    var color = '#';
+    for (var i = 0; i < 6; i++) {
+        color += letters[Math.floor(Math.random() * 11)];
+    }
+    return color;
+}
 
 ymaps.ready(function () {
     $('#workPlace').hide();
+    $('#switchLayout').parent().hide();
     createEye();
+    $('#dropdownMenuButton').trigger('click');
     $('#password').attr('style', 'position: initial;');
 
     // //Для управления закладками
@@ -44,6 +54,11 @@ ymaps.ready(function () {
     //Открытие вкладки с логами устройств
     $('#deviceLogButton').on('click', function () {
         openPage('/map/deviceLog');
+    });
+
+    $('#techButton').on('click', function () {
+        $('#techDialog').dialog('open');
+        // openPage('/techArm?Region=1&Area=1&Area=2');
     });
 
     //Смена пароля текущего аккаунта
@@ -81,10 +96,6 @@ ymaps.ready(function () {
         //         console.log(request.status + ' ' + request.responseText);
         //     }
         // });
-    });
-
-    $('#regionForm').on('click', function () {
-        fillAreas();
     });
 
     //Проверка валидности пароля
@@ -137,6 +148,7 @@ ymaps.ready(function () {
                         authorizedFlag = false;
                         manageFlag = false;
                         logDeviceFlag = false;
+                        techFlag = false;
                         authorize();
                         // location.href = location.origin;
                     },
@@ -172,6 +184,14 @@ ymaps.ready(function () {
         zoom: 19,
     });
 
+    $('#switchLayout').on('change', function () {
+        if ($('#switchLayout').prop('checked')) {
+            if (areaLayouts.length === 0) createAreasLayout(map);
+        } else {
+            if (areaLayouts.length !== 0) deleteAreasLayout(map);
+        }
+    });
+
     ws = new WebSocket('ws://' + location.host + '/mapW');
     ws.onerror = function (evt) {
         console.log('WebsSocket error:' + evt);
@@ -192,17 +212,32 @@ ymaps.ready(function () {
             case 'mapInfo':
                 regionInfo = data.regionInfo;
                 areaInfo = data.areaInfo;
+                // let techRegionInfo = (data.region === '*') ? regionInfo : data.region;
+                // let techAreaInfo = (data.area === null) ? areaInfo : data.area;
                 authorizedFlag = data.authorizedFlag;
                 manageFlag = data.manageFlag;
                 logDeviceFlag = data.logDeviceFlag;
+                techFlag = data.techArmFlag;
+                if ((areaBox === undefined) && (data.areaBox !== undefined)) {
+                    areaBox = data.areaBox;
+                    createAreasLayout(map);
+                }
 
-                //Заполнение поля выбора регионов для создания пользователя
+                //Заполнение поля выбора регионов для перемещения
                 for (let reg in regionInfo) {
                     $('#region').append(new Option(regionInfo[reg], reg));
                 }
-                fillAreas();
+                fillAreas($('#area'), $('#region'), areaInfo);
+
+                if (techFlag) {
+                    makeTech(data, (data.area === null) ? areaInfo : data.area);
+                }
 
                 // map.controls.remove('searchControl');
+
+                $('#regionForm').on('change', function () {
+                    fillAreas($('#area'), $('#region'), areaInfo);
+                });
 
                 map.setBounds([
                     [data.boxPoint.point0.Y, data.boxPoint.point0.X],
@@ -283,6 +318,8 @@ ymaps.ready(function () {
                     //Добавление метки контроллера на карту
                     map.geoObjects.add(placemark);
                 });
+                areaBox = data.areaBox;
+                createAreasLayout(map);
                 break;
             case 'jump':
                 map.setBounds([
@@ -293,9 +330,18 @@ ymaps.ready(function () {
             case 'login':
                 document.cookie = ('Authorization=Bearer ' + data.token);
                 localStorage.setItem('login', data.login);
+                console.log('QqQqQ', data.areaBox);
                 authorizedFlag = data.authorizedFlag;
                 manageFlag = data.manageFlag;
                 logDeviceFlag = data.logDeviceFlag;
+                techFlag = data.techArmFlag;
+                areaBox = data.areaBox;
+                createAreasLayout(map);
+
+                if (techFlag) {
+                    makeTech(data, (data.area === null) ? areaInfo : data.area);
+                }
+
                 $('#loginDialog').dialog('close');
                 chatFlag = true;
                 authorize();
@@ -306,11 +352,13 @@ ymaps.ready(function () {
                 authorizedFlag = false;
                 manageFlag = false;
                 logDeviceFlag = false;
+                techFlag = false;
                 authorize();
                 $('#myForm').remove();
                 $('.open-button').remove();
                 $('#login').val('');
                 $('#password').val('');
+                deleteAreasLayout(map);
                 // location.href = location.origin;
                 break;
             case 'error':
@@ -366,6 +414,39 @@ ymaps.ready(function () {
         }
     });
 
+    $('#techDialog').dialog({
+        autoOpen: false,
+        buttons: {
+            'Подтвердить': function () {
+                //Проверка корректности введённых данных
+                if (($('#techArea option:selected').text() === '')) {
+                    if (!($('#techAreasMsg').length) && ($('#techArea option:selected').text() === '')) {
+                        $('#techAreasForm').append('<div style="color: red;" id="techAreasMsg"><h5>Выберите районы</h5></div>');
+                    }
+                    return;
+                }
+                let selectedAreas = $('#techArea option:selected').toArray().map(item => item.value);
+
+                let region = $('#techRegion option:selected').val();
+                let areas = '';
+                selectedAreas.forEach(area => {
+                    areas += ('&Area=' + area);
+                });
+
+                openPage('/techArm?Region=' + region + areas);
+                $(this).dialog('close');
+            },
+            'Отмена': function () {
+                $(this).dialog('close');
+            }
+        },
+        modal: true,
+        resizable: false,
+        close: function () {
+            $('#techAreasMsg').remove();
+        }
+    });
+
     $('#loginDialog').dialog({
         autoOpen: false,
         buttons: {
@@ -409,33 +490,21 @@ function authorize() {
         $('#logoutButton').hide();
         $('#changeButton').hide();
         $('#workPlace').hide();
+        $('#switchLayout').parent().hide();
     } else {
         $('#loginButton').hide();
         $('#logoutButton').show();
         $('#changeButton').show();
         $('#workPlace').show();
-        if(chatFlag) {
+        $('#switchLayout').parent().show();
+        if (chatFlag) {
             $('body')[0].appendChild($('#chat')[0].content.cloneNode(true));
             chatFlag = false;
-        } //else {
-        //     $('');
-        // }
+        }
     }
     (logDeviceFlag) ? $('#deviceLogButton').show() : $('#deviceLogButton').hide();
     (manageFlag) ? $('#manageButton').show() : $('#manageButton').hide();
-}
-
-//Заполнение поля выбора районов для создания или изменения пользователя
-function fillAreas() {
-    $('#area').empty();
-//	$('#updateArea').empty();
-    for (let regAreaJson in areaInfo) {
-        for (let areaJson in areaInfo[regAreaJson]) {
-            if (regAreaJson === $('#region').find(':selected').text()) {
-                $('#area').append(new Option(areaInfo[regAreaJson][areaJson], areaJson));
-            }
-        }
-    }
+    (techFlag) ? $('#techButton').show() : $('#techButton').hide();
 }
 
 let createChipsLayout = function (calculateSize) {
@@ -512,6 +581,92 @@ let calculate = function (zoom) {
             return 25;
     }
 };
+
+
+function createAreasLayout(map) {
+    if (!$('#switchLayout').prop('checked')) return;
+    areaBox.forEach(area => {
+        let color = getRandomColor();
+        let myRectangle = new ymaps.Rectangle([
+            // Задаем координаты диагональных углов прямоугольника.
+            [area.Box.point0.Y, area.Box.point0.X],
+            [area.Box.point1.Y, area.Box.point1.X]
+        ], {
+            //Свойства
+            hintContent: 'Регион: ' + area.Region + ', Область: ' + area.Area,
+            balloonContent: 'азаза'
+        }, {
+            // Опции.
+            // Цвет и прозрачность заливки.
+            fillColor: color,
+            // Дополнительная прозрачность заливки..
+            // Итоговая прозрачность будет не #33(0.2), а 0.1(0.2*0.5).
+            fillOpacity: 0.1,
+            // Цвет обводки.
+            strokeColor: color,
+            // Прозрачность обводки.
+            strokeOpacity: 0.5,
+            // Ширина линии.
+            strokeWidth: 2,
+            // Радиус скругления углов.
+            // Данная опция принимается только прямоугольником.
+            borderRadius: 6
+        });
+        areaLayouts.push(myRectangle);
+        map.geoObjects.add(myRectangle);
+    })
+}
+
+function deleteAreasLayout(map) {
+    areaLayouts.forEach(layout => {
+        map.geoObjects.remove(layout);
+    });
+    areaLayouts = [];
+}
+
+//Заполнение поля выбора регионов для АРМ технолога
+function makeTech(data, techAreaInfo) {
+    if(data.region === '*') {
+        for (let reg in regionInfo) {
+            $('#techRegion').append(new Option(regionInfo[reg], reg));
+        }
+        fillAreas($('#techArea'), $('#techRegion'), areaInfo);
+    } else {
+        $('#techRegion').append(new Option(regionInfo[data.region], data.region));
+        $('#techRegion').prop('disabled', true);
+        fillTechAreas($('#techArea'), $('#techRegion'), techAreaInfo);
+    }
+
+    $('#techRegionForm').on('change', function () {
+        fillAreas($('#techArea'), $('#techRegion'), areaInfo);
+    });
+}
+
+//Заполнение поля выбора районов для создания или изменения пользователя
+function fillAreas($area, $region, areaInfo) {
+    $area.empty();
+    for (let regAreaJson in areaInfo) {
+        for (let areaJson in areaInfo[regAreaJson]) {
+            if (regAreaJson === $region.find(':selected').text()) {
+                $area.append(new Option(areaInfo[regAreaJson][areaJson], areaJson));
+            }
+        }
+    }
+}
+
+function fillTechAreas($area, $region, areaInfo) {
+    $area.empty();
+    let num;
+    for (let regAreaJson in areaInfo) {
+        $area.append(new Option(areaInfo[regAreaJson], regAreaJson))
+        num = regAreaJson;
+    }
+    if(areaInfo === undefined) return;
+    if (Object.keys(areaInfo).length === 1) {
+        $("#techArea option[value='" + num + "']").prop("selected", true);
+        $area.prop('disabled', true);
+    }
+}
 
 function check() {
 

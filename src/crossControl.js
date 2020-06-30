@@ -8,6 +8,7 @@ let weekSets;
 let monthSets;
 let stageSets;
 let recentlyClicked;
+let zoom;
 let pkFlag = true;
 let skFlag = true;
 let kvFlag = true;
@@ -215,13 +216,18 @@ $(function () {
 //Функционал кнопок управления
     //Кнопка для отпрвления данных на сервер
     $('#sendButton').on('click', function () {
-        ws.send(JSON.stringify({type: 'sendB', state: data.state}));
+        if (data.state.area === unmodifiedData.state.area) {
+            ws.send(JSON.stringify({type: 'sendB', state: data.state}));
+        } else {
+            ws.send(JSON.stringify({type: 'createB', state: data.state}));
+            ws.send(JSON.stringify({type: 'deleteB', state: unmodifiedData.state}));
+        }
     });
 
     //Кнопка для создания нового перекрёстка
     $('#addButton').on('click', function () {
         data.state.dgis = points.Y + ',' + points.X;
-        ws.send(JSON.stringify({type: 'createB', state: data.state}));
+        ws.send(JSON.stringify({type: 'createB', state: data.state, z: zoom}));
     });
 
     //Кнопка для обновления данных на АРМе
@@ -576,7 +582,14 @@ $(function () {
             zoom: 15
         });
         console.log(points);
+        map.events.add('wheel', function (e) {
+            zoom = map._zoom;
+        });
+        map.events.add('mousemove', function (e) {
+            zoom = map._zoom;
+        });
         map.events.add('click', function (e) {
+            zoom = map._zoom;
             if (!map.balloon.isOpen()) {
                 let coords = e.get('coords');
                 points.Y = coords[0].toPrecision(9);
