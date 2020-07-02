@@ -180,7 +180,7 @@ function getLogs(start, end) {
 }
 
 function prettyNumbers(number) {
-    return (number.length === 1) ? '0' + number : number;
+    return (number < 10) ? '0' + number : number;
 }
 
 function timeCalc(now, offset) {

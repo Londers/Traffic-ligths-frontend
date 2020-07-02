@@ -1,5 +1,6 @@
 let crossesSave = [];
 let devicesSave = [];
+let lastClicked = -1;
 
 /**
  * @return {number}
@@ -29,32 +30,23 @@ $(function () {
 
         switch (allData.type) {
             case 'armInfo':
-                let $table = $('#table');
                 crossesSave = data.crosses.sort(sortByID);
                 devicesSave = data.devices;
-                let toWrite = [];
-                crossesSave.forEach(cross => {
-                    let device = checkDevice(cross.idevice).device;
-                    let devFlag = (device !== undefined);
-                    let copy = {
-                        state: false,
-                        usdk: cross.id,
-                        region: cross.region,
-                        area: cross.area,
-                        sv: devFlag ? '+' : '',
-                        type: switchArrayType(cross.arrayType),
-                        exTime: devFlag ? timeFormat(device.ltime) : '',
-                        malfDk: devFlag ? checkMalfunction(device.Error) : '',
-                        gps: devFlag ? checkGPS(device.GPS) : '',
-                        addData: '',
-                        place: cross.describe
-                    };
-                    toWrite.push(copy);
-                });
-                $table.bootstrapTable('append', toWrite);
-                $table.bootstrapTable('scrollTo', 'top');
+                buildTable();
                 break;
-            case 'mrazb':
+            case 'crosses':
+                crossesSave = data.crosses.sort(sortByID);
+                buildTable();
+                break;
+            case 'devices':
+                data.devices.forEach(device => {
+                    if (checkDeviceID(device.idevice) !== -1) {
+                        updateDevices(device);
+                    } else {
+                        devicesSave.push(device);
+                    }
+                });
+                buildTable();
                 break;
             default:
                 break;
@@ -63,11 +55,77 @@ $(function () {
 
     ws.onclose = function (evt) {
         console.log('disconnected', evt);
-        // alert('Связь была разорвана');
-        // location.reload();
-        // automatically try to reconnect on connection loss
     };
 });
+
+function buildBottom() {
+    let device = {};
+    let cross = checkCross(lastClicked);
+
+    $('#type')[0].innerText = switchArrayType(cross.arrayType);
+    $('#id')[0].innerText = cross.id;
+    $('#description')[0].innerText = cross.describe;
+    $('#phone')[0].innerText = cross.phone.substring(1, cross.phone.length -1).trim();
+    $('#area')[0].innerText = cross.area;
+    $('#subarea')[0].innerText = cross.subarea;
+
+    if (checkDeviceID(lastClicked) !== -1) {
+        device = checkDevice(lastClicked).device;
+        $('#connect')[0].innerText = device.Status.ethernet ? 'LAN' : 'G';
+        $('#exTime')[0].innerText = device.Status.tobm;
+    } else {
+        $('#connect')[0].innerText = '';
+        $('#exTime')[0].innerText = '';
+    }
+}
+
+function buildTable() {
+    let $table = $('#table');
+    let toWrite = [];
+    let selected = $table.bootstrapTable('getSelections');
+
+    crossesSave.forEach(cross => {
+        let device = checkDevice(cross.idevice).device;
+        let devFlag = (device !== undefined);
+        let copy = {
+            state: (selected.length !== 0) ? (cross.idevice === selected[0].idevice) : false,
+            region: cross.region,
+            area: cross.area,
+            usdk: cross.id,
+            sv: devFlag ? device.Status.ethernet ? 'LAN' : '+' : '',
+            type: switchArrayType(cross.arrayType),
+            exTime: devFlag ? timeFormat(device.ltime) : '',
+            malfDk: devFlag ? checkMalfunction(device.Error) : '',
+            gps: devFlag ? checkGPS(device.GPS) : '',
+            addData: '',
+            place: cross.describe,
+            idevice: cross.idevice
+        };
+        toWrite.push(copy);
+    });
+
+    $table.bootstrapTable('load', toWrite);
+    $table.bootstrapTable('hideColumn', 'idevice');
+    $table.bootstrapTable('scrollTo', 'top');
+
+    $('tr').each(function() {
+        $(this).on('click', function () {
+            selected = $table.bootstrapTable('getSelections');
+            lastClicked = (selected.length !== 0) ? selected[0].idevice : -1;
+            if (lastClicked !== -1) buildBottom();
+        })
+    });
+
+   if(selected.length !== 0) buildBottom();
+}
+
+function updateDevices(device) {
+    let i = 0;
+    devicesSave.forEach(dev => {
+        if (device.idevice === dev.idevice) devicesSave[i] = device;
+        i++;
+    })
+}
 
 function checkDevice(idevice) {
     let device = {};
@@ -79,10 +137,36 @@ function checkDevice(idevice) {
     return device;
 }
 
+function checkCross(idevice) {
+    let device = {};
+    let i = 0;
+    crossesSave.forEach(cross => {
+        if (cross.idevice === idevice) device = crossesSave[i];
+        i++;
+    });
+    return device;
+}
+
+function checkDeviceID(idevice) {
+    let retValue = -1;
+    let i = 0;
+    devicesSave.forEach(dev => {
+        if (dev.idevice === idevice) retValue = i;
+        i++;
+    });
+    return retValue;
+}
+
 function timeFormat(time) {
     let date = new Date(time);
     // date = new Date(date.getTime() - (date.getTimezoneOffset() * 60 * 1000));
-    const dateTimeFormat = new Intl.DateTimeFormat('ru', { day: "2-digit", month: "2-digit", year: "2-digit", hour: "2-digit", minute: "2-digit"});
+    const dateTimeFormat = new Intl.DateTimeFormat('ru', {
+        day: "2-digit",
+        month: "2-digit",
+        year: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit"
+    });
     // console.log(date);
     return dateTimeFormat.format(date);
 }

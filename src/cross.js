@@ -1,3 +1,5 @@
+//todo если есть подрайон (!=0), по изменению карт предлагать поменять во всём подрайоне
+
 'use strict';
 
 let ID = 0;
@@ -392,7 +394,8 @@ function buildTable(data) {
     }
 }
 
-function checkConnection(connectionFlag) { console.log('checkConnection', connectionFlag);
+function checkConnection(connectionFlag) {
+    // console.log('checkConnection', connectionFlag);
     connectionFlag = (connectionFlag === undefined) ? status : connectionFlag;
     if (noConnectionStatusArray.includes(connectionFlag)) {
         $('a').each(function () {
@@ -662,7 +665,7 @@ function checkSelect($select, rights) {
 }
 
 function checkEdit() {
-    console.log('checkedit', editFlag);
+    // console.log('checkedit', editFlag);
     // if (editFlag) {
     $('a').each(function () {
         this.className = checkButton($(this)[0].className.toString(), editFlag);
