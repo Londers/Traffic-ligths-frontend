@@ -30,6 +30,14 @@
     th {
         background: #eee;
     }
+
+    .inactive {
+        color: #b0b1b2;
+    }
+
+    .active {
+        color: black;
+    }
     </style>
 </head>
 
@@ -48,16 +56,15 @@
             <thead>
             <tr style="">
                 <th class="sorting" data-field="state" data-checkbox="true"></th>
-                <th data-field="region">Регион</th>
-                <th data-field="area">Область</th>
-                <th data-field="usdk">УСДК</th>
-                <th data-field="sv">Св</th>
-                <th data-field="type">Тип</th>
-                <th data-field="exTime">Время обмена</th>
-                <th data-field="malfDk">Неиспр. ДК</th>
-                <th data-field="gps">GPS</th>
-                <th data-field="addData">Доп. данные</th>
-                <th data-field="place">Место размещения</th>
+                <th data-field="area" data-sortable="true">Область</th>
+                <th data-field="usdk" data-sortable="true">УСДК</th>
+                <th data-field="sv" data-sortable="true">Св</th>
+                <th data-field="type" data-sortable="true">Тип</th>
+                <th data-field="exTime" data-sortable="true">Время обмена</th>
+                <th data-field="malfDk" data-sortable="true">Неиспр. ДК</th>
+                <th data-field="gps" data-sortable="true">GPS</th>
+                <th data-field="addData" data-sortable="true">Доп. данные</th>
+                <th data-field="place" data-sortable="true">Место размещения</th>
                 <th data-field="idevice">qqq</th>
             </tr>
             </thead>
@@ -71,10 +78,10 @@
     <div class="row">
         <div class="col-md-6">
             <div class="row">
-                <div class="col-md-2" id="type"></div>
+                <div class="col-md-1" id="type"></div>
                 <div class="col-md-1" id="id"></div>
                 <div class="col-md-1" id="connect"></div>
-                <div class="col-md-8" id="description"></div>
+                <div class="col-md-9" id="description"></div>
             </div>
         </div>
         <div class="col-md-6">
@@ -111,11 +118,11 @@
                 <div class="col-md-1">КРЦ</div>
                 <div class="col-md-2" id="area"></div>
                 <div class="col-md-1">Центр:</div>
-                <div class="col-md-2">ДУ ДК</div>
-                <div class="col-md-2">СФ ДК</div>
-                <div class="col-md-1">ПК</div>
-                <div class="col-md-1">СК</div>
-                <div class="col-md-1">НК</div>
+                <div class="col-md-2 inactive">ДУ ДК</div>
+                <div class="col-md-2 inactive">СФ ДК</div>
+                <div class="col-md-1 inactive">ПК</div>
+                <div class="col-md-1 inactive">СК</div>
+                <div class="col-md-1 inactive">НК</div>
             </div>
         </div>
         <div class="col-md-6 text-center">
@@ -161,7 +168,7 @@
                 <div class="col-md-3">
                     <div class="row">
                         <div class="col-md-5">Прочее</div>
-                        <div class="col-md-7">М:4</div>
+                        <div class="col-md-7" id="addData"></div>
                     </div>
                 </div>
             </div>
@@ -173,7 +180,7 @@
                 <div class="col-md-3">
                     <div>
                         <div class="row">
-                            <div class="col-md-12 mt-4">11.03.20 09:35:25</div>
+                            <div class="col-md-12 mt-4" id="lastOp"></div>
                         </div>
                     </div>
                 </div>
@@ -193,13 +200,13 @@
                 <div class="col-md-2 ml-4">
                     <div class="row">
                         <div class="col-md-6">ПК</div>
-                        <div class="col-md-6">6</div>
+                        <div class="col-md-6" id="pk"></div>
                     </div>
                 </div>
                 <div class="col-md-2">
                     <div class="row">
                         <div class="col-md-6">СК</div>
-                        <div class="col-md-6">2</div>
+                        <div class="col-md-6" id="sk"></div>
                     </div>
                 </div>
             </div>
@@ -209,7 +216,7 @@
                 <div class="col-md-2">
                     <div class="row">
                         <div class="col-md-6">НК</div>
-                        <div class="col-md-6">1</div>
+                        <div class="col-md-6" id="nk"></div>
                     </div>
                 </div>
             </div>
@@ -234,12 +241,12 @@
                 </div>
                 <div class="col-md-2"> Режим<br>Уст-во<br>Состояние<br> Фаза<br>Лампы<br>Двери</div>
                 <div class="col-md-4">
-                    <div>КУ</div>
-                    <div>УСДК</div>
+                    <div id="status">-</div>
+                    <div id="type2">-</div>
                     <div>-</div>
-                    <div>2</div>
-                    <div>-</div>
-                    <div>-</div>
+                    <div id="phase">-</div>
+                    <div id="lamps">-</div>
+                    <div id="doors">-</div>
                 </div>
                 <div class="col-md-3">
                     <div class="text-center">Дополнение</div>

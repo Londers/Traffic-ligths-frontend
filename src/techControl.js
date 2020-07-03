@@ -59,23 +59,46 @@ $(function () {
 });
 
 function buildBottom() {
-    let device = {};
     let cross = checkCross(lastClicked);
+    let deviceInfo = checkDevice(lastClicked);
+    let device = deviceInfo.device;
 
     $('#type')[0].innerText = switchArrayType(cross.arrayType);
+    $('#type2')[0].innerText = switchArrayType(cross.arrayType);
     $('#id')[0].innerText = cross.id;
     $('#description')[0].innerText = cross.describe;
     $('#phone')[0].innerText = cross.phone.substring(1, cross.phone.length -1).trim();
     $('#area')[0].innerText = cross.area;
     $('#subarea')[0].innerText = cross.subarea;
 
-    if (checkDeviceID(lastClicked) !== -1) {
-        device = checkDevice(lastClicked).device;
+    if (device !== undefined) {
         $('#connect')[0].innerText = device.Status.ethernet ? 'LAN' : 'G';
         $('#exTime')[0].innerText = device.Status.tobm;
+        $('#addData')[0].innerText = 'М:' + device.Status.elc;
+        $('#pk')[0].innerText = device.pk;
+        $('#sk')[0].innerText = device.ck;
+        $('#nk')[0].innerText = device.nk;
+
+        $('#lastOp')[0].innerText = timeFormat(device.ltime);
+
+        $('#status')[0].innerText = deviceInfo.modeRdk;
+        $('#phase')[0].innerText = device.DK.fdk;
+        $('#lamps')[0].innerText = device.DK.ldk;
+        $('#doors')[0].innerText = device.DK.odk ? 'Открыты' : 'Закрыты';
     } else {
         $('#connect')[0].innerText = '';
         $('#exTime')[0].innerText = '';
+
+        $('#pk')[0].innerText = '';
+        $('#sk')[0].innerText = '';
+        $('#nk')[0].innerText = '';
+        $('#addData')[0].innerText = '';
+        $('#lastOp')[0].innerText = '';
+
+        $('#status')[0].innerText = '-';
+        $('#phase')[0].innerText = '-';
+        $('#lamps')[0].innerText = '-';
+        $('#doors')[0].innerText = '-';
     }
 }
 
@@ -89,15 +112,14 @@ function buildTable() {
         let devFlag = (device !== undefined);
         let copy = {
             state: (selected.length !== 0) ? (cross.idevice === selected[0].idevice) : false,
-            region: cross.region,
             area: cross.area,
             usdk: cross.id,
             sv: devFlag ? device.Status.ethernet ? 'LAN' : '+' : '',
             type: switchArrayType(cross.arrayType),
-            exTime: devFlag ? timeFormat(device.ltime) : '',
+            exTime: devFlag ? timeFormat(device.ltime).substring(0, 15) : '',
             malfDk: devFlag ? checkMalfunction(device.Error) : '',
             gps: devFlag ? checkGPS(device.GPS) : '',
-            addData: '',
+            addData: devFlag? 'М:' + device.Status.elc : '',
             place: cross.describe,
             idevice: cross.idevice
         };
@@ -165,7 +187,8 @@ function timeFormat(time) {
         month: "2-digit",
         year: "2-digit",
         hour: "2-digit",
-        minute: "2-digit"
+        minute: "2-digit",
+        second: "2-digit"
     });
     // console.log(date);
     return dateTimeFormat.format(date);
@@ -225,3 +248,10 @@ function switchArrayType(type) {
 
     return retValue;
 }
+/*
+   TODO:
+    odk false - дверь закрыта
+    lampi - ldk
+    base true => все карты базовая привязка
+    local true => устройство загружается
+ */
