@@ -1,6 +1,7 @@
 let crossesSave = [];
 let devicesSave = [];
-let lastClicked = -1;
+
+// let lastClicked = -1;
 
 /**
  * @return {number}
@@ -32,11 +33,11 @@ $(function () {
             case 'armInfo':
                 crossesSave = data.crosses.sort(sortByID);
                 devicesSave = data.devices;
-                buildTable();
+                buildTable(true);
                 break;
             case 'crosses':
                 crossesSave = data.crosses.sort(sortByID);
-                buildTable();
+                buildTable(false);
                 break;
             case 'devices':
                 data.devices.forEach(device => {
@@ -46,7 +47,7 @@ $(function () {
                         devicesSave.push(device);
                     }
                 });
-                buildTable();
+                buildTable(false);
                 break;
             default:
                 break;
@@ -58,51 +59,7 @@ $(function () {
     };
 });
 
-function buildBottom() {
-    let cross = checkCross(lastClicked);
-    let deviceInfo = checkDevice(lastClicked);
-    let device = deviceInfo.device;
-
-    $('#type')[0].innerText = switchArrayType(cross.arrayType);
-    $('#type2')[0].innerText = switchArrayType(cross.arrayType);
-    $('#id')[0].innerText = cross.id;
-    $('#description')[0].innerText = cross.describe;
-    $('#phone')[0].innerText = cross.phone.substring(1, cross.phone.length -1).trim();
-    $('#area')[0].innerText = cross.area;
-    $('#subarea')[0].innerText = cross.subarea;
-
-    if (device !== undefined) {
-        $('#connect')[0].innerText = device.Status.ethernet ? 'LAN' : 'G';
-        $('#exTime')[0].innerText = device.Status.tobm;
-        $('#addData')[0].innerText = 'М:' + device.Status.elc;
-        $('#pk')[0].innerText = device.pk;
-        $('#sk')[0].innerText = device.ck;
-        $('#nk')[0].innerText = device.nk;
-
-        $('#lastOp')[0].innerText = timeFormat(device.ltime);
-
-        $('#status')[0].innerText = deviceInfo.modeRdk;
-        $('#phase')[0].innerText = device.DK.fdk;
-        $('#lamps')[0].innerText = device.DK.ldk;
-        $('#doors')[0].innerText = device.DK.odk ? 'Открыты' : 'Закрыты';
-    } else {
-        $('#connect')[0].innerText = '';
-        $('#exTime')[0].innerText = '';
-
-        $('#pk')[0].innerText = '';
-        $('#sk')[0].innerText = '';
-        $('#nk')[0].innerText = '';
-        $('#addData')[0].innerText = '';
-        $('#lastOp')[0].innerText = '';
-
-        $('#status')[0].innerText = '-';
-        $('#phase')[0].innerText = '-';
-        $('#lamps')[0].innerText = '-';
-        $('#doors')[0].innerText = '-';
-    }
-}
-
-function buildTable() {
+function buildTable(firstLoadFlag) {
     let $table = $('#table');
     let toWrite = [];
     let selected = $table.bootstrapTable('getSelections');
@@ -119,10 +76,11 @@ function buildTable() {
             exTime: devFlag ? timeFormat(device.ltime).substring(0, 15) : '',
             malfDk: devFlag ? checkMalfunction(device.Error) : '',
             gps: devFlag ? checkGPS(device.GPS) : '',
-            addData: devFlag? 'М:' + device.Status.elc : '',
+            addData: devFlag ? 'М:' + device.Status.elc : '',
             place: cross.describe,
             idevice: cross.idevice
         };
+        if ((cross.idevice === crossesSave[0].idevice) && (firstLoadFlag)) copy.state = true;
         toWrite.push(copy);
     });
 
@@ -130,15 +88,80 @@ function buildTable() {
     $table.bootstrapTable('hideColumn', 'idevice');
     $table.bootstrapTable('scrollTo', 'top');
 
-    $('tr').each(function() {
-        $(this).on('click', function () {
-            selected = $table.bootstrapTable('getSelections');
-            lastClicked = (selected.length !== 0) ? selected[0].idevice : -1;
-            if (lastClicked !== -1) buildBottom();
-        })
+    $table.on('click', function () {
+        if ($table.bootstrapTable('getSelections').length !== 0) buildBottom();
     });
 
-   if(selected.length !== 0) buildBottom();
+    buildBottom();
+}
+
+//ПРОБЕЛЫ ВАЖНЫ #SPACELIVESMATTER
+function checkCommand(cmd, value) {
+    let $command = $('#' + cmd);
+    if (value) {
+        $command.attr('class', $command.attr('class').replace(' inactive', ' active'));
+    } else {
+        $command.attr('class', $command.attr('class').replace(' active', ' inactive'));
+    }
+}
+
+function buildBottom() {
+    let selected = $('#table').bootstrapTable('getSelections');
+    let cross = checkCross(selected[0].idevice);
+    let deviceInfo = checkDevice(selected[0].idevice);
+    let device = deviceInfo.device;
+
+    $('#type')[0].innerText = switchArrayType(cross.arrayType);
+    $('#type2')[0].innerText = switchArrayType(cross.arrayType);
+    $('#id')[0].innerText = cross.id;
+    $('#description')[0].innerText = cross.describe;
+    $('#phone')[0].innerText = cross.phone.substring(1, cross.phone.length - 1).trim();
+    $('#area')[0].innerText = cross.area;
+    $('#subarea')[0].innerText = cross.subarea;
+
+    if (device !== undefined) {
+        $('#connect')[0].innerText = device.Status.ethernet ? 'LAN' : 'G';
+
+        checkCommand('dudk', device.StatusCommandDU.IsDUDK1);
+        checkCommand('sfdk', device.StatusCommandDU.IsReqSFDK1);
+        checkCommand('cmdPk', device.StatusCommandDU.IsPK);
+        checkCommand('cmdSk', device.StatusCommandDU.IsCK);
+        checkCommand('cmdNk', device.StatusCommandDU.IsNK);
+
+        $('#exTime')[0].innerText = device.Status.tobm;
+        $('#addData')[0].innerText = 'М:' + device.Status.elc;
+        $('#pk')[0].innerText = device.pk;
+        $('#sk')[0].innerText = device.ck;
+        $('#nk')[0].innerText = device.nk;
+
+        $('#lastOp')[0].innerText = timeFormat(device.ltime);
+
+        $('#status')[0].innerText = deviceInfo.modeRdk;
+        $('#phase')[0].innerText = device.DK.fdk;
+        $('#lamps')[0].innerText = device.DK.ldk;
+        $('#doors')[0].innerText = device.DK.odk ? 'Открыты' : 'Закрыты';
+    } else {
+        $('#connect')[0].innerText = '';
+
+        checkCommand('dudk', false);
+        checkCommand('sfdk', false);
+        checkCommand('cmdPk', false);
+        checkCommand('cmdSk', false);
+        checkCommand('cmdNk', false);
+
+        $('#exTime')[0].innerText = '';
+        $('#addData')[0].innerText = '';
+        $('#pk')[0].innerText = '';
+        $('#sk')[0].innerText = '';
+        $('#nk')[0].innerText = '';
+
+        $('#lastOp')[0].innerText = '';
+
+        $('#status')[0].innerText = '-';
+        $('#phase')[0].innerText = '-';
+        $('#lamps')[0].innerText = '-';
+        $('#doors')[0].innerText = '-';
+    }
 }
 
 function updateDevices(device) {
@@ -248,10 +271,31 @@ function switchArrayType(type) {
 
     return retValue;
 }
+
 /*
    TODO:
     odk false - дверь закрыта
     lampi - ldk
     base true => все карты базовая привязка
     local true => устройство загружается
+
+   TODO:   в таблице время ПК!!!!
+    время1 слева - момент запуска (становится красным если разница больше минуты (пк и устройство))
+    время2 снизу - максимальное ожидание ответа сбоку 3, красный >8 секунд (от отправки изменений с АРМ, до ответа устройства)
+    кнопки  Опрос - опрос устройства
+            Контроль - меню "контроль"?
+            GRPS-обмен - меню ?
+            Вкл. СФ - вкл/выкл
+            ДК1 16 - удалить
+            Сброс отв. - сброс и новый счетчик
+            Привязка - открывает арм
+            Закрыть???
+    Технология - от ЮВ
+    модем
+    GPS
+    485
+    Состояние - совпадает с таблицей
+    если типы устройтв не совпадают, слева сверху красным загореться
+    в таблице - все горит красным, кроме нет связи
+    + gps, l - lan, * есть не переданная информация
  */
