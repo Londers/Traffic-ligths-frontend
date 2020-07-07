@@ -1,7 +1,11 @@
 let crossesSave = [];
 let devicesSave = [];
+let ws;
 
-// let lastClicked = -1;
+//Функция для открытия вкладки
+function openPage(url) {
+    window.open(location.origin + '/user/' + localStorage.getItem('login') + url);
+}
 
 /**
  * @return {number}
@@ -13,7 +17,7 @@ function sortByID(a, b) {
 $(function () {
     $('.fixed-table-toolbar').hide();
 
-    let ws = new WebSocket('ws://' + location.host + location.pathname + 'W' + location.search);
+    ws = new WebSocket('ws://' + location.host + location.pathname + 'W' + location.search);
 
     ws.onerror = function (evt) {
         console.log('WebsSocket error:' + evt);
@@ -89,7 +93,7 @@ function buildTable(firstLoadFlag) {
     $table.bootstrapTable('scrollTo', 'top');
 
     $table.on('click', function () {
-        if ($table.bootstrapTable('getSelections').length !== 0) buildBottom();
+        buildBottom();
     });
 
     buildBottom();
@@ -107,6 +111,7 @@ function checkCommand(cmd, value) {
 
 function buildBottom() {
     let selected = $('#table').bootstrapTable('getSelections');
+    if (selected.length === 0) return;
     let cross = checkCross(selected[0].idevice);
     let deviceInfo = checkDevice(selected[0].idevice);
     let device = deviceInfo.device;
@@ -119,6 +124,10 @@ function buildBottom() {
     $('#area')[0].innerText = cross.area;
     $('#subarea')[0].innerText = cross.subarea;
 
+    $('#bindButton').unbind().on('click', function () {
+        openPage('/cross/control?Region=' + cross.region + '&Area=' + cross.area + '&ID=' + cross.id);
+    });
+
     if (device !== undefined) {
         $('#connect')[0].innerText = device.Status.ethernet ? 'LAN' : 'G';
 
@@ -129,15 +138,27 @@ function buildBottom() {
         checkCommand('cmdNk', device.StatusCommandDU.IsNK);
 
         $('#exTime')[0].innerText = device.Status.tobm;
+        $('#gprs')[0].innerText = device.Status.lnow;
+        $('#gps')[0].innerText = device.Status.sGPS;
         $('#addData')[0].innerText = 'М:' + device.Status.elc;
+
+        $('#technology').innerText = device.texMode;
+
         $('#pk')[0].innerText = device.pk;
         $('#sk')[0].innerText = device.ck;
         $('#nk')[0].innerText = device.nk;
+
+        $('#sfSwitch').unbind().on('click', function () {
+            (device.StatusCommandDU.IsReqSFDK1) ?
+                controlSend({id: cross.idevice, cmd: 4, param: 0}) :
+                controlSend({id: cross.idevice, cmd: 4, param: 1});
+        });
 
         $('#lastOp')[0].innerText = timeFormat(device.ltime);
 
         $('#status')[0].innerText = deviceInfo.modeRdk;
         $('#phase')[0].innerText = device.DK.fdk;
+        $('#state')[0].innerText = (checkMalfunction(device.Error) === '') ? '-' : checkMalfunction(device.Error);
         $('#lamps')[0].innerText = device.DK.ldk;
         $('#doors')[0].innerText = device.DK.odk ? 'Открыты' : 'Закрыты';
     } else {
@@ -150,15 +171,23 @@ function buildBottom() {
         checkCommand('cmdNk', false);
 
         $('#exTime')[0].innerText = '';
+        $('#gprs')[0].innerText = '';
+        $('#gps')[0].innerText =  '';
         $('#addData')[0].innerText = '';
+
+        $('#technology').innerText = '';
+
         $('#pk')[0].innerText = '';
         $('#sk')[0].innerText = '';
         $('#nk')[0].innerText = '';
+
+        $('#sfSwitch').unbind();
 
         $('#lastOp')[0].innerText = '';
 
         $('#status')[0].innerText = '-';
         $('#phase')[0].innerText = '-';
+        $('#state')[0].innerText = '-';
         $('#lamps')[0].innerText = '-';
         $('#doors')[0].innerText = '-';
     }
@@ -282,20 +311,16 @@ function switchArrayType(type) {
    TODO:   в таблице время ПК!!!!
     время1 слева - момент запуска (становится красным если разница больше минуты (пк и устройство))
     время2 снизу - максимальное ожидание ответа сбоку 3, красный >8 секунд (от отправки изменений с АРМ, до ответа устройства)
-    кнопки  Опрос - опрос устройства
+    кнопки
             Контроль - меню "контроль"?
             GRPS-обмен - меню ?
-            Вкл. СФ - вкл/выкл
-            ДК1 16 - удалить
             Сброс отв. - сброс и новый счетчик
-            Привязка - открывает арм
-            Закрыть???
-    Технология - от ЮВ
-    модем
-    GPS
-    485
-    Состояние - совпадает с таблицей
     если типы устройтв не совпадают, слева сверху красным загореться
     в таблице - все горит красным, кроме нет связи
     + gps, l - lan, * есть не переданная информация
  */
+
+//Отправка выбранной команды на сервер
+function controlSend(toSend) {
+    ws.send(JSON.stringify({type: 'dispatch', id: toSend.id, cmd: toSend.cmd, param: toSend.param}));
+}

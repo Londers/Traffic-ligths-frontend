@@ -99,14 +99,9 @@
         </div>
         <div class="col-md-6">
             <div class="row">
-                <div class="col-md-2">
+                <div class="col-md-4 text-center">
                     <button type="button" class="btn-sm btn-light justify-content-center" id="bindButton" style="">
                         Привязка
-                    </button>
-                </div>
-                <div class="col-md-2">
-                    <button type="button" class="btn-sm btn-light justify-content-center" id="closeButton" style="">
-                        Закрыть
                     </button>
                 </div>
             </div>
@@ -146,19 +141,13 @@
                 <div class="col-md-3">
                     <div class="row">
                         <div class="col-md-5">Модем:</div>
-                        <div class="col-md-7">Нормальное</div>
+                        <div class="col-md-7" id="gprs"></div>
                     </div>
                 </div>
                 <div class="col-md-3 ml-4">
                     <div class="row">
                         <div class="col-md-4">GPS</div>
-                        <div class="col-md-8">Норм.</div>
-                    </div>
-                </div>
-                <div class="col-md-2">
-                    <div class="row">
-                        <div class="col-md-5">485</div>
-                        <div class="col-md-7">Норм.</div>
+                        <div class="col-md-8" id="gps"></div>
                     </div>
                 </div>
             </div>
@@ -187,9 +176,7 @@
                 <div class="col-md-5">
                     <div class="row">
                         <div class="col-md-5">Технология:</div>
-                        <div class="col-md-2">ТР</div>
-                        <div class="col-md-2">ВР</div>
-                        <div class="col-md-2">НК</div>
+                        <div class="col-md-6 text-center" id="technology">ТР</div>
                     </div>
                 </div>
                 <div class="col-md-1 ml-4">
@@ -228,15 +215,12 @@
             <div class="row">
                 <div class="col-md-3">
                     <button type="button" class="btn btn-light justify-content-center border" style="min-width:123px">
-                        Опрос
-                    </button>
-                    <button type="button" class="btn btn-light justify-content-center border" style="min-width:123px">
                         Контроль
                     </button>
                     <button type="button" class="btn btn-light justify-content-center border" style="min-width:123px">
                         GPRS-обмен
                     </button>
-                    <button type="button" class="btn btn-light justify-content-center border" style="min-width:123px">
+                    <button type="button" class="btn btn-light justify-content-center border" style="min-width:123px" id="sfSwitch">
                         Вкл.СФ
                     </button>
                 </div>
@@ -244,7 +228,7 @@
                 <div class="col-md-4">
                     <div id="status">-</div>
                     <div id="type2">-</div>
-                    <div>-</div>
+                    <div id="state">-</div>
                     <div id="phase">-</div>
                     <div id="lamps">-</div>
                     <div id="doors">-</div>

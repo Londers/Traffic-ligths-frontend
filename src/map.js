@@ -578,7 +578,8 @@ let calculate = function (zoom) {
         case 19:
             return 130;
         default:
-            return 25;
+            // return 25;
+            return 80;
     }
 };
 

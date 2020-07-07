@@ -188,7 +188,7 @@ $(function () {
                 $('#status').html('Статус: ' + data.cross.tlsost.description);
 
                 $('#controlButton').on('click', function () {
-                    openPage(window.location.origin + window.location.pathname + '/control' + window.location.search, idevice);
+                    window.open(window.location.origin + window.location.pathname + '/control' + window.location.search, idevice);
                 });
 
                 //Проверка существования карт и добавление их выбора
@@ -679,23 +679,6 @@ function checkEdit() {
     // }
     $('select').each(function () {
         checkSelect($(this), editFlag);
-    });
-}
-
-//Функция для открытия новой вкладки
-function openPage(url, idevice) {
-    $.ajax({
-        url: url,
-        type: 'GET',
-        success: function (data) {
-            // location.href = url;
-            window.open(url);
-//            window.close()
-        },
-        error: function (request) {
-            console.log(request.status + ' ' + request.responseText);
-//			location.href = window.location.origin;
-        }
     });
 }
 

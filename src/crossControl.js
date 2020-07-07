@@ -219,8 +219,8 @@ $(function () {
         if (data.state.area === unmodifiedData.state.area) {
             ws.send(JSON.stringify({type: 'sendB', state: data.state}));
         } else {
-            ws.send(JSON.stringify({type: 'createB', state: data.state}));
             ws.send(JSON.stringify({type: 'deleteB', state: unmodifiedData.state}));
+            ws.send(JSON.stringify({type: 'createB', state: data.state}));
         }
     });
 
