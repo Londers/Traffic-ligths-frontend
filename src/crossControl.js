@@ -124,6 +124,10 @@ $(function () {
         switch (allData.type) {
             case 'sendB':
                 console.log('sendB');
+                if (!data.status) {
+                    alert('Сервер не отвечает');
+                    return;
+                }
                 if (localStorage.getItem('login') !== data.user) {
                     loadData(data, false);
                 } else {
@@ -133,7 +137,7 @@ $(function () {
                 break;
             case 'createB':
                 console.log('createB');
-                if (data.message === undefined) {
+                if (!data.status) {
                     if (data.result[0].includes('занят')) alert(data.result[0]);
                 } else {
                     location.href = location.pathname + location.search.replace('ID=' + unmodifiedData.state.id, 'ID=' + $('#id').val());
@@ -148,13 +152,20 @@ $(function () {
                 checkEdit();
                 break;
             case 'deleteB':
-                (data.message.includes('cross data deleted')) ? window.close() : alert('Не удалось удалить перекрёсток: ' + data.message);
+                if (Number(data.pos.area) !== unmodifiedData.state.area) {
+                    let search = location.search
+                        .replace('Area=' + unmodifiedData.state.area, 'Area=' + data.pos.area)
+                        .replace('ID=' + unmodifiedData.state.id, 'ID=' + data.pos.id);
+                    location.href = location.pathname + search;
+                } else {
+                    (data.status) ? window.close() : alert('Не удалось удалить перекрёсток');
+                }
                 break;
             case 'checkB':
                 console.log('checkB');
                 counter = 0;
                 let flag = false;
-                if(editFlag) disableControl('sendButton', data.status);
+                if (editFlag) disableControl('sendButton', data.status);
                 checkNew(data.status);
                 $('#verification').bootstrapTable('removeAll');
                 data.result.forEach(function () {
@@ -219,7 +230,11 @@ $(function () {
         if (data.state.area === unmodifiedData.state.area) {
             ws.send(JSON.stringify({type: 'sendB', state: data.state}));
         } else {
-            ws.send(JSON.stringify({type: 'deleteB', state: unmodifiedData.state}));
+            ws.send(JSON.stringify({
+                type: 'deleteB',
+                state: unmodifiedData.state,
+                pos: {id: Number($('#id').val()), area: $('#area').val()}
+            }));
             ws.send(JSON.stringify({type: 'createB', state: data.state}));
         }
     });
@@ -238,7 +253,11 @@ $(function () {
     //Кнопка для удаления перекрёстка
     $('#deleteButton').on('click', function () {
         if (confirm('Вы уверены? Перекрёсток будет безвозвратно удалён.')) {
-            ws.send(JSON.stringify({type: 'deleteB', state: data.state}));
+            ws.send(JSON.stringify({
+                type: 'deleteB',
+                state: data.state,
+                pos: {id: Number($('#id').val()), area: $('#area').val()}
+            }));
         }
     });
 
@@ -249,7 +268,13 @@ $(function () {
 
     //Кнопка для проверки валидности заполненных данных
     $('#checkButton').on('click', function () {
-        ws.send(JSON.stringify({type: 'checkB', state: data.state}));
+        let sub = $('#subarea').val();
+        if ((['+', '-', '.', 'e', 'E'].some(el => sub.includes(el))) || (sub === '')) {
+            if (!($('#subMsg').length)) $('#subarea').parent().append('<div style="color: red;" id="subMsg"><h5>Некорректный номер подрайона</h5></div>');
+        } else {
+            if (($('#subMsg').length)) $('#subMsg').remove();
+            ws.send(JSON.stringify({type: 'checkB', state: data.state}));
+        }
     });
 
     $('#workTrigger').on('click', function () {
@@ -1432,7 +1457,7 @@ function checkButton(buttonClass, rights) {
 function checkEdit() {
     let counter = 0;
     $('a').each(function () {
-        if(counter++ < 7) this.className = checkButton($(this)[0].className.toString(), editFlag);
+        if (counter++ < 7) this.className = checkButton($(this)[0].className.toString(), editFlag);
     });
     $('#reloadButton').each(function () {
         this.className = checkButton($(this)[0].className.toString(), true)

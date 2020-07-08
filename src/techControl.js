@@ -127,6 +127,9 @@ function buildBottom() {
     $('#bindButton').unbind().on('click', function () {
         openPage('/cross/control?Region=' + cross.region + '&Area=' + cross.area + '&ID=' + cross.id);
     });
+    $('#crossButton').unbind().on('click', function () {
+        openPage('/cross?Region=' + cross.region + '&Area=' + cross.area + '&ID=' + cross.id);
+    });
 
     if (device !== undefined) {
         $('#connect')[0].innerText = device.Status.ethernet ? 'LAN' : 'G';

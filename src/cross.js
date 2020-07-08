@@ -260,8 +260,8 @@ $(function () {
                     return;
                 }
                 counter = 0;
-                let message = JSON.parse(data.message.substring(data.message.indexOf('{'), data.message.lastIndexOf('}') + 1));
-                let msg = getDescription(message);
+                // let message = JSON.parse(data.message.substring(data.message.indexOf('{'), data.message.lastIndexOf('}') + 1));
+                let msg = getDescription(data.command);
 
 
                 if (data.fdk === 0) return;
@@ -269,7 +269,7 @@ $(function () {
                 $('#verification').bootstrapTable('prepend', {
                     status: msg,
                     time: strTime,
-                    user: message.user
+                    user: data.command.user
                 }).find('tbody').find('tr').find('td').each(function () {
                     // if (Math.abs(counter++ % 3) === 1) {
                     $(this).attr('class', 'text-left');
