@@ -33,7 +33,12 @@ ymaps.ready(function () {
     $('#workPlace').hide();
     $('#switchLayout').parent().hide();
     createEye();
-    $('#dropdownMenuButton').trigger('click');
+    $('#dropdownControlButton').trigger('click');
+    $('#dropdownConnectionButton').trigger('click');
+    $('#dropdownSettingsButton').trigger('click');
+    $('#dropdownAdminMenu').trigger('click');
+    $('#dropdownHelpButton').trigger('click');
+    $('#dropdownLayersButton').trigger('click');
     $('#password').attr('style', 'position: initial;');
 
     // //Для управления закладками
@@ -96,6 +101,10 @@ ymaps.ready(function () {
         //         console.log(request.status + ' ' + request.responseText);
         //     }
         // });
+    });
+
+    $('#dropdownConnectionButton').on('click', function () {
+        ws.send(JSON.stringify({type: 'checkConn'}));
     });
 
     //Проверка валидности пароля
@@ -266,7 +275,10 @@ ymaps.ready(function () {
                     map.geoObjects.add(placemark);
                 });
                 authorize();
-                $('#workPlace')[0].innerText = 'Рабочее место: ' + data.description;
+                $('#workPlace')[0].innerText = 'АСУДД "Микро" '
+                    + ((data.region === '*') ? 'Все регионы' : regionInfo[data.region])
+                    + '\nАРМ дежурного - '
+                    + data.description + '\n' + localStorage.getItem('login');
                 break;
             case 'tflight':
                 if (data.tflight === null) {
@@ -345,7 +357,10 @@ ymaps.ready(function () {
                 $('#loginDialog').dialog('close');
                 chatFlag = true;
                 authorize();
-                $('#workPlace')[0].innerText = 'Рабочее место: ' + data.description;
+                $('#workPlace')[0].innerText = 'АСУДД "Микро" '
+                    + ((data.region === '*') ? 'Все регионы' : regionInfo[data.region])
+                    + '\nАРМ дежурного - '
+                    + data.description + '\n' + localStorage.getItem('login');
                 break;
             case 'logOut':
                 // document.cookie = '';
@@ -360,6 +375,14 @@ ymaps.ready(function () {
                 $('#password').val('');
                 deleteAreasLayout(map);
                 // location.href = location.origin;
+                break;
+            case 'checkConn':
+                $('#databaseConnection').children().css({
+                    'background-color' : ((data.checkConn.statusBD) ? 'green' : 'red')
+                });
+                $('#serverConnection').children().css({
+                    'background-color' : ((data.checkConn.statusS) ? 'green' : 'red')
+                });
                 break;
             case 'error':
                 if (data.message.includes('Invalid login credentials')) {
@@ -488,15 +511,21 @@ function authorize() {
     if (!authorizedFlag) {
         $('#loginButton').show();
         $('#logoutButton').hide();
-        $('#changeButton').hide();
+        // $('#changeButton').hide();
         $('#workPlace').hide();
         $('#switchLayout').parent().hide();
+        $('button[class*="dropdown"]').each(function () {
+            $(this).hide();
+        })
     } else {
         $('#loginButton').hide();
         $('#logoutButton').show();
-        $('#changeButton').show();
+        // $('#changeButton').show();
         $('#workPlace').show();
         $('#switchLayout').parent().show();
+        $('button[class*="dropdown"]').each(function () {
+            $(this).show();
+        });
         if (chatFlag) {
             $('body')[0].appendChild($('#chat')[0].content.cloneNode(true));
             chatFlag = false;
@@ -578,8 +607,8 @@ let calculate = function (zoom) {
         case 19:
             return 130;
         default:
-            // return 25;
-            return 80;
+            return 25;
+        // return 80;
     }
 };
 
@@ -627,7 +656,7 @@ function deleteAreasLayout(map) {
 
 //Заполнение поля выбора регионов для АРМ технолога
 function makeTech(data, techAreaInfo) {
-    if(data.region === '*') {
+    if (data.region === '*') {
         for (let reg in regionInfo) {
             $('#techRegion').append(new Option(regionInfo[reg], reg));
         }
@@ -662,7 +691,7 @@ function fillTechAreas($area, $region, areaInfo) {
         $area.append(new Option(areaInfo[regAreaJson], regAreaJson))
         num = regAreaJson;
     }
-    if(areaInfo === undefined) return;
+    if (areaInfo === undefined) return;
     if (Object.keys(areaInfo).length === 1) {
         $("#techArea option[value='" + num + "']").prop("selected", true);
         $area.prop('disabled', true);

@@ -123,6 +123,7 @@ function buildBottom() {
     $('#phone')[0].innerText = cross.phone.substring(1, cross.phone.length - 1).trim();
     $('#area')[0].innerText = cross.area;
     $('#subarea')[0].innerText = cross.subarea;
+    $('#crossButton')[0].innerText = 'ДК ' + cross.id;
 
     $('#bindButton').unbind().on('click', function () {
         openPage('/cross/control?Region=' + cross.region + '&Area=' + cross.area + '&ID=' + cross.id);
