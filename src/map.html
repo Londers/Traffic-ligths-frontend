@@ -94,17 +94,6 @@
 <body style="max-height: 960px;">
 <div class="container-fluid">
     <div id="toolbar" class="row" style="min-height: 38px;">
-        <!--        <div class="col-md-2">-->
-        <!--            <button id="changeButton" class="btn btn-secondary">Сменить пароль</button>-->
-        <!--        </div>-->
-        <!--        <div class="col-md-1">-->
-        <!--            <button id="manageButton" class="btn btn-secondary" style="display: none;">Управление</button>-->
-        <!--        </div>-->
-        <!--        <div class="col-md-2">-->
-        <!--            <button id="deviceLogButton" class="btn btn-secondary" style="display: none;">Логи устройств</button>-->
-        <!--        </div>-->
-        <!--&lt;!&ndash;            <button id="techSupportButton" class="btn btn-secondary" style="  position: absolute; right: 75px;">Выйти из аккаунта&ndash;&gt;-->
-        <!--&lt;!&ndash;            </button>&ndash;&gt;-->
         <div class="col-md-2 text-center">
             <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownControlButton"
                     data-toggle="dropdown"
@@ -137,15 +126,9 @@
             <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
                 <button class="dropdown-item" type="button" id="setAreaButton">Районы перемещения</button>
                 <button class="dropdown-item" type="button" id="setFragmentButton">Районы фрагментов</button>
+                <button class="dropdown-item" type="button" id="fixationReset">Снять фиксацию</button>
             </div>
         </div>
-        <!--        <div class="col-md-1 text-center">-->
-        <!--            <div class="form-check">-->
-        <!--                <label class="form-check-label">-->
-        <!--                    <input type="checkbox" class="form-check-input" id="switchLayout" checked="true">Показать-->
-        <!--                    области</label>-->
-        <!--            </div>-->
-        <!--        </div>-->
         <div class="dropdown col-md-2 text-center">
             <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownAdminMenu"
                     data-toggle="dropdown"
@@ -157,10 +140,6 @@
                 <button class="dropdown-item" type="button" id="manageButton" style="display: none;">Таблица прав и
                     данных операторов, названий армов
                 </button>
-                <!--                <button class="dropdown-item" type="button" id="deviceLogButton" style="display: none;">Логи устройств</button>-->
-                <!--                <button class="dropdown-item" type="button" id="locationButton">Перемещение</button>-->
-                <!--                <button class="dropdown-item" type="button" id="techButton" style="display: none;">АРМ технолога</button>-->
-
             </div>
         </div>
         <div class="col-md-1 text-center">
@@ -178,19 +157,6 @@
             <button id="loginButton" class="btn btn-secondary">Вход</button>
         </div>
     </div>
-    <!--        <div class="col-md-1">-->
-    <!--            <button id="locationButton" class="btn btn-secondary">Перемещение-->
-    <!--            </button>-->
-    <!--        </div>-->
-    <!--            <div class="col-md-2">-->
-    <!--                <button id="logoutButton" class="btn btn-secondary">Выйти из-->
-    <!--                    аккаунта-->
-    <!--                </button>-->
-    <!--            </div>-->
-    <!--            <div class="col-md-1">-->
-    <!--                <button id="loginButton" class="btn btn-secondary">Войти в аккаунт</button>-->
-    <!--            </div>-->
-
     <div style="position: absolute; top: 300px; right: 50px; z-index: 2">
         <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownLayersButton"
                 data-toggle="dropdown"
@@ -220,13 +186,8 @@
             <button class="dropdown-item" type="button" id="addLayoutButton">Добавить слой</button>
         </div>
     </div>
-
-    <!--            <div class="form-check">-->
-    <!--                <label class="form-check-label">-->
-    <!--                    <input type="checkbox" class="form-check-input" id="switchLayout" checked="true">Показать-->
-    <!--                    области</label>-->
-    <!--            </div>-->
-
+    <!--                <button class="dropdown-item" type="button" id="deviceLogButton" style="display: none;">Логи устройств</button>-->
+    <!--                <button class="dropdown-item" type="button" id="techButton" style="display: none;">АРМ технолога</button>-->
 </div>
 <div id="loginDialog" class="container-sm" style="display: none;" title="Авторизация">
     <form class="needs-validated">
@@ -263,7 +224,7 @@
 </div>
 <div class="container-fluid border border-dark" id="map" style="max-height: 920px; position: relative; z-index: 1"></div>
 <template id="chat">
-    <button class="open-button" onclick="openForm()">Открыть чат</button>
+    <button class="open-button" onclick="openForm()" style="position: fixed; z-index: 2;">Открыть чат</button>
     <div class="form-popup" id="myForm">
         <link rel="stylesheet" href="/file/web/css/chat.css">
         <form class="form-container">

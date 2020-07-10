@@ -7,12 +7,14 @@ let statuses = [];
 let regionInfo;
 let areaInfo;
 let areaBox;
+let boxRemember = {Y: 0, X: 0};
 // let login = '';
 let authorizedFlag = false;
 let logDeviceFlag = false;
 let manageFlag = false;
 let techFlag = false;
 let chatFlag = true;
+let fixationFlag = false;
 let ws;
 
 //Функция для открытия вкладки
@@ -51,6 +53,12 @@ ymaps.ready(function () {
 
     $('#changeDialog').show();
 
+    $('#password').on('keyup', function (event) {
+        if (event.key === 'Enter') {
+            check(true);
+        }
+    });
+
     //Открытие личного кабинета
     $('#manageButton').on('click', function () {
         openPage('/manage');
@@ -63,7 +71,6 @@ ymaps.ready(function () {
 
     $('#techButton').on('click', function () {
         $('#techDialog').dialog('open');
-        // openPage('/techArm?Region=1&Area=1&Area=2');
     });
 
     //Смена пароля текущего аккаунта
@@ -82,7 +89,7 @@ ymaps.ready(function () {
     //Выбор места для открытия на карте
     $('#loginButton').on('click', function () {
         $('#login').val('');
-        // $('#password').val('');
+        $('#password').val('');
         $('#loginDialog').dialog('open');
     });
 
@@ -103,8 +110,16 @@ ymaps.ready(function () {
         // });
     });
 
+    $('#changeUserButton').on('click', function () {
+        $('#login').val('');
+        $('#password').val('');
+        $('#loginDialog').dialog('open');
+    });
+
     $('#dropdownConnectionButton').on('click', function () {
-        ws.send(JSON.stringify({type: 'checkConn'}));
+        if($('#dropdownConnectionButton').attr('aria-expanded') === 'true') {
+            ws.send(JSON.stringify({type: 'checkConn'}));
+        }
     });
 
     //Проверка валидности пароля
@@ -191,6 +206,21 @@ ymaps.ready(function () {
     let map = new ymaps.Map('map', {
         center: [54.9912, 73.3685],
         zoom: 19,
+    });
+
+    $('#fixationButton').on('click', function () {
+        if (fixationFlag) {
+            map.setBounds(boxRemember);
+        } else {
+            boxRemember = map.getBounds();
+            $('#fixationButton')[0].innerText = 'Вернуться';
+            fixationFlag = true;
+        }
+    });
+
+    $('#fixationReset').on('click', function () {
+        fixationFlag = false;
+        $('#fixationButton')[0].innerText = 'Зафиксировать экран';
     });
 
     $('#switchLayout').on('change', function () {
@@ -340,27 +370,34 @@ ymaps.ready(function () {
                 ]);
                 break;
             case 'login':
-                document.cookie = ('Authorization=Bearer ' + data.token);
-                localStorage.setItem('login', data.login);
-                console.log('QqQqQ', data.areaBox);
-                authorizedFlag = data.authorizedFlag;
-                manageFlag = data.manageFlag;
-                logDeviceFlag = data.logDeviceFlag;
-                techFlag = data.techArmFlag;
-                areaBox = data.areaBox;
-                createAreasLayout(map);
+                if (data.status) {
+                    $('#login').val('');
+                    $('#password').val('');
+                    document.cookie = ('Authorization=Bearer ' + data.token);
+                    localStorage.setItem('login', data.login);
+                    // console.log('QqQqQ', data.areaBox);
+                    authorizedFlag = data.authorizedFlag;
+                    manageFlag = data.manageFlag;
+                    logDeviceFlag = data.logDeviceFlag;
+                    techFlag = data.techArmFlag;
+                    areaBox = data.areaBox;
+                    createAreasLayout(map);
 
-                if (techFlag) {
-                    makeTech(data, (data.area === null) ? areaInfo : data.area);
+                    if (techFlag) {
+                        makeTech(data, (data.area === null) ? areaInfo : data.area);
+                    }
+
+                    $('#loginDialog').dialog('close');
+                    chatFlag = true;
+                    authorize();
+                    $('#workPlace')[0].innerText = 'АСУДД "Микро" '
+                        + ((data.region === '*') ? 'Все регионы' : regionInfo[data.region])
+                        + '\nАРМ дежурного - '
+                        + data.description + '\n' + localStorage.getItem('login');
+                } else {
+                    check(false, data.message);
+                    $('#password').val('');
                 }
-
-                $('#loginDialog').dialog('close');
-                chatFlag = true;
-                authorize();
-                $('#workPlace')[0].innerText = 'АСУДД "Микро" '
-                    + ((data.region === '*') ? 'Все регионы' : regionInfo[data.region])
-                    + '\nАРМ дежурного - '
-                    + data.description + '\n' + localStorage.getItem('login');
                 break;
             case 'logOut':
                 // document.cookie = '';
@@ -368,6 +405,7 @@ ymaps.ready(function () {
                 manageFlag = false;
                 logDeviceFlag = false;
                 techFlag = false;
+                localStorage.setItem('login', '');
                 authorize();
                 $('#myForm').remove();
                 $('.open-button').remove();
@@ -378,10 +416,10 @@ ymaps.ready(function () {
                 break;
             case 'checkConn':
                 $('#databaseConnection').children().css({
-                    'background-color' : ((data.checkConn.statusBD) ? 'green' : 'red')
+                    'background-color': ((data.checkConn.statusBD) ? 'green' : 'red')
                 });
                 $('#serverConnection').children().css({
-                    'background-color' : ((data.checkConn.statusS) ? 'green' : 'red')
+                    'background-color': ((data.checkConn.statusS) ? 'green' : 'red')
                 });
                 break;
             case 'error':
@@ -474,7 +512,7 @@ ymaps.ready(function () {
         autoOpen: false,
         buttons: {
             'Подтвердить': function () {
-                check();
+                check(true);
                 //     //Проверка корректности введённых данных
                 //     if (($('#area option:selected').text() === '')) {
                 //         if (!($('#areasMsg').length) && ($('#area option:selected').text() === '')) {
@@ -698,7 +736,7 @@ function fillTechAreas($area, $region, areaInfo) {
     }
 }
 
-function check() {
+function check(sendFlag, msg) {
 
     $('#loginMsg').remove();
     $('#passwordMsg').remove();
@@ -713,29 +751,13 @@ function check() {
         return;
     }
 
-    //Отправка на сервер запроса проверки данных
-    // $.ajax({
-    //     type: 'POST',
-    //     url: window.location.origin + '/login',
-    //     data: JSON.stringify(account),
-    //     dataType: 'json',
-    //     success: function (data, text, xhr) {
-    //         if (xhr.status !== 200) return;
-    //         document.cookie = ('Authorization=Bearer ' + data.token);
-    //         //В случае успешного логина, перенаправление на участок карты данного пользователя
-    //         location.href = window.location.origin + '/user/' + $('#login').val() + '/map';
-    //     },
-    //     error: function (request) {
-    //         if (!($('#passwordMsg').length)){
-    //             $('#passwordForm').append('<div style="color: red;" id="passwordMsg"><h5>Неверный логин и/или пароль</h5></div>');
-    //         }
-    //         console.log(request.status + ' ' + request.responseText);
-    //     }
-    // });
-
-    ws.send(JSON.stringify({type: 'login', login: $('#login').val(), password: $('#password').val()}));
-    $('#login').val('');
-    $('#password').val('');
+    if (sendFlag) {
+        ws.send(JSON.stringify({type: ((localStorage.getItem('login') !== '') ? 'changeAcc' : 'login'), login: $('#login').val(), password: $('#password').val()}));
+    } else {
+        if (!($('#passwordMsg').length)) {
+            $('#passwordForm').append('<div style="color: red;" id="passwordMsg"><h5>' + msg + '</h5></div>');
+        }
+    }
     // ws.addEventListener('login', function (evt) {
     //     let allData = JSON.parse(evt.data);
     //     let data = JSON.parse(allData.data);
