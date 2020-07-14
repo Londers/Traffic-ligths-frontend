@@ -20,7 +20,9 @@ $(function () {
     ws = new WebSocket('ws://' + location.host + location.pathname + 'W' + location.search);
 
     ws.onerror = function (evt) {
-        console.log('WebsSocket error:' + evt);
+        console.log('WebsSocket error:', evt);
+        alert('Произошла ошибка, попробуйте снова');
+        window.close();
     };
 
     ws.onopen = function () {
@@ -146,7 +148,7 @@ function buildBottom() {
         $('#gps')[0].innerText = device.Status.sGPS;
         $('#addData')[0].innerText = 'М:' + device.Status.elc;
 
-        $('#technology').innerText = device.texMode;
+        $('#technology').innerText = device.techMode;
 
         $('#pk')[0].innerText = device.pk;
         $('#sk')[0].innerText = device.ck;

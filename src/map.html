@@ -103,6 +103,7 @@
                 <button class="dropdown-item" type="button" id="locationButton">Перемещение</button>
                 <button class="dropdown-item" type="button" id="fragmentButton">Фрагменты</button>
                 <button class="dropdown-item" type="button" id="fixationButton">Зафиксировать экран</button>
+                <button class="dropdown-item" type="button" id="fixationReset">Снять фиксацию</button>
             </div>
         </div>
         <div class="col-md-1 text-left">
@@ -126,7 +127,6 @@
             <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
                 <button class="dropdown-item" type="button" id="setAreaButton">Районы перемещения</button>
                 <button class="dropdown-item" type="button" id="setFragmentButton">Районы фрагментов</button>
-                <button class="dropdown-item" type="button" id="fixationReset">Снять фиксацию</button>
             </div>
         </div>
         <div class="dropdown col-md-2 text-center">
@@ -157,37 +157,46 @@
             <button id="loginButton" class="btn btn-secondary">Вход</button>
         </div>
     </div>
-    <div style="position: absolute; top: 300px; right: 50px; z-index: 2">
-        <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownLayersButton"
-                data-toggle="dropdown"
-                aria-haspopup="true" aria-expanded="false">Слои
-        </button>
-        <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-            <div class="dropdown-item">
-                <label class="form-check-label">
-                    <input type="checkbox" class="form-check-input" id="switchLayout">Районы
-                </label>
-            </div>
-            <div class="dropdown-item">
-                <label class="form-check-label">
-                    <input type="checkbox" class="form-check-input" id="camerasLayout">Камеры
-                </label>
-            </div>
-            <div class="dropdown-item">
-                <label class="form-check-label">
-                    <input type="checkbox" class="form-check-input" id="directionLayout">Направления
-                </label>
-            </div>
-            <div class="dropdown-item">
-                <label class="form-check-label">
-                    <input type="checkbox" class="form-check-input" id="trackerLayout">Трекер
-                </label>
-            </div>
-            <button class="dropdown-item" type="button" id="addLayoutButton">Добавить слой</button>
-        </div>
-    </div>
     <!--                <button class="dropdown-item" type="button" id="deviceLogButton" style="display: none;">Логи устройств</button>-->
     <!--                <button class="dropdown-item" type="button" id="techButton" style="display: none;">АРМ технолога</button>-->
+</div>
+<div style="position: absolute; top: 300px; right: 50px; z-index: 2">
+    <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownLayersButton"
+            data-toggle="dropdown"
+            aria-haspopup="true" aria-expanded="false">Слои
+    </button>
+    <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+        <div class="dropdown-item">
+            <label class="form-check-label">
+                <input type="checkbox" class="form-check-input" id="switchLayout">Районы
+            </label>
+        </div>
+        <div class="dropdown-item">
+            <label class="form-check-label">
+                <input type="checkbox" class="form-check-input" id="switchSubLayout">Подрайоны
+            </label>
+        </div>
+        <div class="dropdown-item">
+            <label class="form-check-label">
+                <input type="checkbox" class="form-check-input" id="camerasLayout">Камеры
+            </label>
+        </div>
+        <div class="dropdown-item">
+            <label class="form-check-label">
+                <input type="checkbox" class="form-check-input" id="directionLayout">Направления
+            </label>
+        </div>
+        <div class="dropdown-item">
+            <label class="form-check-label">
+                <input type="checkbox" class="form-check-input" id="trackerLayout">Трекер
+            </label>
+        </div>
+        <button class="dropdown-item" type="button" id="addLayoutButton">Добавить слой</button>
+    </div>
+</div>
+
+<div style="position: absolute; top: 250px; left: 25px; z-index: 2">
+    <button class="btn btn-secondary" type="button" id="deviceLogButton" style="display: none;">Журнал клиентов</button>
 </div>
 <div id="loginDialog" class="container-sm" style="display: none;" title="Авторизация">
     <form class="needs-validated">
@@ -222,7 +231,8 @@
                required>
     </div>
 </div>
-<div class="container-fluid border border-dark" id="map" style="max-height: 920px; position: relative; z-index: 1"></div>
+<div class="container-fluid border border-dark" id="map"
+     style="max-height: 920px; position: relative; z-index: 1"></div>
 <template id="chat">
     <button class="open-button" onclick="openForm()" style="position: fixed; z-index: 2;">Открыть чат</button>
     <div class="form-popup" id="myForm">

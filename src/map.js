@@ -2,8 +2,8 @@
 
 let currnum = -1;
 let IDs = [];
-let areaLayouts = [];
-let statuses = [];
+let areaLayout = [];
+let subareasLayout = [];
 let regionInfo;
 let areaInfo;
 let areaBox;
@@ -117,7 +117,7 @@ ymaps.ready(function () {
     });
 
     $('#dropdownConnectionButton').on('click', function () {
-        if($('#dropdownConnectionButton').attr('aria-expanded') === 'true') {
+        if ($('#dropdownConnectionButton').attr('aria-expanded') === 'true') {
             ws.send(JSON.stringify({type: 'checkConn'}));
         }
     });
@@ -223,11 +223,19 @@ ymaps.ready(function () {
         $('#fixationButton')[0].innerText = 'Зафиксировать экран';
     });
 
+    $('#switchSubLayout').on('change', function () {
+        if ($('#switchSubLayout').prop('checked')) {
+            if (subareasLayout.length === 0) createSubareasLayout(map);
+        } else {
+            if (subareasLayout.length !== 0) deleteSubareasLayout(map);
+        }
+    });
+
     $('#switchLayout').on('change', function () {
         if ($('#switchLayout').prop('checked')) {
-            if (areaLayouts.length === 0) createAreasLayout(map);
+            if (areaLayout.length === 0) createAreasLayout(map);
         } else {
-            if (areaLayouts.length !== 0) deleteAreasLayout(map);
+            if (areaLayout.length !== 0) deleteAreasLayout(map);
         }
     });
 
@@ -287,7 +295,6 @@ ymaps.ready(function () {
                 data.tflight.forEach(trafficLight => {
                     currnum = trafficLight.tlsost.num;
                     IDs.push(trafficLight.region.num + '-' + trafficLight.area.num + '-' + trafficLight.ID);
-                    statuses.push(currnum);
                     //Создание меток контроллеров на карте
                     let placemark = new ymaps.Placemark([trafficLight.points.Y, trafficLight.points.X], {
                         hintContent: trafficLight.description
@@ -343,7 +350,6 @@ ymaps.ready(function () {
                 data.tflight.forEach(trafficLight => {
                     currnum = trafficLight.tlsost.num;
                     IDs.push(trafficLight.region.num + '-' + trafficLight.area.num + '-' + trafficLight.ID);
-                    statuses.push(currnum);
                     //Создание меток контроллеров на карте
                     let placemark = new ymaps.Placemark([trafficLight.points.Y, trafficLight.points.X], {
                         hintContent: trafficLight.description
@@ -432,8 +438,8 @@ ymaps.ready(function () {
         }
     };
 
-    ws.onclose = function () {
-        console.log('disconnected');
+    ws.onclose = function (evt) {
+        console.log('disconnected', evt);
         // alert('Связь была разорвана');
         location.reload();
         // automatically try to reconnect on connection loss
@@ -581,7 +587,7 @@ let createChipsLayout = function (calculateSize) {
     }
     // Создадим макет метки.
     let Chips = ymaps.templateLayoutFactory.createClass(
-        '<div class="placemark"  style="background-image:url(\'free/img/trafficLights/' + currnum + '.svg\'); background-size: 100%"></div>', {
+        '<div class="placemark"  style="background-image:url(\'' + location.origin + '/free/img/trafficLights/' + currnum + '.svg\'); background-size: 100%"></div>', {
             build: function () {
                 Chips.superclass.build.call(this);
                 let map = this.getData().geoObject.getMap();
@@ -650,18 +656,17 @@ let calculate = function (zoom) {
     }
 };
 
-
 function createAreasLayout(map) {
     if (!$('#switchLayout').prop('checked')) return;
     areaBox.forEach(area => {
         let color = getRandomColor();
         let myRectangle = new ymaps.Rectangle([
             // Задаем координаты диагональных углов прямоугольника.
-            [area.Box.point0.Y, area.Box.point0.X],
-            [area.Box.point1.Y, area.Box.point1.X]
+            [area.box.point0.Y, area.box.point0.X],
+            [area.box.point1.Y, area.box.point1.X]
         ], {
             //Свойства
-            hintContent: 'Регион: ' + area.Region + ', Область: ' + area.Area,
+            hintContent: 'Регион: ' + area.region + ', Область: ' + area.area,
             balloonContent: 'азаза'
         }, {
             // Опции.
@@ -680,16 +685,59 @@ function createAreasLayout(map) {
             // Данная опция принимается только прямоугольником.
             borderRadius: 6
         });
-        areaLayouts.push(myRectangle);
+        areaLayout.push(myRectangle);
         map.geoObjects.add(myRectangle);
     })
 }
 
 function deleteAreasLayout(map) {
-    areaLayouts.forEach(layout => {
+    areaLayout.forEach(layout => {
         map.geoObjects.remove(layout);
     });
-    areaLayouts = [];
+    areaLayout = [];
+}
+
+function createSubareasLayout(map) {
+    if (!$('#switchSubLayout').prop('checked')) return;
+    areaBox.forEach(area => {
+        area.sub.forEach(sub => {
+            let color = getRandomColor();
+            let myRectangle = new ymaps.Rectangle([
+                // Задаем координаты диагональных углов прямоугольника.
+                [sub.box.point0.Y, sub.box.point0.X],
+                [sub.box.point1.Y, sub.box.point1.X]
+            ], {
+                //Свойства
+                hintContent: 'Регион: ' + area.region + ', Область: ' + area.area + ', Подобласть:' + sub.subArea,
+                balloonContent: 'azaza'
+            }, {
+                // Опции.
+                // Цвет и прозрачность заливки.
+                fillColor: color,
+                // Дополнительная прозрачность заливки..
+                // Итоговая прозрачность будет не #33(0.2), а 0.1(0.2*0.5).
+                fillOpacity: 0.1,
+                // Цвет обводки.
+                strokeColor: color,
+                // Прозрачность обводки.
+                strokeOpacity: 0.5,
+                // Ширина линии.
+                strokeWidth: 2,
+                // Радиус скругления углов.
+                // Данная опция принимается только прямоугольником.
+                borderRadius: 6
+            });
+            subareasLayout.push(myRectangle);
+            map.geoObjects.add(myRectangle);
+        })
+    })
+}
+
+function deleteSubareasLayout(map) {
+    subareasLayout.forEach(layout => {
+        map.geoObjects.remove(layout);
+    });
+    subareasLayout = [];
 }
 
 //Заполнение поля выбора регионов для АРМ технолога
@@ -752,7 +800,11 @@ function check(sendFlag, msg) {
     }
 
     if (sendFlag) {
-        ws.send(JSON.stringify({type: ((localStorage.getItem('login') !== '') ? 'changeAcc' : 'login'), login: $('#login').val(), password: $('#password').val()}));
+        ws.send(JSON.stringify({
+            type: ((localStorage.getItem('login') !== '') ? 'changeAcc' : 'login'),
+            login: $('#login').val(),
+            password: $('#password').val()
+        }));
     } else {
         if (!($('#passwordMsg').length)) {
             $('#passwordForm').append('<div style="color: red;" id="passwordMsg"><h5>' + msg + '</h5></div>');
