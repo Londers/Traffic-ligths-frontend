@@ -9,8 +9,8 @@ let areaInfo;
 let areaBox;
 let boxRemember = {Y: 0, X: 0};
 let description = '';
-let modeList = [];
-let modeListLength = 0;
+let routeList = [];
+let routeListLength = 0;
 let circlesList = [];
 let zoom = 19;
 // let login = '';
@@ -31,9 +31,23 @@ function getRandomColor() {
     return color;
 }
 
-function handleClick(map, coordinates, region, area, id, description) {
-    modeList.push({
-        num: modeListLength++,
+
+function handleClick(map, trafficLight) {
+    let coordinates = [trafficLight.points.Y, trafficLight.points.X];
+    let region = trafficLight.region.num;
+    let area = trafficLight.area.num;
+    let id = trafficLight.ID;
+    let description = trafficLight.description;
+    let phases = trafficLight.phases;
+    let dupCheck = false;
+
+    routeList.forEach(route => {
+        if ((route.pos.region === region) && (route.pos.area === area) && (route.pos.id === id)) dupCheck = true;
+    });
+    if (dupCheck) return;
+
+    routeList.push({
+        num: routeListLength++,
         phase: -1,
         point: {Y: coordinates[0], X: coordinates[1]},
         pos: {region: region, area: area, id: id}
@@ -44,7 +58,7 @@ function handleClick(map, coordinates, region, area, id, description) {
         // Координаты центра круга.
         coordinates,
         // Радиус круга в метрах.
-        1000
+        radiusCalculate(map._zoom)
     ], {
         // Описываем свойства круга.
         // Содержимое балуна.
@@ -72,57 +86,96 @@ function handleClick(map, coordinates, region, area, id, description) {
     // Добавляем круг на карту.
     map.geoObjects.add(myCircle);
 
-
-    let tflight = [];
     //Заполнение структуры для дальнейшей записи в таблицу
-    tflight.push({
+    let tflight = [{
         desc: description,
-        phase: -1,
-    });
+        phase: phases,
+        pos: routeListLength
+        // pos: {region: region, area: area, id: id}
+    }];
+
     $('#table').bootstrapTable('append', tflight);
     $('#table').bootstrapTable('scrollTo', 'top');
+
+    makeSelects();
+}
+
+function makeSelects() {
+    let counter = 0;
+    $('#table tbody tr').each(function () {
+        counter = 0;
+        $(this).find('td').each(function () {
+            if ((counter++ % 2) !== 0) {
+                let phases = $(this)[0].innerText.split(',');
+                let selectTxt = '';
+                phases.forEach(phase => {
+                    selectTxt += '<option value="' + phase + '">' + phase + '</option>';
+                });
+                $(this)[0].innerText = '';
+                $(this)[0].innerHTML = '<select>' + selectTxt + '</select>';
+            }
+        })
+    })
+}
+
+function fillPhases() {
+    let tfs = $('#table').bootstrapTable('getData').slice();
+    console.log(tfs);
+
+    // let retValue = '';
+    // routeList.forEach(route => {
+    //     route.num
+    //
+    //     // for (const [key, value] of Object.entries(route)) {
+    //     //     if (value) retValue += ErrorsText[key] + ', ';
+    //     // }
+    // });
+
+    // routeList.forEach(route => {
+    //     tfs.push([route.region, route.area, route.id]);
+    // })
+
 }
 
 function radiusCalculate(zoom) {
-    return zoom * 1000;
-    // switch (zoom) {
-    //     case 3:
-    //         return 128000000;
-    //     case 4:
-    //         return 64000000;
-    //     case 5:
-    //         return 32000000;
-    //     case 6:
-    //         return 16000000;
-    //     case 7:
-    //         return 8000000;
-    //     case 8:
-    //         return 4000000;
-    //     case 9:
-    //         return 2000000;
-    //     case 10:
-    //         return 1000000;
-    //     case 11:
-    //         return 500000;
-    //     case 12:
-    //         return 250000;
-    //     case 13:
-    //         return 125000;
-    //     case 14:
-    //         return 62500;
-    //     case 15:
-    //         return 31250;
-    //     case 16:
-    //         return 15625;
-    //     case 17:
-    //         return 78312;
-    //     case 18:
-    //         return 39156;
-    //     case 19:
-    //         return 19578;
-    //     default:
-    //         return 250000;
-    // }
+    switch (zoom) {
+        case 3:
+            return 32000;
+        case 4:
+            return 16000;
+        case 5:
+            return 8000;
+        case 6:
+            return 4000;
+        case 7:
+            return 2000;
+        case 8:
+            return 1000;
+        case 9:
+            return 750;
+        case 10:
+            return 500;
+        case 11:
+            return 300;
+        case 12:
+            return 200;
+        case 13:
+            return 150;
+        case 14:
+            return 130;
+        case 15:
+            return 100;
+        case 16:
+            return 60;
+        case 17:
+            return 40;
+        case 18:
+            return 30;
+        case 19:
+            return 25;
+        default:
+            return 25000;
+    }
 }
 
 function circlesControl(map) {
@@ -131,9 +184,7 @@ function circlesControl(map) {
             map.geoObjects.remove(circle);
         });
         circlesList.forEach(circle => {
-            // console.log(circle.geometry.radius + ' --- ' + map._zoom);
             circle.geometry.setRadius(radiusCalculate(map._zoom));
-            // console.log(circle.geometry.radius + ' --- ' + map._zoom);
             map.geoObjects.add(circle);
         });
         zoom = map._zoom;
@@ -155,15 +206,7 @@ ymaps.ready(function () {
         zoom: 19,
     });
 
-    map.events.add('wheel', function () {
-        circlesControl(map);
-    });
-
-    map.events.add('mousemove', function () {
-        circlesControl(map);
-    });
-
-    map.events.add('click', function () {
+    map.events.add(['wheel', 'mousemove', 'click'], function () {
         circlesControl(map);
     });
 
@@ -198,8 +241,9 @@ ymaps.ready(function () {
         }
     });
 
-    $('#sendModeButton').on('click', function () {
-        ws.send(JSON.stringify({type: 'createMode', description: description, listTL: modeList}));
+    $('#sendRouteButton').on('click', function () {
+        fillPhases();
+        ws.send(JSON.stringify({type: 'createRoute', description: description, listTL: routeList}));
     });
     ws = new WebSocket('ws://' + location.host + location.pathname + 'W');
 
@@ -261,7 +305,7 @@ ymaps.ready(function () {
                     });
                     //Функция для вызова АРМ нажатием на контроллер
                     placemark.events.add('click', function () {
-                        handleClick(map, [trafficLight.points.Y, trafficLight.points.X], trafficLight.region.num, trafficLight.area.num, trafficLight.ID, trafficLight.description);
+                        handleClick(map, trafficLight);
                     });
                     //Добавление метки контроллера на карту
                     map.geoObjects.add(placemark);
@@ -286,7 +330,7 @@ ymaps.ready(function () {
                             })
                         });
                         placemark.events.add('click', function () {
-                            handleClick(map, [trafficLight.points.Y, trafficLight.points.X], trafficLight.region.num, trafficLight.area.num, trafficLight.ID, trafficLight.description);
+                            handleClick(map, trafficLight);
                         });
                         //Замена метки контроллера со старым состоянием на метку с новым
                         map.geoObjects.splice(index, 1, placemark);
@@ -310,7 +354,7 @@ ymaps.ready(function () {
                     });
                     //Функция для вызова АРМ нажатием на контроллер
                     placemark.events.add('click', function () {
-                        handleClick(map, [trafficLight.points.Y, trafficLight.points.X], trafficLight.region.num, trafficLight.area.num, trafficLight.ID, trafficLight.description);
+                        handleClick(map, trafficLight);
                     });
                     //Добавление метки контроллера на карту
                     map.geoObjects.add(placemark);
@@ -324,7 +368,7 @@ ymaps.ready(function () {
                     [data.boxPoint.point1.Y, data.boxPoint.point1.X]
                 ]);
                 break;
-            case 'createMode':
+            case 'createRoute':
                 if (data.error) {
                     alert(data.error);
                     return;
@@ -332,11 +376,11 @@ ymaps.ready(function () {
                 let color = getRandomColor();
                 let myRectangle = new ymaps.Rectangle([
                     // Задаем координаты диагональных углов прямоугольника.
-                    [data.mode.box.point0.Y, data.mode.box.point0.X],
-                    [data.mode.box.point1.Y, data.mode.box.point1.X]
+                    [data.route.box.point0.Y, data.route.box.point0.X],
+                    [data.route.box.point1.Y, data.route.box.point1.X]
                 ], {
                     //Свойства
-                    hintContent: data.mode.description,
+                    hintContent: data.route.description,
                     balloonContent: 'azaza'
                 }, {
                     // Опции.
@@ -460,12 +504,12 @@ let createChipsLayout = function (calculateSize) {
 //Мастшабирование иконов светофороф на карте
 let calculate = function (zoom) {
     switch (zoom) {
-//		          case 11:
-//		            return 5;
-//		          case 12:
-//		            return 10;
-//		          case 13:
-//		            return 20;
+        case 11:
+            return 5;
+        case 12:
+            return 10;
+        case 13:
+            return 20;
         case 14:
             return 30;
         case 15:
