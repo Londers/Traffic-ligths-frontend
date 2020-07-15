@@ -117,8 +117,12 @@
             <button class="dropdown-item" type="button" id="fixationReset">Снять фиксацию</button>
         </div>
     </div>
-    <div class="col-md-6 text-center">
+    <div class="col-md-3 text-center">
         <button id="sendRouteButton" class="btn btn-secondary">Создать режим</button>
+    </div>
+    <div class="col-md-3 text-center">
+        <select id="routes">
+        </select>
     </div>
 </div>
 <div class="container-fluid border border-dark" id="map"
@@ -143,7 +147,7 @@
     <tr>
         <th class="sorting" data-field="desc">Описание</th>
         <th class="sorting" data-field="phase" data-editable="true">Фаза</th>
-        <th data-visible="false" data-field="place">Место</th>
+        <th data-visible="false" data-field="id">id</th>
     </tr>
     </thead>
     <tbody>

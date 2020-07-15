@@ -11,6 +11,8 @@ let boxRemember = {Y: 0, X: 0};
 let description = '';
 let routeList = [];
 let routeListLength = 0;
+let allRoutesList = [];
+let lastRoute = {};
 let circlesList = [];
 let zoom = 19;
 // let login = '';
@@ -90,7 +92,7 @@ function handleClick(map, trafficLight) {
     let tflight = [{
         desc: description,
         phase: phases,
-        pos: routeListLength
+        id: routeListLength - 1
         // pos: {region: region, area: area, id: id}
     }];
 
@@ -119,22 +121,14 @@ function makeSelects() {
 }
 
 function fillPhases() {
-    let tfs = $('#table').bootstrapTable('getData').slice();
-    console.log(tfs);
 
-    // let retValue = '';
-    // routeList.forEach(route => {
-    //     route.num
-    //
-    //     // for (const [key, value] of Object.entries(route)) {
-    //     //     if (value) retValue += ErrorsText[key] + ', ';
-    //     // }
-    // });
-
-    // routeList.forEach(route => {
-    //     tfs.push([route.region, route.area, route.id]);
-    // })
-
+    let selects = $('#table').find('select');
+    let counter = 0;
+    routeList.slice().forEach(route => {
+        route.phase = Number(selects[counter].selectedOptions[0].innerText);
+        routeList[counter++] = route;
+    });
+    ws.send(JSON.stringify({type: 'createRoute', description: description, listTL: routeList}))
 }
 
 function radiusCalculate(zoom) {
@@ -191,6 +185,38 @@ function circlesControl(map) {
     }
 }
 
+function setRouteArea(map, box, description) {
+    map.geoObjects.remove(lastRoute);
+    let color = getRandomColor();
+    let myRectangle = new ymaps.Rectangle([
+        // Задаем координаты диагональных углов прямоугольника.
+        [box.point0.Y, box.point0.X],
+        [box.point1.Y, box.point1.X]
+    ], {
+        //Свойства
+        hintContent: description,
+        balloonContent: 'azaza'
+    }, {
+        // Опции.
+        // Цвет и прозрачность заливки.
+        fillColor: color,
+        // Дополнительная прозрачность заливки..
+        // Итоговая прозрачность будет не #33(0.2), а 0.1(0.2*0.5).
+        fillOpacity: 0.1,
+        // Цвет обводки.
+        strokeColor: color,
+        // Прозрачность обводки.
+        strokeOpacity: 0.5,
+        // Ширина линии.
+        strokeWidth: 2,
+        // Радиус скругления углов.
+        // Данная опция принимается только прямоугольником.
+        borderRadius: 6
+    });
+    lastRoute = myRectangle;
+    map.geoObjects.add(myRectangle);
+}
+
 ymaps.ready(function () {
     $('#dropdownLayersButton').trigger('click');
     $('#dropdownControlButton').trigger('click');
@@ -243,8 +269,15 @@ ymaps.ready(function () {
 
     $('#sendRouteButton').on('click', function () {
         fillPhases();
-        ws.send(JSON.stringify({type: 'createRoute', description: description, listTL: routeList}));
     });
+
+    $('#routes').on('change', function () {
+        let selected = Number($(this)[0].selectedOptions[0].value);
+        allRoutesList.forEach(route => {
+           if (route.id === selected) setRouteArea(map, route.box, route.description);
+        });
+    });
+
     ws = new WebSocket('ws://' + location.host + location.pathname + 'W');
 
     ws.onerror = function (evt) {
@@ -264,10 +297,9 @@ ymaps.ready(function () {
         // localStorage.setItem("maintab", "closed");
         switch (allData.type) {
             case 'mapInfo':
+                allRoutesList = data.routes;
                 regionInfo = data.regionInfo;
                 areaInfo = data.areaInfo;
-                // let techRegionInfo = (data.region === '*') ? regionInfo : data.region;
-                // let techAreaInfo = (data.area === null) ? areaInfo : data.area;
                 if ((areaBox === undefined) && (data.areaBox !== undefined)) {
                     areaBox = data.areaBox;
                     createAreasLayout(map);
@@ -310,6 +342,11 @@ ymaps.ready(function () {
                     //Добавление метки контроллера на карту
                     map.geoObjects.add(placemark);
                 });
+
+                data.routes.forEach(route => {
+                   $('#routes').append(new Option(route.description+'poka huinya'+route.id, route.id));
+                });
+                // .append(new Option(regionInfo[reg], reg));
                 break;
             case 'tflight':
                 if (data.tflight === null) {
@@ -373,34 +410,10 @@ ymaps.ready(function () {
                     alert(data.error);
                     return;
                 }
-                let color = getRandomColor();
-                let myRectangle = new ymaps.Rectangle([
-                    // Задаем координаты диагональных углов прямоугольника.
-                    [data.route.box.point0.Y, data.route.box.point0.X],
-                    [data.route.box.point1.Y, data.route.box.point1.X]
-                ], {
-                    //Свойства
-                    hintContent: data.route.description,
-                    balloonContent: 'azaza'
-                }, {
-                    // Опции.
-                    // Цвет и прозрачность заливки.
-                    fillColor: color,
-                    // Дополнительная прозрачность заливки..
-                    // Итоговая прозрачность будет не #33(0.2), а 0.1(0.2*0.5).
-                    fillOpacity: 0.1,
-                    // Цвет обводки.
-                    strokeColor: color,
-                    // Прозрачность обводки.
-                    strokeOpacity: 0.5,
-                    // Ширина линии.
-                    strokeWidth: 2,
-                    // Радиус скругления углов.
-                    // Данная опция принимается только прямоугольником.
-                    borderRadius: 6
-                });
-                subareasLayout.push(myRectangle);
-                map.geoObjects.add(myRectangle);
+                $('#routes').append(new Option(data.route.description+'new poka huinya'+data.route.id, data.route.id));
+                $('#routes option[value=' + data.route.id + ']').attr('selected', 'selected');
+
+                setRouteArea(map, data.route.box, data.route.description);
                 break;
             case 'error':
                 break;
