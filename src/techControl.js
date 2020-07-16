@@ -1,5 +1,6 @@
 let crossesSave = [];
 let devicesSave = [];
+let currIdevice = -1;
 let ws;
 
 //Функция для открытия вкладки
@@ -12,6 +13,10 @@ function openPage(url) {
  */
 function sortByID(a, b) {
     return a.id - b.id;
+}
+
+function sendGPRS() {
+    //TODO implement functional
 }
 
 $(function () {
@@ -39,6 +44,13 @@ $(function () {
             case 'armInfo':
                 crossesSave = data.crosses.sort(sortByID);
                 devicesSave = data.devices;
+                let gps = data.gps.ip.split('.');
+                $('#gprs1').val(gps[0]);
+                $('#gprs2').val(gps[1]);
+                $('#gprs3').val(gps[2]);
+                $('#gprs4').val(gps[3]);
+                $('#port').val(data.gps.port);
+
                 buildTable(true);
                 break;
             case 'crosses':
@@ -63,6 +75,29 @@ $(function () {
     ws.onclose = function (evt) {
         console.log('disconnected', evt);
     };
+
+    //Всплывающее окно для изменения настроек GPRS
+    $('#gprsDialog').dialog({
+        autoOpen: false,
+        buttons: {
+            'Отправить': function () {
+                sendGPRS();
+                $(this).dialog('close');
+            },
+            'Отмена': function () {
+                $(this).dialog('close');
+            }
+        },
+        maxWidth: window.screen.width,
+        maxHeight: window.screen.height,
+        width: window.screen.width/2,
+        height: window.screen.height/2,
+        modal: true,
+        resizable: false,
+        close: function () {
+            // $('#areasMsg').remove();
+        }
+    });
 });
 
 function buildTable(firstLoadFlag) {
@@ -154,10 +189,15 @@ function buildBottom() {
         $('#sk')[0].innerText = device.ck;
         $('#nk')[0].innerText = device.nk;
 
-        $('#sfSwitch').unbind().on('click', function () {
+        $('#sfSwitchButton').unbind().on('click', function () {
             (device.StatusCommandDU.IsReqSFDK1) ?
                 controlSend({id: cross.idevice, cmd: 4, param: 0}) :
                 controlSend({id: cross.idevice, cmd: 4, param: 1});
+        });
+
+        $('#changeGPRSButton').unbind().on('click', function () {
+            $('#exTimeD').val(device.Status.tobm);
+            $('#gprsDialog').dialog('open');
         });
 
         $('#lastOp')[0].innerText = timeFormat(device.ltime);
@@ -187,7 +227,8 @@ function buildBottom() {
         $('#sk')[0].innerText = '';
         $('#nk')[0].innerText = '';
 
-        $('#sfSwitch').unbind();
+        $('#sfSwitchButton').unbind();
+        $('#gprsDialog').unbind();
 
         $('#lastOp')[0].innerText = '';
 
@@ -315,10 +356,9 @@ function switchArrayType(type) {
     local true => устройство загружается
 
    TODO:   в таблице время ПК!!!!
-    время1 слева - момент запуска (становится красным если разница больше минуты (пк и устройство))
-    время2 снизу - максимальное ожидание ответа сбоку 3, красный >8 секунд (от отправки изменений с АРМ, до ответа устройства)
+    время1 слева - момент запуска (становится красным если разница больше минуты (пк и устройство))    ЮВ сказал нет
+    время2 снизу - максимальное ожидание ответа сбоку 3, красный >8 секунд (от отправки изменений с АРМ, до ответа устройства) Ожидание ответа (дефолт 8сек), если больше - красить красным
     кнопки
-            Контроль - меню "контроль"?
             GRPS-обмен - меню ?
             Сброс отв. - сброс и новый счетчик
     если типы устройтв не совпадают, слева сверху красным загореться

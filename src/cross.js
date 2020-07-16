@@ -22,12 +22,6 @@ $(function () {
     // };
     ws.onclose = function (evt) {
         console.log('disconnected', evt);
-        if (evt.reason !== '') {
-            alert(evt.reason);
-        } else {
-            alert('Потеряна связь с сервером');
-        }
-        window.close();
     };
 
     let $table = $('#table');
@@ -47,7 +41,7 @@ $(function () {
         let data = allData.data;
         let counter = 0;
         switch (allData.type) {
-            case "crossBuild":
+            case 'crossBuild':
                 let state = data.state;
                 let controlCrossFlag = data.controlCrossFlag;
                 let region = data.cross.region.num;
@@ -231,14 +225,14 @@ $(function () {
                 });
                 buildTable(data.phase);
                 break;
-            case "changeEdit":
+            case 'changeEdit':
                 console.log('edit:' + data.edit);
                 editFlag = data.edit;
                 if (editFlag) controlSend({id: idevice, cmd: 4, param: 1});
                 checkEdit();
                 checkConnection();
                 break;
-            case "dispatch":
+            case 'dispatch':
                 console.log('dispatch', data);
                 let time = new Date();
                 let strTime = '';
@@ -276,7 +270,7 @@ $(function () {
                     // }
                 }).bootstrapTable('scrollTo', 'top');
                 break;
-            case "crossUpdate":
+            case 'crossUpdate':
                 console.log('crossUpdate', data);
                 $('#status').html('Статус: ' + data.status.description);
                 $('#pk').find('option').each(function () {
@@ -338,10 +332,19 @@ $(function () {
                     $(this).removeAttr('selected');
                 });
                 break;
-            case "phase":
+            case 'phase':
                 console.log('phase ', data);
                 //Обработка таблицы
                 buildTable(data);
+                break;
+            case 'close':
+                if (editFlag) controlSend({id: idevice, cmd: 4, param: 0});
+                if (allData.message !== '') {
+                    alert(allData.message);
+                } else {
+                    alert('Потеряна связь с сервером');
+                }
+                window.close();
                 break;
             case 'error':
                 console.log('error');

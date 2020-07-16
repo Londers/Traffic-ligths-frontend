@@ -895,7 +895,6 @@ function boundsCalc(tab, clicked, key) {
 
 //Заполнение вкладки "Основные"
 function mainTabFill(data, firstLoadFlag) {
-    let state = data.state;
     for (let area in data.areaMap) {
         if (firstLoadFlag) $('#area').append(new Option(data.areaMap[area], area));
     }
