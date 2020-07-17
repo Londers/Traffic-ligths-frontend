@@ -15,6 +15,7 @@ let allRoutesList = [];
 let lastRoute = {};
 let circlesList = [];
 let zoom = 19;
+let tflights = [];
 // let login = '';
 let fixationFlag = false;
 let ws;
@@ -48,6 +49,10 @@ function handleClick(map, trafficLight) {
     });
     if (dupCheck) return;
 
+    if (routeListLength > 0) {
+        if (routeList[routeListLength - 1].pos.region !== region) return;
+    }
+
     routeList.push({
         num: routeListLength++,
         phase: -1,
@@ -56,7 +61,7 @@ function handleClick(map, trafficLight) {
     });
 
     // Создаем круг.
-    var myCircle = new ymaps.Circle([
+    let myCircle = new ymaps.Circle([
         // Координаты центра круга.
         coordinates,
         // Радиус круга в метрах.
@@ -121,14 +126,19 @@ function makeSelects() {
 }
 
 function fillPhases() {
-
+    if (routeListLength === 0) return;
     let selects = $('#table').find('select');
     let counter = 0;
     routeList.slice().forEach(route => {
         route.phase = Number(selects[counter].selectedOptions[0].innerText);
         routeList[counter++] = route;
     });
-    ws.send(JSON.stringify({type: 'createRoute', description: description, listTL: routeList}))
+    ws.send(JSON.stringify({
+        type: 'createRoute',
+        description: description,
+        region: routeList[0].pos.region,
+        listTL: routeList
+    }))
 }
 
 function radiusCalculate(zoom) {
@@ -168,7 +178,7 @@ function radiusCalculate(zoom) {
         case 19:
             return 25;
         default:
-            return 25000;
+            return 20;
     }
 }
 
@@ -185,36 +195,27 @@ function circlesControl(map) {
     }
 }
 
-function setRouteArea(map, box, description) {
+function setRouteArea(map, box, description, routeId) {
     map.geoObjects.remove(lastRoute);
-    let color = getRandomColor();
-    let myRectangle = new ymaps.Rectangle([
-        // Задаем координаты диагональных углов прямоугольника.
-        [box.point0.Y, box.point0.X],
-        [box.point1.Y, box.point1.X]
-    ], {
-        //Свойства
-        hintContent: description,
-        balloonContent: 'azaza'
-    }, {
-        // Опции.
-        // Цвет и прозрачность заливки.
-        fillColor: color,
-        // Дополнительная прозрачность заливки..
-        // Итоговая прозрачность будет не #33(0.2), а 0.1(0.2*0.5).
-        fillOpacity: 0.1,
-        // Цвет обводки.
-        strokeColor: color,
-        // Прозрачность обводки.
-        strokeOpacity: 0.5,
-        // Ширина линии.
-        strokeWidth: 2,
-        // Радиус скругления углов.
-        // Данная опция принимается только прямоугольником.
-        borderRadius: 6
+    let coordinates = [];
+    allRoutesList[routeId].listTL.forEach(tf => {
+        coordinates.push([tf.point.Y, tf.point.X])
     });
-    lastRoute = myRectangle;
-    map.geoObjects.add(myRectangle);
+
+    // Построение маршрута.
+    // По умолчанию строится автомобильный маршрут.
+    let multiRoute = new ymaps.multiRouter.MultiRoute({
+        // Точки маршрута. Точки могут быть заданы как координатами, так и адресом.
+        referencePoints:
+        coordinates
+    }, {
+        // Автоматически устанавливать границы карты так,
+        // чтобы маршрут был виден целиком.
+        boundsAutoApply: true
+    });
+
+    lastRoute = multiRoute;
+    map.geoObjects.add(multiRoute);
 }
 
 ymaps.ready(function () {
@@ -272,9 +273,11 @@ ymaps.ready(function () {
     });
 
     $('#routes').on('change', function () {
+        let counter = 0;
         let selected = Number($(this)[0].selectedOptions[0].value);
         allRoutesList.forEach(route => {
-           if (route.id === selected) setRouteArea(map, route.box, route.description);
+            if (route.id === selected) setRouteArea(map, route.box, route.description, counter);
+            counter++;
         });
     });
 
@@ -300,11 +303,12 @@ ymaps.ready(function () {
                 allRoutesList = data.routes;
                 regionInfo = data.regionInfo;
                 areaInfo = data.areaInfo;
+                tflights = data.tflight;
                 if ((areaBox === undefined) && (data.areaBox !== undefined)) {
                     areaBox = data.areaBox;
                     createAreasLayout(map);
                 }
-
+                // convexHullTry(map, data.hull);
                 //Заполнение поля выбора регионов для перемещения
                 for (let reg in regionInfo) {
                     $('#region').append(new Option(regionInfo[reg], reg));
@@ -344,7 +348,7 @@ ymaps.ready(function () {
                 });
 
                 data.routes.forEach(route => {
-                   $('#routes').append(new Option(route.description+'poka huinya'+route.id, route.id));
+                    $('#routes').append(new Option(route.description + 'poka huinya' + route.id, route.id));
                 });
                 // .append(new Option(regionInfo[reg], reg));
                 break;
@@ -410,10 +414,11 @@ ymaps.ready(function () {
                     alert(data.error);
                     return;
                 }
-                $('#routes').append(new Option(data.route.description+'new poka huinya'+data.route.id, data.route.id));
+                $('#routes').append(new Option(data.route.description + 'new poka huinya' + data.route.id, data.route.id));
                 $('#routes option[value=' + data.route.id + ']').attr('selected', 'selected');
 
-                setRouteArea(map, data.route.box, data.route.description);
+                allRoutesList.push(data.route);
+                setRouteArea(map, data.route.box, data.route.description, allRoutesList.length - 1);
                 break;
             case 'error':
                 break;
@@ -541,8 +546,48 @@ let calculate = function (zoom) {
     }
 };
 
+// function convexHullTry(map, coords) {
+//     let coordinates = [];
+//     coords.forEach(point => {
+//         coordinates.push([point.Y, point.X]);
+//     });
+//     // Создаем многоугольник, используя вспомогательный класс Polygon.
+//     var myPolygon = new ymaps.Polygon([
+//         // Указываем координаты вершин многоугольника.
+//         // Координаты вершин внешнего контура.
+//         coordinates,
+//         // Координаты вершин внутреннего контура.
+//         [
+//             [0, 0]
+//         ]
+//     ], {
+//         // Описываем свойства геообъекта.
+//         // Содержимое балуна.
+//         hintContent: "Многоугольник"
+//     }, {
+//         // Задаем опции геообъекта.
+//         // Цвет заливки.
+//         fillColor: '#00FF0088',
+//         // Ширина обводки.
+//         strokeWidth: 5
+//     });
+//
+//     // Добавляем многоугольник на карту.
+//     map.geoObjects.add(myPolygon);
+// }
+
 function createAreasLayout(map) {
     if (!$('#switchLayout').prop('checked')) return;
+    // let areas = [];
+    // areaBox.forEach(area => {
+    //     let areaSet = [];
+    //     tflights.forEach(tflight => {
+    //         if (tflight.area.nameArea === area.area) areaSet.push({y: tflight.points.Y, x: tflight.points.X});
+    //     });
+    //     areas.push(areaSet);
+    // });
+    // console.log('CH+++', convexHull(areas[0]));
+
     areaBox.forEach(area => {
         let color = getRandomColor();
         let myRectangle = new ymaps.Rectangle([
