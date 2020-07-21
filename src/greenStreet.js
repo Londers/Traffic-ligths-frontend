@@ -6,7 +6,7 @@ let areaLayout = [];
 let subareasLayout = [];
 let regionInfo;
 let areaInfo;
-let areaBox;
+let areaZone;
 let boxRemember = {Y: 0, X: 0};
 let description = '';
 let routeList = [];
@@ -304,8 +304,8 @@ ymaps.ready(function () {
                 regionInfo = data.regionInfo;
                 areaInfo = data.areaInfo;
                 tflights = data.tflight;
-                if ((areaBox === undefined) && (data.areaBox !== undefined)) {
-                    areaBox = data.areaBox;
+                if ((areaZone === undefined) && (data.areaZone !== undefined)) {
+                    areaZone = data.areaZone;
                     createAreasLayout(map);
                 }
                 // convexHullTry(map, data.hull);
@@ -400,7 +400,7 @@ ymaps.ready(function () {
                     //Добавление метки контроллера на карту
                     map.geoObjects.add(placemark);
                 });
-                areaBox = data.areaBox;
+                areaZone = data.areaZone;
                 createAreasLayout(map);
                 break;
             case 'jump':
@@ -522,12 +522,12 @@ let createChipsLayout = function (calculateSize) {
 //Мастшабирование иконов светофороф на карте
 let calculate = function (zoom) {
     switch (zoom) {
-        case 11:
-            return 5;
-        case 12:
-            return 10;
-        case 13:
-            return 20;
+        // case 11:
+        //     return 5;
+        // case 12:
+        //     return 10;
+        // case 13:
+        //     return 20;
         case 14:
             return 30;
         case 15:
@@ -541,82 +541,16 @@ let calculate = function (zoom) {
         case 19:
             return 130;
         default:
-            return 25;
+            return 20;
         // return 80;
     }
 };
 
-// function convexHullTry(map, coords) {
-//     let coordinates = [];
-//     coords.forEach(point => {
-//         coordinates.push([point.Y, point.X]);
-//     });
-//     // Создаем многоугольник, используя вспомогательный класс Polygon.
-//     var myPolygon = new ymaps.Polygon([
-//         // Указываем координаты вершин многоугольника.
-//         // Координаты вершин внешнего контура.
-//         coordinates,
-//         // Координаты вершин внутреннего контура.
-//         [
-//             [0, 0]
-//         ]
-//     ], {
-//         // Описываем свойства геообъекта.
-//         // Содержимое балуна.
-//         hintContent: "Многоугольник"
-//     }, {
-//         // Задаем опции геообъекта.
-//         // Цвет заливки.
-//         fillColor: '#00FF0088',
-//         // Ширина обводки.
-//         strokeWidth: 5
-//     });
-//
-//     // Добавляем многоугольник на карту.
-//     map.geoObjects.add(myPolygon);
-// }
-
 function createAreasLayout(map) {
     if (!$('#switchLayout').prop('checked')) return;
-    // let areas = [];
-    // areaBox.forEach(area => {
-    //     let areaSet = [];
-    //     tflights.forEach(tflight => {
-    //         if (tflight.area.nameArea === area.area) areaSet.push({y: tflight.points.Y, x: tflight.points.X});
-    //     });
-    //     areas.push(areaSet);
-    // });
-    // console.log('CH+++', convexHull(areas[0]));
-
-    areaBox.forEach(area => {
-        let color = getRandomColor();
-        let myRectangle = new ymaps.Rectangle([
-            // Задаем координаты диагональных углов прямоугольника.
-            [area.box.point0.Y, area.box.point0.X],
-            [area.box.point1.Y, area.box.point1.X]
-        ], {
-            //Свойства
-            hintContent: 'Регион: ' + area.region + ', Область: ' + area.area,
-            balloonContent: 'азаза'
-        }, {
-            // Опции.
-            // Цвет и прозрачность заливки.
-            fillColor: color,
-            // Дополнительная прозрачность заливки..
-            // Итоговая прозрачность будет не #33(0.2), а 0.1(0.2*0.5).
-            fillOpacity: 0.1,
-            // Цвет обводки.
-            strokeColor: color,
-            // Прозрачность обводки.
-            strokeOpacity: 0.5,
-            // Ширина линии.
-            strokeWidth: 2,
-            // Радиус скругления углов.
-            // Данная опция принимается только прямоугольником.
-            borderRadius: 6
-        });
-        areaLayout.push(myRectangle);
-        map.geoObjects.add(myRectangle);
+    areaZone.forEach(area => {
+        let polygon = convexHullTry(map, area.zone, 'Регион: ' + area.region + ', Область: ' + area.area);
+        areaLayout.push(polygon);
     })
 }
 
@@ -629,36 +563,10 @@ function deleteAreasLayout(map) {
 
 function createSubareasLayout(map) {
     if (!$('#switchSubLayout').prop('checked')) return;
-    areaBox.forEach(area => {
+    areaZone.forEach(area => {
         area.sub.forEach(sub => {
-            let color = getRandomColor();
-            let myRectangle = new ymaps.Rectangle([
-                // Задаем координаты диагональных углов прямоугольника.
-                [sub.box.point0.Y, sub.box.point0.X],
-                [sub.box.point1.Y, sub.box.point1.X]
-            ], {
-                //Свойства
-                hintContent: 'Регион: ' + area.region + ', Область: ' + area.area + ', Подобласть:' + sub.subArea,
-                balloonContent: 'azaza'
-            }, {
-                // Опции.
-                // Цвет и прозрачность заливки.
-                fillColor: color,
-                // Дополнительная прозрачность заливки..
-                // Итоговая прозрачность будет не #33(0.2), а 0.1(0.2*0.5).
-                fillOpacity: 0.1,
-                // Цвет обводки.
-                strokeColor: color,
-                // Прозрачность обводки.
-                strokeOpacity: 0.5,
-                // Ширина линии.
-                strokeWidth: 2,
-                // Радиус скругления углов.
-                // Данная опция принимается только прямоугольником.
-                borderRadius: 6
-            });
-            subareasLayout.push(myRectangle);
-            map.geoObjects.add(myRectangle);
+            let polygon = convexHullTry(map, sub.zone, 'Регион: ' + area.region + ', Область: ' + area.area + ', Подобласть:' + sub.subArea);
+            subareasLayout.push(polygon);
         })
     })
 }
@@ -668,6 +576,39 @@ function deleteSubareasLayout(map) {
         map.geoObjects.remove(layout);
     });
     subareasLayout = [];
+}
+
+function convexHullTry(map, coords, description) {
+    let color = getRandomColor();
+    let coordinates = [];
+    coords.forEach(point => {
+        coordinates.push([point.Y, point.X]);
+    });
+    // Создаем многоугольник, используя вспомогательный класс Polygon.
+    var myPolygon = new ymaps.Polygon([
+        // Указываем координаты вершин многоугольника.
+        // Координаты вершин внешнего контура.
+        coordinates,
+        // Координаты вершин внутреннего контура.
+        [
+            [0, 0]
+        ]
+    ], {
+        // Описываем свойства геообъекта.
+        // Содержимое балуна.
+        hintContent: description
+    }, {
+        // Задаем опции геообъекта.
+        // Цвет заливки.
+        fillColor: color,
+        fillOpacity: 0.1,
+        // Ширина обводки.
+        strokeWidth: 5
+    });
+
+    // Добавляем многоугольник на карту.
+    map.geoObjects.add(myPolygon);
+    return myPolygon;
 }
 
 //Заполнение поля выбора районов для создания или изменения пользователя

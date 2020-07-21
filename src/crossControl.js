@@ -104,9 +104,6 @@ $(function () {
     ws.onopen = function () {
         console.log('connected');
     };
-    // ws.onmessage = function (evt) {
-    //     console.log(JSON.parse(evt.data));
-    // };
     ws.onclose = function (evt) {
         console.log('disconnected', evt);
         if (evt.reason !== '') {
@@ -152,14 +149,14 @@ $(function () {
                 checkEdit();
                 break;
             case 'deleteB':
-                if (Number(data.pos.area) !== unmodifiedData.state.area) {
-                    let search = location.search
-                        .replace('Area=' + unmodifiedData.state.area, 'Area=' + data.pos.area)
-                        .replace('ID=' + unmodifiedData.state.id, 'ID=' + data.pos.id);
-                    location.href = location.pathname + search;
-                } else {
+                // if (Number(data.pos.area) !== unmodifiedData.state.area) {
+                //     let search = location.search
+                //         .replace('Area=' + unmodifiedData.state.area, 'Area=' + data.pos.area)
+                //         .replace('ID=' + unmodifiedData.state.id, 'ID=' + data.pos.id);
+                //     location.href = location.pathname + search;
+                // } else {
                     (data.status) ? window.close() : alert('Не удалось удалить перекрёсток');
-                }
+                // }
                 break;
             case 'checkB':
                 console.log('checkB');
@@ -230,11 +227,6 @@ $(function () {
         if (data.state.area === unmodifiedData.state.area) {
             ws.send(JSON.stringify({type: 'sendB', state: data.state}));
         } else {
-            ws.send(JSON.stringify({
-                type: 'deleteB',
-                state: unmodifiedData.state,
-                pos: {id: Number($('#id').val()), area: $('#area').val()}
-            }));
             ws.send(JSON.stringify({type: 'createB', state: data.state}));
         }
     });
@@ -255,8 +247,7 @@ $(function () {
         if (confirm('Вы уверены? Перекрёсток будет безвозвратно удалён.')) {
             ws.send(JSON.stringify({
                 type: 'deleteB',
-                state: data.state,
-                pos: {id: Number($('#id').val()), area: $('#area').val()}
+                state: data.state
             }));
         }
     });

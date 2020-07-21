@@ -35,12 +35,16 @@ $(function () {
             devices = data.devices.slice();
             let counter = 0;
             data.devices.forEach(device => {
-                let region = regionInfo[devices[counter].region];
-                let area = areaInfo[region][devices[counter].area];
-                device.region = region;
-                device.area = area;
-                IDs.push({ID: device.ID, description: device.description});
-                devices[counter++].ID = '';
+                let region, area;
+                if (device.idevice !== -1) {
+                    region = regionInfo[devices[counter].region];
+                    area = areaInfo[region][devices[counter].area];
+                    device.region = region;
+                    device.area = area;
+                    IDs.push({ID: device.ID, description: device.description});
+                    devices[counter].ID = '';
+                }
+                counter++;
             });
             console.log(data);
 
@@ -188,7 +192,7 @@ function timeCalc(now, offset) {
 }
 
 function findIdByDescription(description) {
-    let id;
+    let id = 0;
     IDs.forEach(ID => {
         if (ID.description === description) id = ID.ID;
     });
@@ -201,7 +205,7 @@ function getRegionNum(region) {
     for (let reg in regionInfo) {
         if (regionInfo[reg] === region) num = reg;
     }
-    return num;
+    return num.toString();
 }
 
 //Получение номера района по описанию

@@ -6,7 +6,7 @@ let areaLayout = [];
 let subareasLayout = [];
 let regionInfo;
 let areaInfo;
-let areaBox;
+let areaZone;
 let boxRemember = {Y: 0, X: 0};
 // let login = '';
 let authorizedFlag = false;
@@ -66,10 +66,10 @@ ymaps.ready(function () {
 
     //Открытие вкладки с логами устройств
     $('#deviceLogButton').on('click', function () {
-        openPage('/map/deviceLog');
+        openPage('/deviceLog');
     });
 
-    $('#techButton').on('click', function () {
+    $('#techArmButton').on('click', function () {
         $('#techDialog').dialog('open');
     });
 
@@ -114,6 +114,15 @@ ymaps.ready(function () {
         $('#login').val('');
         $('#password').val('');
         $('#loginDialog').dialog('open');
+    });
+
+    $('#standardZUButton').on('click', () => {
+        openPage('/greenStreet');
+    });
+
+    $('#soundButton').on('click', () => {
+        let audio = new Audio('/free/resources/zvuk-kasperskogo-vizg-svini.mp3');
+        audio.autoplay = true;
     });
 
     $('#dropdownConnectionButton').on('click', function () {
@@ -265,8 +274,8 @@ ymaps.ready(function () {
                 manageFlag = data.manageFlag;
                 logDeviceFlag = data.logDeviceFlag;
                 techFlag = data.techArmFlag;
-                if ((areaBox === undefined) && (data.areaBox !== undefined)) {
-                    areaBox = data.areaBox;
+                if ((areaZone === undefined) && (data.areaZone !== undefined)) {
+                    areaZone = data.areaZone;
                     createAreasLayout(map);
                 }
 
@@ -366,7 +375,7 @@ ymaps.ready(function () {
                     //Добавление метки контроллера на карту
                     map.geoObjects.add(placemark);
                 });
-                areaBox = data.areaBox;
+                areaZone = data.areaZone;
                 createAreasLayout(map);
                 break;
             case 'jump':
@@ -381,12 +390,12 @@ ymaps.ready(function () {
                     $('#password').val('');
                     document.cookie = ('Authorization=Bearer ' + data.token);
                     localStorage.setItem('login', data.login);
-                    // console.log('QqQqQ', data.areaBox);
+                    // console.log('QqQqQ', data.areaZone);
                     authorizedFlag = data.authorizedFlag;
                     manageFlag = data.manageFlag;
                     logDeviceFlag = data.logDeviceFlag;
                     techFlag = data.techArmFlag;
-                    areaBox = data.areaBox;
+                    areaZone = data.areaZone;
                     createAreasLayout(map);
 
                     if (techFlag) {
@@ -421,12 +430,16 @@ ymaps.ready(function () {
                 // location.href = location.origin;
                 break;
             case 'checkConn':
-                $('#databaseConnection').children().css({
-                    'background-color': ((data.checkConn.statusBD) ? 'green' : 'red')
-                });
-                $('#serverConnection').children().css({
-                    'background-color': ((data.checkConn.statusS) ? 'green' : 'red')
-                });
+                if (data.statusBD !== undefined) {
+                    $('#databaseConnection').children().css({
+                        'background-color': ((data.statusBD) ? 'green' : 'red')
+                    });
+                }
+                if (data.statusS !== undefined) {
+                    $('#serverConnection').children().css({
+                        'background-color': ((data.statusS) ? 'green' : 'red')
+                    });
+                }
                 break;
             case 'error':
                 if (data.message.includes('Invalid login credentials')) {
@@ -557,6 +570,11 @@ function authorize() {
         $('#logoutButton').hide();
         // $('#changeButton').hide();
         $('#workPlace').hide();
+        $('#serverLogButton').hide();
+        $('#DUJournalButton').hide();
+        $('#standardZUButton').hide();
+        $('#arbitraryZUButton').hide();
+        $('#soundButton').hide();
         $('#switchLayout').parent().hide();
         $('button[class*="dropdown"]').each(function () {
             $(this).hide();
@@ -566,6 +584,11 @@ function authorize() {
         $('#logoutButton').show();
         // $('#changeButton').show();
         $('#workPlace').show();
+        $('#serverLogButton').show();
+        $('#DUJournalButton').show();
+        $('#standardZUButton').show();
+        $('#arbitraryZUButton').show();
+        $('#soundButton').show();
         $('#switchLayout').parent().show();
         $('button[class*="dropdown"]').each(function () {
             $(this).show();
@@ -577,7 +600,7 @@ function authorize() {
     }
     (logDeviceFlag) ? $('#deviceLogButton').show() : $('#deviceLogButton').hide();
     (manageFlag) ? $('#manageButton').show() : $('#manageButton').hide();
-    (techFlag) ? $('#techButton').show() : $('#techButton').hide();
+    (techFlag) ? $('#techArmButton').show() : $('#techArmButton').hide();
 }
 
 let createChipsLayout = function (calculateSize) {
@@ -658,35 +681,9 @@ let calculate = function (zoom) {
 
 function createAreasLayout(map) {
     if (!$('#switchLayout').prop('checked')) return;
-    areaBox.forEach(area => {
-        let color = getRandomColor();
-        let myRectangle = new ymaps.Rectangle([
-            // Задаем координаты диагональных углов прямоугольника.
-            [area.box.point0.Y, area.box.point0.X],
-            [area.box.point1.Y, area.box.point1.X]
-        ], {
-            //Свойства
-            hintContent: 'Регион: ' + area.region + ', Область: ' + area.area,
-            balloonContent: 'азаза'
-        }, {
-            // Опции.
-            // Цвет и прозрачность заливки.
-            fillColor: color,
-            // Дополнительная прозрачность заливки..
-            // Итоговая прозрачность будет не #33(0.2), а 0.1(0.2*0.5).
-            fillOpacity: 0.1,
-            // Цвет обводки.
-            strokeColor: color,
-            // Прозрачность обводки.
-            strokeOpacity: 0.5,
-            // Ширина линии.
-            strokeWidth: 2,
-            // Радиус скругления углов.
-            // Данная опция принимается только прямоугольником.
-            borderRadius: 6
-        });
-        areaLayout.push(myRectangle);
-        map.geoObjects.add(myRectangle);
+    areaZone.forEach(area => {
+        let polygon = convexHullTry(map, area.zone, 'Регион: ' + area.region + ', Область: ' + area.area);
+        areaLayout.push(polygon);
     })
 }
 
@@ -699,36 +696,10 @@ function deleteAreasLayout(map) {
 
 function createSubareasLayout(map) {
     if (!$('#switchSubLayout').prop('checked')) return;
-    areaBox.forEach(area => {
+    areaZone.forEach(area => {
         area.sub.forEach(sub => {
-            let color = getRandomColor();
-            let myRectangle = new ymaps.Rectangle([
-                // Задаем координаты диагональных углов прямоугольника.
-                [sub.box.point0.Y, sub.box.point0.X],
-                [sub.box.point1.Y, sub.box.point1.X]
-            ], {
-                //Свойства
-                hintContent: 'Регион: ' + area.region + ', Область: ' + area.area + ', Подобласть:' + sub.subArea,
-                balloonContent: 'azaza'
-            }, {
-                // Опции.
-                // Цвет и прозрачность заливки.
-                fillColor: color,
-                // Дополнительная прозрачность заливки..
-                // Итоговая прозрачность будет не #33(0.2), а 0.1(0.2*0.5).
-                fillOpacity: 0.1,
-                // Цвет обводки.
-                strokeColor: color,
-                // Прозрачность обводки.
-                strokeOpacity: 0.5,
-                // Ширина линии.
-                strokeWidth: 2,
-                // Радиус скругления углов.
-                // Данная опция принимается только прямоугольником.
-                borderRadius: 6
-            });
-            subareasLayout.push(myRectangle);
-            map.geoObjects.add(myRectangle);
+            let polygon = convexHullTry(map, sub.zone, 'Регион: ' + area.region + ', Область: ' + area.area + ', Подобласть:' + sub.subArea);
+            subareasLayout.push(polygon);
         })
     })
 }
@@ -738,6 +709,39 @@ function deleteSubareasLayout(map) {
         map.geoObjects.remove(layout);
     });
     subareasLayout = [];
+}
+
+function convexHullTry(map, coords, description) {
+    let color = getRandomColor();
+    let coordinates = [];
+    coords.forEach(point => {
+        coordinates.push([point.Y, point.X]);
+    });
+    // Создаем многоугольник, используя вспомогательный класс Polygon.
+    var myPolygon = new ymaps.Polygon([
+        // Указываем координаты вершин многоугольника.
+        // Координаты вершин внешнего контура.
+        coordinates,
+        // Координаты вершин внутреннего контура.
+        [
+            [0, 0]
+        ]
+    ], {
+        // Описываем свойства геообъекта.
+        // Содержимое балуна.
+        hintContent: description
+    }, {
+        // Задаем опции геообъекта.
+        // Цвет заливки.
+        fillColor: color,
+        fillOpacity: 0.1,
+        // Ширина обводки.
+        strokeWidth: 5
+    });
+
+    // Добавляем многоугольник на карту.
+    map.geoObjects.add(myPolygon);
+    return myPolygon;
 }
 
 //Заполнение поля выбора регионов для АРМ технолога
