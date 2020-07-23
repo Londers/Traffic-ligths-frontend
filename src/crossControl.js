@@ -590,6 +590,8 @@ $(function () {
         pkTabFill('pkTable');
     });
 
+    let x = undefined,y = undefined;
+
     //Функционирование карты для выбора координат
     ymaps.ready(function () {
         //Создание и первичная настройка карты
@@ -598,13 +600,14 @@ $(function () {
             zoom: 15
         });
         console.log(points);
-        map.events.add('wheel', function (e) {
+        map.events.add(['wheel', 'mousemove'], function (e) {
             zoom = map._zoom;
         });
-        map.events.add('mousemove', function (e) {
-            zoom = map._zoom;
+        $('#map').on('click', function (event) {
+            x = event.clientX;
+            y = event.clientY;
         });
-        map.events.add('click', function (e) {
+        map.events.add('click', function (e) { console.log(e.getLocalPixels());
             zoom = map._zoom;
             if (!map.balloon.isOpen()) {
                 let coords = e.get('coords');
@@ -614,8 +617,11 @@ $(function () {
                     contentHeader: 'Светофор появится на этом месте карты!',
                     contentBody: '<p>Щелкните на крестик в левом верхнем углу</p>'
                 });
+                $('.areaMap').show().attr('style', 'overflow: auto; position: absolute; z-index: 2; top:' +
+                    (y-225) + 'px; left:' + (x-600) + 'px');
             } else {
                 map.balloon.close();
+                $('.areaMap').hide();
             }
         });
 

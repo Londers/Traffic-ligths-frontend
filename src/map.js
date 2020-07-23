@@ -32,7 +32,7 @@ function getRandomColor() {
 }
 
 ymaps.ready(function () {
-    $('#workPlace').hide();
+    // $('#workPlace').hide();
     $('#switchLayout').parent().hide();
     createEye();
     $('#dropdownControlButton').trigger('click');
@@ -120,10 +120,10 @@ ymaps.ready(function () {
         openPage('/greenStreet');
     });
 
-    $('#soundButton').on('click', () => {
-        let audio = new Audio('/free/resources/zvuk-kasperskogo-vizg-svini.mp3');
-        audio.autoplay = true;
-    });
+    // $('#soundButton').on('click', () => {
+    //     let audio = new Audio('/free/resources/zvuk-kasperskogo-vizg-svini.mp3');
+    //     audio.autoplay = true;
+    // });
 
     $('#dropdownConnectionButton').on('click', function () {
         if ($('#dropdownConnectionButton').attr('aria-expanded') === 'true') {
@@ -321,10 +321,13 @@ ymaps.ready(function () {
                     map.geoObjects.add(placemark);
                 });
                 authorize();
+                let reg = regionInfo[data.region];
+                let desc = data.description;
+                let login = localStorage.getItem('login');
                 $('#workPlace')[0].innerText = 'АСУДД "Микро" '
-                    + ((data.region === '*') ? 'Все регионы' : regionInfo[data.region])
-                    + '\nАРМ дежурного - '
-                    + data.description + '\n' + localStorage.getItem('login');
+                    + ((data.region === '*') ? 'Все регионы' : ((reg === undefined) ? '' : reg))
+                    + '\n' + ((desc === undefined) ? 'АРМ' : ((data.role === 'Viewer') ? 'АРМ наблюдателя' : 'АРМ дежурного - ') + data.description)
+                    + '\n' + localStorage.getItem('login');
                 break;
             case 'tflight':
                 if (data.tflight === null) {
@@ -407,7 +410,7 @@ ymaps.ready(function () {
                     authorize();
                     $('#workPlace')[0].innerText = 'АСУДД "Микро" '
                         + ((data.region === '*') ? 'Все регионы' : regionInfo[data.region])
-                        + '\nАРМ дежурного - '
+                        + '\n' + ((data.role === 'Viewer') ? 'АРМ наблюдателя' : 'АРМ дежурного - ')
                         + data.description + '\n' + localStorage.getItem('login');
                 } else {
                     check(false, data.message);
@@ -427,6 +430,7 @@ ymaps.ready(function () {
                 $('#login').val('');
                 $('#password').val('');
                 deleteAreasLayout(map);
+                $('#workPlace')[0].innerText = 'АСУДД "Микро" ' + '\nАРМ';
                 // location.href = location.origin;
                 break;
             case 'checkConn':
@@ -569,7 +573,7 @@ function authorize() {
         $('#loginButton').show();
         $('#logoutButton').hide();
         // $('#changeButton').hide();
-        $('#workPlace').hide();
+        // $('#workPlace').hide();
         $('#serverLogButton').hide();
         $('#DUJournalButton').hide();
         $('#standardZUButton').hide();
@@ -583,7 +587,7 @@ function authorize() {
         $('#loginButton').hide();
         $('#logoutButton').show();
         // $('#changeButton').show();
-        $('#workPlace').show();
+        // $('#workPlace').show();
         $('#serverLogButton').show();
         $('#DUJournalButton').show();
         $('#standardZUButton').show();

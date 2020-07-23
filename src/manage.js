@@ -32,12 +32,9 @@ $(function () {
         buttons: {
             'Подтвердить': function () {
                 //Проверка корректности введённых данных
-                if (($('#login').val() === '') || ($('#password').val() === '') || ($('#area option:selected').text() === '')) {
+                if (($('#login').val() === '') || ($('#area option:selected').text() === '')) {
                     if (!($('#loginMsg').length) && ($('#login').val() === '')) {
                         $('#loginForm').append('<div style="color: red;" id="loginMsg"><h5>Введите логин</h5></div>');
-                    }
-                    if (!($('#passwordMsg').length) && ($('#password').val() === '')) {
-                        $('#passwordForm').append('<div style="color: red;" id="passwordMsg"><h5>Введите пароль</h5></div>');
                     }
                     if (!($('#areasMsg').length) && ($('#area option:selected').text() === '')) {
                         $('#areasForm').append('<div style="color: red;" id="areasMsg"><h5>Выберите районы</h5></div>');
@@ -57,7 +54,6 @@ $(function () {
                 let toSend = {
                     login: $('#login').val(),
                     workTime: parseInt($('#workTime option:selected').text()),
-                    password: $('#password').val(),
                     role: {name: $('#privileges option:selected').text(), permissions: permissionControl('a')},
                     region: {num: $('#region option:selected').val()},
                     area: areas,
@@ -75,6 +71,10 @@ $(function () {
                         $('#addDialog').dialog('close');
                         $table.bootstrapTable('removeAll');
                         getUsers($table);
+                        $('#showPass').val('Логин: ' + data.login + '\nПароль: ' + data.pass);
+                        $('#showPass')[0].disabled = true;
+                        $('#ui-id-3')[0].innerText = 'Успешное создание пользователя';
+                        $('#showPassDialog').dialog('open');
                     },
                     data: JSON.stringify(toSend),
                     error: function (request) {
@@ -92,7 +92,6 @@ $(function () {
         resizable: false,
         close: function () {
             $('#loginMsg').remove();
-            $('#passwordMsg').remove();
             $('#areasMsg').remove();
         }
     });
@@ -164,12 +163,23 @@ $(function () {
         }
     });
 
+    $('#showPassDialog').dialog({
+        autoOpen: false,
+        buttons: {
+            'Подтвердить': function () {
+                $(this).dialog('close');
+            }
+        },
+        modal: true,
+        resizable: false,
+    });
+
     //Добавление нового пользователя
     $('#appendButton').on('click', function () {
         $('#login').val('');
         $('#privileges').val('Viewer');
-        $('#password').val('');
         fillAreas();
+        $('#description').val('');
 
         $('#addDialog').dialog('open');
     });
@@ -181,15 +191,13 @@ $(function () {
         let currAreas;
         let currWorkTime;
         let currDescription;
-
+        $('#updateMsg').remove();
         let login = $.map($table.bootstrapTable('getSelections'), function (row) {
             return row.login;
         });
 
         if (login[0] === undefined) {
-            if (!($('#updateMsg').length)) {
-                $('#toolbar').append('<div style="color: red;" id="updateMsg"><h5>Выберите пользователя для изменения</h5></div>');
-            }
+            $('#toolbar').append('<div style="color: red;" id="updateMsg"><h5>Выберите пользователя для изменения</h5></div>');
             return;
         }
 
@@ -205,9 +213,7 @@ $(function () {
 
         //костыль для TechAutomatic
         if ((currPrivileges.name === 'Admin') && (localStorage.getItem('login') !== 'TechAutomatic')) {
-            if (!($('#updateMsg').length)) {
-                $('#toolbar').append('<div style="color: red;" id="updateMsg"><h5>Невозможно изменить администратора</h5></div>');
-            }
+            $('#toolbar').append('<div style="color: red;" id="updateMsg"><h5>Невозможно изменить администратора</h5></div>');
             return;
         }
 
@@ -276,6 +282,58 @@ $(function () {
     //Открыте вкладки с проверкой БД
     $('#stateTest').on('click', function () {
         openPage('/stateTest');
+    });
+
+    $('#resetButton').on('click', () => {
+        let currPrivileges;
+        let currRegion;
+        let currAreas;
+        let currWorkTime;
+        let currDescription;
+
+        $('#updateMsg').remove();
+
+        let login = $.map($table.bootstrapTable('getSelections'), function (row) {
+            return row.login;
+        });
+
+        if (login[0] === undefined) {
+            $('#toolbar').append('<div style="color: red;" id="updateMsg"><h5>Выберите пользователя для сброса пароля</h5></div>');
+            return;
+        }
+
+        accInfo.forEach(user => {
+            if (user.login === login[0]) {
+                currPrivileges = user.role;
+                currRegion = user.region.num;
+                currAreas = user.area;
+                currWorkTime = user.workTime;
+                currDescription = user.description;
+            }
+        });
+
+        //костыль для TechAutomatic
+        if ((currPrivileges.name === 'Admin') && (localStorage.getItem('login') !== 'TechAutomatic')) {
+            $('#toolbar').append('<div style="color: red;" id="updateMsg"><h5>Невозможно сбросить пароль администратора</h5></div>');
+            return;
+        }
+
+        $.ajax({
+            url: window.location.href + '/resetpw',
+            type: 'post',
+            dataType: 'json',
+            contentType: 'application/json',
+            success: function (data) {
+                $('#showPass').val('Логин: ' + data.login + '\nНовый пароль: ' + data.pass);
+                $('#showPass')[0].disabled = true;
+                $('#ui-id-3')[0].innerText = 'Успешный сброс пароля';
+                $('#showPassDialog').dialog('open');
+            },
+            data: JSON.stringify({login: login[0]}),
+            error: function (request) {
+                console.log(request.status + ' ' + request.responseText);
+            }
+        });
     });
 
     //Обнуление дополнительных прав и смене шаблона роли
@@ -432,7 +490,7 @@ function fillPrivileges(type) {
         $('input[id^="' + type + '"]').each(function () {
             $(this).parent().hide();
         });
-    } else  if ((currPrivileges !== 'RegAdmin') && (currPrivileges !== 'Admin')){
+    } else if ((currPrivileges !== 'RegAdmin') && (currPrivileges !== 'Admin')) {
         $('input[id^="' + type + '"]').each(function () {
             $(this).parent().show();
         });

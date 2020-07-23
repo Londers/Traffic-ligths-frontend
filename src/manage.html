@@ -45,12 +45,17 @@
         th {
             background: #eee;
         }
+
+        textarea {
+            resize: none;
+        }
     </style>
 </head>
 <body>
 <div id="toolbar">
     <button id="appendButton" class="btn btn-secondary">Добавить</button>
     <button id="updateButton" class="btn btn-secondary">Изменить</button>
+    <button id="resetButton" class="btn btn-secondary">Сбросить пароль</button>
     <button id="deleteButton" class="btn btn-secondary">Удалить</button>
     <button id="serverLogButton" class="btn btn-secondary ml-5">Логи сервера</button>
     <button id="editControlButton" class="btn btn-secondary ml-5">Список редактируемых ДК</button>
@@ -88,11 +93,6 @@
             <select id="privileges" class="form-control">
             </select>
         </div>
-        <div class="form-group" id="passwordForm">
-            <label for="password">Пароль</label>
-            <input type="password" class="form-control" id="password" placeholder="Введите пароль" name="password"
-                   required>
-        </div>
         <div class="form-group" onclick="fillAreas()">
             <label for="region">Регион</label>
             <select class="form-control" id="region">
@@ -112,8 +112,7 @@
         </div>
         <div class="form-group" id="descriptionForm">
             <label for="description">Название АРМа</label>
-            <textarea class="form-control" id="description" maxlength="255" style="max-height: 100px">
-            </textarea>
+            <textarea class="form-control" id="description" maxlength="255" style="max-height: 100px"></textarea>
         </div>
     </form>
 </div>
@@ -148,7 +147,13 @@
         </div>
     </form>
 </div>
-
+<div id="showPassDialog">
+    <form class="needs-validated">
+        <div class="form-group">
+            <textarea id="showPass"></textarea>
+        </div>
+    </form>
+</div>
 <!--<button class="open-button" onclick="openForm()">Открыть чат</button>-->
 <!--<div class="form-popup" id="myForm">-->
 <!--    <form class="form-container">-->
