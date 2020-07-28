@@ -323,7 +323,6 @@ ymaps.ready(function () {
                 authorize();
                 let reg = regionInfo[data.region];
                 let desc = data.description;
-                let login = localStorage.getItem('login');
                 $('#workPlace')[0].innerText = 'АСУДД "Микро" '
                     + ((data.region === '*') ? 'Все регионы' : ((reg === undefined) ? '' : reg))
                     + '\n' + ((desc === undefined) ? 'АРМ' : ((data.role === 'Viewer') ? 'АРМ наблюдателя' : 'АРМ дежурного - ') + data.description)
@@ -334,6 +333,11 @@ ymaps.ready(function () {
                     console.log('null');
                 } else {
                     console.log('Обновление');
+                    if (data.areaZone !== undefined) {
+                        areaZone = data.areaZone;
+                        deleteSubareasLayout(map);
+                        createSubareasLayout(map);
+                    }
                     //Обновление статуса контроллера происходит только при его изменении
                     data.tflight.forEach(trafficLight => {
                         currnum = trafficLight.tlsost.num;

@@ -607,7 +607,7 @@ $(function () {
             x = event.clientX;
             y = event.clientY;
         });
-        map.events.add('click', function (e) { console.log(e.getLocalPixels());
+        map.events.add('click', function (e) {
             zoom = map._zoom;
             if (!map.balloon.isOpen()) {
                 let coords = e.get('coords');

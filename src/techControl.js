@@ -1,6 +1,6 @@
 let crossesSave = [];
 let devicesSave = [];
-let currIdevice = -1;
+let errorRows = [];
 let ws;
 
 //Функция для открытия вкладки
@@ -17,6 +17,35 @@ function sortByID(a, b) {
 
 function sendGPRS() {
     //TODO implement functional
+}
+
+function checkDifference() {
+    let devNumInTable = 4;
+    errorRows = [];
+    devicesSave.forEach(device => {
+        let cross = checkCross(device.idevice);
+        if (switchArrayType(cross.arrayType) !== switchArrayTypeFromDevice(device.device.Model)) {
+            let list = $('#table').bootstrapTable('getData');
+            let i = 0;
+            let index = -1;
+            list.forEach(item => {
+                if (item.idevice === device.idevice) {
+                    index = i;
+                }
+                i++;
+            });
+            if(!errorRows.includes(device.idevice)) errorRows.push(device.idevice);
+            $('#table tbody tr').each((i, tr) => {
+                if (i++ === index) {
+                    $(tr).find('td').each((j, td) => {
+                        if (j++ === devNumInTable) {
+                            $(td).attr('style', 'background-color: red;');
+                        }
+                    })
+                }
+            })
+        }
+    })
 }
 
 $(function () {
@@ -129,10 +158,15 @@ function buildTable(firstLoadFlag) {
     $table.bootstrapTable('hideColumn', 'idevice');
     $table.bootstrapTable('scrollTo', 'top');
 
-    $table.on('click', function () {
+    $table.unbind().on('click', function () {
         buildBottom();
     });
 
+    $('#top').unbind().on('click', () => {
+        checkDifference();
+    });
+
+    checkDifference();
     buildBottom();
 }
 
@@ -146,6 +180,14 @@ function checkCommand(cmd, value) {
     }
 }
 
+function switchArrayTypeFromDevice(model) {
+    let type = 'УСДК';
+    if (model.C12) return 'С12' + type;
+    if (model.DKA) return 'ДК-А';
+    if (model.DTA) return 'ДТ СК';
+    return type;
+}
+
 function buildBottom() {
     let selected = $('#table').bootstrapTable('getSelections');
     if (selected.length === 0) return;
@@ -153,8 +195,12 @@ function buildBottom() {
     let deviceInfo = checkDevice(selected[0].idevice);
     let device = deviceInfo.device;
 
+    if(errorRows.includes(selected[0].idevice)) {
+        $('#type').attr('style', 'background-color: red;');
+    } else {
+        $('#type').attr('style', '');
+    }
     $('#type')[0].innerText = switchArrayType(cross.arrayType);
-    $('#type2')[0].innerText = switchArrayType(cross.arrayType);
     $('#id')[0].innerText = cross.id;
     $('#description')[0].innerText = cross.describe;
     $('#phone')[0].innerText = cross.phone.substring(1, cross.phone.length - 1).trim();
@@ -194,7 +240,7 @@ function buildBottom() {
                 controlSend({id: cross.idevice, cmd: 4, param: 0}) :
                 controlSend({id: cross.idevice, cmd: 4, param: 1});
         });
-
+        $('#sfSwitchButton')[0].innerText = (device.StatusCommandDU.IsReqSFDK1) ? 'Выкл. СФ' : 'Вкл. СФ';
         $('#changeGPRSButton').unbind().on('click', function () {
             $('#exTimeD').val(device.Status.tobm);
             $('#gprsDialog').dialog('open');
@@ -203,10 +249,14 @@ function buildBottom() {
         $('#lastOp')[0].innerText = timeFormat(device.ltime);
 
         $('#status')[0].innerText = deviceInfo.modeRdk;
+        $('#type2')[0].innerText = switchArrayTypeFromDevice(device.Model);
         $('#phase')[0].innerText = device.DK.fdk;
         $('#state')[0].innerText = (checkMalfunction(device.Error) === '') ? '-' : checkMalfunction(device.Error);
         $('#lamps')[0].innerText = device.DK.ldk;
         $('#doors')[0].innerText = device.DK.odk ? 'Открыты' : 'Закрыты';
+
+        $('#pspd')[0].innerText = device.Model.vpcpdl + '.' + device.Model.vpcpdr;
+        $('#pbs')[0].innerText = device.Model.vpbsl + '.' + device.Model.vpbsr;
     } else {
         $('#connect')[0].innerText = '';
 
@@ -228,15 +278,20 @@ function buildBottom() {
         $('#nk')[0].innerText = '';
 
         $('#sfSwitchButton').unbind();
+        $('#sfSwitchButton')[0].innerText = 'Вкл. СФ';
         $('#gprsDialog').unbind();
 
         $('#lastOp')[0].innerText = '';
 
         $('#status')[0].innerText = '-';
+        $('#type2')[0].innerText = '-';
         $('#phase')[0].innerText = '-';
         $('#state')[0].innerText = '-';
         $('#lamps')[0].innerText = '-';
         $('#doors')[0].innerText = '-';
+
+        $('#pspd')[0].innerText = '-';
+        $('#pbs')[0].innerText = '-';
     }
 }
 
@@ -259,13 +314,13 @@ function checkDevice(idevice) {
 }
 
 function checkCross(idevice) {
-    let device = {};
+    let cross = {};
     let i = 0;
-    crossesSave.forEach(cross => {
-        if (cross.idevice === idevice) device = crossesSave[i];
+    crossesSave.forEach(crossS => {
+        if (crossS.idevice === idevice) cross = crossesSave[i];
         i++;
     });
-    return device;
+    return cross;
 }
 
 function checkDeviceID(idevice) {
@@ -361,7 +416,6 @@ function switchArrayType(type) {
     кнопки
             GRPS-обмен - меню ?
             Сброс отв. - сброс и новый счетчик
-    если типы устройтв не совпадают, слева сверху красным загореться
     в таблице - все горит красным, кроме нет связи
     + gps, l - lan, * есть не переданная информация
  */

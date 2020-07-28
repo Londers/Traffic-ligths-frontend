@@ -111,7 +111,7 @@
 </div>
 
 <body style="">
-<div class="container-fluid" style="max-width: 98%; max-height: 520px;">
+<div class="container-fluid" id="top" style="max-width: 98%; max-height: 520px;">
     <div class="row-fluid overflow-auto" style="max-height: 520px;">
         <table class="table table-bordered"
                id="table"
@@ -301,7 +301,7 @@
                     </button>
                 </div>
                 <div class="col-md-2"> Режим<br>Уст-во<br>Состояние<br> Фаза<br>Лампы<br>Двери</div>
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <div id="status">-</div>
                     <div id="type2">-</div>
                     <div id="state">-</div>
@@ -309,10 +309,20 @@
                     <div id="lamps">-</div>
                     <div id="doors">-</div>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-4">
                     <div class="text-center">Дополнение</div>
-                    <div>ПО ПСПД 12.3</div>
-                    <div>ПО ПБС 1.8</div>
+                    <div>
+                        <div class="row">
+                            <div class="col-md-7">ПО ПСПД </div>
+                            <div class="col-md-5" id="pspd"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="row">
+                            <div class="col-md-7">ПО ПБС </div>
+                            <div class="col-md-5" id="pbs"></div>
+                        </div>
+                    </div>
                     <div>связь 0</div>
                     <div>связь S 4</div>
                     <div>уровень S 99</div>
