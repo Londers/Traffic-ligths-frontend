@@ -246,7 +246,13 @@ function buildBottom() {
             $('#gprsDialog').dialog('open');
         });
 
+        $('#lastOpDev')[0].innerText = timeFormat(device.dtime);
         $('#lastOp')[0].innerText = timeFormat(device.ltime);
+        if (Math.abs((new Date(device.ltime) - new Date(device.dtime))) > 1000) {
+            $('#lastOpDev').attr('style', 'background-color: red;');
+        } else {
+            $('#lastOpDev').attr('style', '');
+        }
 
         $('#status')[0].innerText = deviceInfo.modeRdk;
         $('#type2')[0].innerText = switchArrayTypeFromDevice(device.Model);
@@ -281,6 +287,7 @@ function buildBottom() {
         $('#sfSwitchButton')[0].innerText = 'Вкл. СФ';
         $('#gprsDialog').unbind();
 
+        $('#lastOpDev')[0].innerText = '';
         $('#lastOp')[0].innerText = '';
 
         $('#status')[0].innerText = '-';

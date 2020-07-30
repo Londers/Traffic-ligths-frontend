@@ -370,31 +370,64 @@ $(function () {
 
 function buildTable(data) {
     let $table = $('#table');
-    let dataArr = $table.bootstrapTable('getData');
+    let dataArr = $table.bootstrapTable('getData').slice();
+    let lastRow = dataArr[dataArr.length - 1];
     let toWrite = {phaseNum: data.fdk, tPr: '', tMain: '', duration: ''};
-    let checkDup = false;
-    let index = 0;
+
     $('#phase')[0].innerText = 'Фаза: ' + toWrite.phaseNum;
     if (typeof setPhase !== "undefined") {
         setPhase(toWrite.phaseNum);
     }
     (data.pdk) ? toWrite.tPr = data.tdk : toWrite.tMain = data.tdk;
-    dataArr.forEach(rec => {
-        (rec.phaseNum === data.fdk) ? checkDup = true : index++;
-    });
-    if (!checkDup) {
-        toWrite.duration = toWrite.tMain + toWrite.tPr;
-        dataArr = dataArr.slice();
-        $table.bootstrapTable('removeAll');
-        dataArr.push(toWrite);
-        dataArr.sort(compare);
-        $table.bootstrapTable('append', dataArr);
-    } else {
-        toWrite.phaseNum = dataArr[index].phaseNum;
-        (data.pdk) ? toWrite.tMain = dataArr[index].tMain : toWrite.tPr = dataArr[index].tPr;
-        toWrite.duration = toWrite.tMain + toWrite.tPr;
-        $table.bootstrapTable('updateRow', {index: index, row: toWrite});
+
+    if (lastRow === undefined){
+        $table.bootstrapTable('append', toWrite);
+        return;
     }
+
+    if (lastRow.phaseNum === toWrite.phaseNum) {
+        let tPr = Number((lastRow.tPr !== '') ? lastRow.tPr : 0);
+        let tMain = Number((lastRow.tMain !== '') ? lastRow.tMain : 0);
+        if (data.pdk) {
+            lastRow.tPr = tPr + data.tdk;
+        } else {
+            lastRow.tMain = tMain + data.tdk;
+        }
+        // lastRow.duration = Number((dur !== '') ? dur : 0) + data.tdk;
+        lastRow.duration = tPr + tMain;
+        $table.bootstrapTable('updateRow', {index: dataArr.length - 1, row: lastRow});
+    } else {
+        dataArr.push(toWrite);
+        $table.bootstrapTable('removeAll');
+        $table.bootstrapTable('append', dataArr);
+    }
+
+    // let $table = $('#table');
+    // let dataArr = $table.bootstrapTable('getData');
+    // let toWrite = {phaseNum: data.fdk, tPr: '', tMain: '', duration: ''};
+    // let checkDup = false;
+    // let index = 0;
+    // $('#phase')[0].innerText = 'Фаза: ' + toWrite.phaseNum;
+    // if (typeof setPhase !== "undefined") {
+    //     setPhase(toWrite.phaseNum);
+    // }
+    // (data.pdk) ? toWrite.tPr = data.tdk : toWrite.tMain = data.tdk;
+    // dataArr.forEach(rec => {
+    //     (rec.phaseNum === data.fdk) ? checkDup = true : index++;
+    // });
+    // if (!checkDup) {
+    //     toWrite.duration = toWrite.tMain + toWrite.tPr;
+    //     dataArr = dataArr.slice();
+    //     $table.bootstrapTable('removeAll');
+    //     dataArr.push(toWrite);
+    //     dataArr.sort(compare);
+    //     $table.bootstrapTable('append', dataArr);
+    // } else {
+    //     toWrite.phaseNum = dataArr[index].phaseNum;
+    //     (data.pdk) ? toWrite.tMain = dataArr[index].tMain : toWrite.tPr = dataArr[index].tPr;
+    //     toWrite.duration = toWrite.tMain + toWrite.tPr;
+    //     $table.bootstrapTable('updateRow', {index: index, row: toWrite});
+    // }
 }
 
 function checkConnection(connectionFlag) {

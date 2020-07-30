@@ -269,7 +269,7 @@ ymaps.ready(function () {
     });
 
     $('#sendRouteButton').on('click', function () {
-        fillPhases();
+        $('#newRouteDialog').dialog('open');
     });
 
     $('#routes').on('change', function () {
@@ -348,7 +348,7 @@ ymaps.ready(function () {
                 });
 
                 data.routes.forEach(route => {
-                    $('#routes').append(new Option(route.description + 'poka huinya' + route.id, route.id));
+                    $('#routes').append(new Option(route.description, route.id));
                 });
                 // .append(new Option(regionInfo[reg], reg));
                 break;
@@ -414,7 +414,7 @@ ymaps.ready(function () {
                     alert(data.error);
                     return;
                 }
-                $('#routes').append(new Option(data.route.description + 'new poka huinya' + data.route.id, data.route.id));
+                $('#routes').append(new Option(data.route.description, data.route.id));
                 $('#routes option[value=' + data.route.id + ']').attr('selected', 'selected');
 
                 allRoutesList.push(data.route);
@@ -468,6 +468,24 @@ ymaps.ready(function () {
         }
     });
 
+    $('#newRouteDialog').dialog({
+        autoOpen: false,
+        buttons: {
+            'Подтвердить': function () {
+                description = $('#routeDesc').val();
+                fillPhases();
+                $(this).dialog('close');
+            },
+            'Отмена': function () {
+                $(this).dialog('close');
+            }
+        },
+        modal: true,
+        resizable: false,
+        close: function () {
+            $('#areasMsg').remove();
+        }
+    });
 });
 
 let createChipsLayout = function (calculateSize) {

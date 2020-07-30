@@ -86,6 +86,10 @@ ymaps.ready(function () {
         $('#locationDialog').dialog('open');
     });
 
+    $('#techSuppButton').on('click', function () {
+        openPage('/techSupp');
+    });
+
     //Выбор места для открытия на карте
     $('#loginButton').on('click', function () {
         $('#login').val('');
@@ -323,10 +327,12 @@ ymaps.ready(function () {
                 authorize();
                 let reg = regionInfo[data.region];
                 let desc = data.description;
-                $('#workPlace')[0].innerText = 'АСУДД "Микро" '
-                    + ((data.region === '*') ? 'Все регионы' : ((reg === undefined) ? '' : reg))
-                    + '\n' + ((desc === undefined) ? 'АРМ' : ((data.role === 'Viewer') ? 'АРМ наблюдателя' : 'АРМ дежурного - ') + data.description)
-                    + '\n' + localStorage.getItem('login');
+                if (authorizedFlag) {
+                    $('#workPlace')[0].innerText = 'АСУДД "Микро" '
+                        + ((data.region === '*') ? 'Все регионы' : ((reg === undefined) ? '' : reg))
+                        + '\n' + ((desc === undefined) ? 'АРМ' : ((data.role === 'Viewer') ? 'АРМ наблюдателя' : 'АРМ дежурного - ') + data.description)
+                        + '\n' + localStorage.getItem('login');
+                }
                 break;
             case 'tflight':
                 if (data.tflight === null) {

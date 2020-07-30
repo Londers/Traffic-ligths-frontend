@@ -69,6 +69,15 @@
         </div>
     </form>
 </div>
+<div id="newRouteDialog" title="Выбор района">
+    <form class="needs-validated">
+        <div class="form-group" id="newRouteForm"> <!--onclick="fillAreas()">-->
+            <label for="routeDesc">Название</label>
+            <input class="form-control" id="routeDesc">
+            </input>
+        </div>
+    </form>
+</div>
 <body style="max-height: 960px;">
 <div style="position: absolute; top: 300px; right: 50px; z-index: 2">
     <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownLayersButton"
@@ -120,8 +129,9 @@
     <div class="col-md-3 text-center">
         <button id="sendRouteButton" class="btn btn-secondary">Создать режим</button>
     </div>
-    <div class="col-md-3 text-center">
+    <div class="col-md-3 text-center mt-2">
         <select id="routes">
+            <option>-</option>
         </select>
     </div>
 </div>
