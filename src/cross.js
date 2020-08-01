@@ -5,7 +5,6 @@
 let ID = 0;
 let loopFunc;
 let phaseFlags = [];
-// let deviceFlag = false;
 let editFlag = false;
 let status;
 let idevice = undefined;
@@ -17,9 +16,7 @@ $(function () {
     ws.onopen = function () {
         console.log('connected');
     };
-    // ws.onmessage = function (evt) {
-    //     console.log(JSON.parse(evt.data));
-    // };
+
     ws.onclose = function (evt) {
         console.log('disconnected', evt);
     };
@@ -31,11 +28,6 @@ $(function () {
         $('#check').trigger('click');
     });
 
-    //Получение информации о перекрёстке
-    // $.ajax({
-    //     type: 'POST',
-    //     url: window.location.href,
-    //     success: function (data) {
     ws.onmessage = function (evt) {
         let allData = JSON.parse(evt.data);
         let data = allData.data;
@@ -356,20 +348,16 @@ $(function () {
         }
     };
 
-    // },
-    //     error: function (request, errorMsg) {
-    //         console.log(request.status + ' ' + request.responseText);
-    //     }
-    // });
+    ws.onerror = function (evt) {
+        console.log('WebsSocket error:' + evt);
+    };
 
-    // window.setInterval(function () {
-    //     reload();
-    // }, 1000);
     $('#verification').bootstrapTable('removeAll');
 });
 
 function buildTable(data) {
     let $table = $('#table');
+    if($table.bootstrapTable('getData').length > 20) { $table.bootstrapTable('removeAll'); }
     let dataArr = $table.bootstrapTable('getData').slice();
     let lastRow = dataArr[dataArr.length - 1];
     let toWrite = {phaseNum: data.fdk, tPr: '', tMain: '', duration: ''};
