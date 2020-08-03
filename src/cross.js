@@ -331,16 +331,16 @@ $(function () {
                 break;
             case 'close':
                 if (editFlag) controlSend({id: idevice, cmd: 4, param: 0});
-                if (allData.message !== '') {
-                    alert(allData.message);
+                ws.close();
+                if (data.message !== '') {
+                    alert(data.message);
                 } else {
                     alert('Потеряна связь с сервером');
                 }
                 window.close();
                 break;
             case 'error':
-                console.log('error');
-
+                console.log('error', evt);
                 break;
             default:
                 console.log('unknown command');

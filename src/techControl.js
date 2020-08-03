@@ -96,6 +96,18 @@ $(function () {
                 });
                 buildTable(false);
                 break;
+            case 'close':
+                ws.close();
+                if (data.message !== '') {
+                    alert(data.message);
+                } else {
+                    alert('Потеряна связь с сервером');
+                }
+                window.close();
+                break;
+            case 'error':
+                console.log('error', evt);
+                break;
             default:
                 break;
         }

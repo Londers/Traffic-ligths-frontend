@@ -1,3 +1,7 @@
+let ws;
+let saveShit = [];
+let multiples = [1, 2, 3, 4, 5, 10, 15, 20, 30];
+
 /**
  * @return {number}
  */
@@ -15,7 +19,7 @@ $(function () {
         .bootstrapTable('hideColumn', 'xnum')
         .bootstrapTable('hideColumn', 'status');
 
-    let ws = new WebSocket('ws://' + location.host + location.pathname + 'W');
+    ws = new WebSocket('ws://' + location.host + location.pathname + 'W');
     ws.onopen = function () {
         console.log('connected');
     };
@@ -24,43 +28,23 @@ $(function () {
         console.log('disconnected', evt);
     };
 
-
     ws.onmessage = function (evt) {
         let allData = JSON.parse(evt.data);
         let data = allData.data;
-        let switchFlag = true;
+        // let switchFlag = true;
         let dataArr = [];
-        let counter = 0;
+
+        // let counter = 0;
         switch (allData.type) {
             case 'xctrlInfo':
                 data.xctrlInfo.sort(sortByPlace);
+                data.xctrlInfo.forEach(row => {
+                    row.data = makeShit(row.ltime, row.pknow, row.pklast, row.xnum, row.status);
+                });
                 $table.bootstrapTable('load', data.xctrlInfo);
+                saveShit = data.xctrlInfo;
                 dataArr = $table.bootstrapTable('getData');
-                dataArr.forEach(rec => {
-                    $table.bootstrapTable('updateCell', {
-                        index: counter++,
-                        field: 'data',
-                        value: makeShit(rec.ltime, rec.pknow, rec.pklast, rec.xnum, rec.status)
-                    });
-                });
-                switchFlag = true;
-                $table.find('tr').find('td').each((i, td) => {
-                    let value = $(td)[0].innerText;
-                    let row = $(td)[0].parentElement.rowIndex - 1;
-                    if ((value === 'true') || (value === 'false')) {
-                        $(td)[0].innerText = '';
-                        if (switchFlag) {
-                            buildCheckBox(td, 'sw', row);
-                        } else {
-                            buildCheckBox(td, 'rl', row);
-                        }
-                        switchFlag = !switchFlag;
-                    }
-                    if (value === '-') {
-                        $(td)[0].innerText = '';
-                        buildCheckBox(td, 'st', row);
-                    }
-                });
+                buildTable();
                 break;
             case 'xctrlUpdate':
                 let index = -1;
@@ -71,37 +55,24 @@ $(function () {
                             index = i;
                         }
                     });
+                    newRow.data = makeShit(newRow.ltime, newRow.pknow, newRow.pklast, newRow.xnum, newRow.status);
                     $table.bootstrapTable('updateRow', {index: index, row: newRow});
+                    saveShit[index] = newRow;
                 });
-                dataArr.forEach(rec => {
-                    $table.bootstrapTable('updateCell', {
-                        index: counter++,
-                        field: 'data',
-                        value: makeShit(rec.ltime, rec.pknow, rec.pklast, rec.xnum, rec.status)
-                    });
-                });
-                switchFlag = true;
-                $table.find('tr').find('td').each((i, td) => {
-                    let value = $(td)[0].innerText;
-                    let row = $(td)[0].parentElement.rowIndex - 1;
-                    if ((value === 'true') || (value === 'false')) {
-                        $(td)[0].innerText = '';
-                        if (switchFlag) {
-                            buildCheckBox(td, 'sw', row);
-                        } else {
-                            buildCheckBox(td, 'rl', row);
-                        }
-                        switchFlag = !switchFlag;
-                    }
-                    if (value === '-') {
-                        $(td)[0].innerText = '';
-                        buildCheckBox(td, 'st', row);
-                    }
-                });
+                buildTable();
                 break;
-            case 'shit2':
+            case 'close':
+                ws.close();
+                if (data.message !== '') {
+                    alert(data.message);
+                } else {
+                    alert('Потеряна связь с сервером');
+                }
+                window.close();
                 break;
-
+            case 'error':
+                console.log('error', evt);
+                break;
         }
     };
 
@@ -113,26 +84,82 @@ $(function () {
         $('#table tbody').find('input[id*="sw"]').each((i, checkBox) => {
             $(checkBox).prop('checked', $('#switchCheck')[0].checked);
         });
+        massControl();
     });
 
     $('#releaseCheck').on('change', function () {
         $('#table tbody').find('input[id*="rl"]').each((i, checkBox) => {
             $(checkBox).prop('checked', $('#releaseCheck')[0].checked);
         });
+        massControl();
     });
-
-    $('#table').on('click', function () {
-        ws.send(JSON.stringify({type: 'xctrlGet'}));
-    })
 });
 
-function buildCheckBox(td, id, row) {
+function massControl() {
+    let toSend = [];
+    saveShit.forEach((row, index) => {
+        row.switch = $('#sw' + index)[0].checked;
+        row.release = $('#rl' + index)[0].checked;
+        toSend.push(row);
+    });
+    ws.send(JSON.stringify({type: 'xctrlChange', state: toSend}));
+}
+
+function buildTimeSelect(td, rowIndex, value) {
+    let ret = '';
+    let id = 'timeSelect' + rowIndex;
+    ret = '<div class="form-group">\n' +
+        '<label for="' + id + '" class="mr-2"></label>\n' +
+        '<select id="' + id + '">\n' +
+        '</select>\n' +
+        '</div>';
+    $(td).append(ret);
+    multiples.forEach(number => {
+       $('#' + id).append(new Option(Number(number), Number(number)));
+    });
+    $('#' + id).val(value);
+}
+
+function buildTable() {
+    let switchFlag = true;
+    $('#table').find('tr').find('td').each((i, td) => {
+        let value = td.innerText;
+        let rowIndex = td.parentElement.rowIndex - 1;
+        if ((value === 'true') || (value === 'false')) {
+            td.innerText = '';
+            if (switchFlag) {
+                buildCheckbox(td, 'sw', rowIndex);
+            } else {
+                buildCheckbox(td, 'rl', rowIndex);
+            }
+            switchFlag = !switchFlag;
+        }
+        if (td.cellIndex === 3) {
+            td.innerText = '';
+            buildTimeSelect(td, rowIndex, value);
+        }
+        if (value === '-') {
+            td.innerText = '';
+            buildCheckbox(td, 'st', rowIndex);
+        }
+    });
+}
+
+function buildCheckbox(td, id, rowIndex) {
     $(td).append('<div class="custom-control custom-checkbox">\n' +
-        '<input type="checkbox" class="custom-control-input" id="' + id + row + '">\n' +
-        '<label class="custom-control-label" for="' + id + row + '"></label></div>')
+        '<input type="checkbox" class="custom-control-input" id="' + id + rowIndex + '">\n' +
+        '<label class="custom-control-label" for="' + id + rowIndex + '"></label></div>')
         .on('change', () => {
-            console.log('row ' + row + ', checkbox ' + id + ' was changed to ' + $('#' + id + row)[0].checked);
-        })
+            let toSend = saveShit[rowIndex];
+            toSend.switch = $('#sw' + rowIndex)[0].checked;
+            toSend.release = $('#rl' + rowIndex)[0].checked;
+            ws.send(JSON.stringify({type: 'xctrlChange', state: [toSend]}));
+            console.log('rowIndex ' + rowIndex + ', checkbox ' + id + ' was changed to ' + $('#' + id + rowIndex)[0].checked);
+        });
+    let value = false;
+    if (id === 'sw') value = saveShit[rowIndex].switch;
+    if (id === 'rl') value = saveShit[rowIndex].release;
+    $('#' + id + rowIndex)[0].checked = value;
 }
 
 function timeFormat(time) {
@@ -151,8 +178,8 @@ function timeFormat(time) {
 }
 
 function makeShit(ltime, pknow, pklast, xnum, status) {
-    let ret = 'Время последней операции: ' + timeFormat(ltime) +
-        '\nПредыдущий ПК: ' + pklast + ', текущий ПК:' + pknow +
-        '\nХарактерное число: ' + xnum;
+    let ret = 'Время: ' + timeFormat(ltime) +
+        ',Предыдущий ПК: ' + ((pklast === 0) ? 'нет' : pklast) + ', новый ПК: ' + ((pknow === 0) ? 'нет' : pknow) +
+        ',Характерное число: ' + xnum;
     return ret;
 }

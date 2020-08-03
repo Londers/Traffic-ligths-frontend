@@ -212,8 +212,17 @@ $(function () {
                 // $('#trigger')[0].innerHTML = 'Список<br>Пользователей';
                 // $('#trigger').show();
                 break;
+            case 'close':
+                ws.close();
+                if (data.message !== '') {
+                    alert(data.message);
+                } else {
+                    alert('Потеряна связь с сервером');
+                }
+                window.close();
+                break;
             case 'error':
-                console.log('error');
+                console.log('error', evt);
                 break;
             default:
                 console.log('unknown command', allData.type);

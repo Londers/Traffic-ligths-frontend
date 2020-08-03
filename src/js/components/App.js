@@ -284,6 +284,15 @@ class ChatApp extends Component {
                     let index = shit.findUser(data.user);
                     shit.child.changeStatus(index, data.status);
                     break;
+                case 'close':
+                    ws.close();
+                    if (data.message !== '') {
+                        alert(data.message);
+                    } else {
+                        alert('Потеряна связь с сервером');
+                    }
+                    window.close();
+                    break;
                 case "error":
                     console.log(data.user + " - " + data.error);
                     break;
