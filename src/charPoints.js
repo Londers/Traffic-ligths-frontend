@@ -1,6 +1,6 @@
 let ws;
 let saveShit = [];
-let multiples = [1, 2, 3, 4, 5, 10, 15, 20, 30];
+let multiples = [1, 2, 3, 4, 5, 6, 10, 12, 15, 20, 30];
 
 /**
  * @return {number}
@@ -40,6 +40,7 @@ $(function () {
                 data.xctrlInfo.sort(sortByPlace);
                 data.xctrlInfo.forEach(row => {
                     row.data = makeShit(row.ltime, row.pknow, row.pklast, row.xnum, row.status);
+                    statusCB = '-';
                 });
                 $table.bootstrapTable('load', data.xctrlInfo);
                 saveShit = data.xctrlInfo;
@@ -115,9 +116,15 @@ function buildTimeSelect(td, rowIndex, value) {
         '</div>';
     $(td).append(ret);
     multiples.forEach(number => {
-       $('#' + id).append(new Option(Number(number), Number(number)));
+        $('#' + id).append(new Option(Number(number), Number(number)));
     });
-    $('#' + id).val(value);
+    $('#' + id).val(value).on('change', function () {
+        let toSend = saveShit[$(this)[0].parentElement.parentElement.parentElement.rowIndex - 1];
+        toSend.step = Number($(this)[0].value);
+        toSend.rem = Number($(this)[0].value);
+        ws.send(JSON.stringify({type: 'xctrlChange', state: [toSend]}));
+        // console.log($(this)[0].parentElement.parentElement.parentElement.rowIndex + $(this)[0].value);
+    });
 }
 
 function buildTable() {
@@ -146,20 +153,58 @@ function buildTable() {
 }
 
 function buildCheckbox(td, id, rowIndex) {
-    $(td).append('<div class="custom-control custom-checkbox">\n' +
-        '<input type="checkbox" class="custom-control-input" id="' + id + rowIndex + '">\n' +
-        '<label class="custom-control-label" for="' + id + rowIndex + '"></label></div>')
-        .on('change', () => {
-            let toSend = saveShit[rowIndex];
-            toSend.switch = $('#sw' + rowIndex)[0].checked;
-            toSend.release = $('#rl' + rowIndex)[0].checked;
-            ws.send(JSON.stringify({type: 'xctrlChange', state: [toSend]}));
-            console.log('rowIndex ' + rowIndex + ', checkbox ' + id + ' was changed to ' + $('#' + id + rowIndex)[0].checked);
-        });
-    let value = false;
-    if (id === 'sw') value = saveShit[rowIndex].switch;
-    if (id === 'rl') value = saveShit[rowIndex].release;
-    $('#' + id + rowIndex)[0].checked = value;
+    if (id === 'st') {
+        $(td).append('<div class="custom-control custom-checkbox popup">\n' +
+            '<input type="checkbox" class="custom-control-input" id="' + id + rowIndex + '">\n' +
+            '<label class="custom-control-label" for="' + id + rowIndex + '"></label>' +
+            '<div class="popuptext" id="status' + rowIndex + '"></div></div>')
+            .on('change', () => {
+                $('#status' + rowIndex)[0].classList.toggle("show");
+                $('#status' + rowIndex)[0].innerHTML = '';
+                saveShit[rowIndex].status.forEach(status => {
+                    $('#status' + rowIndex)[0].innerHTML += status + '<br>';
+                });
+
+                // let toSend = saveShit[rowIndex];
+                // toSend.switch = $('#sw' + rowIndex)[0].checked;
+                // toSend.release = $('#rl' + rowIndex)[0].checked;
+                // ws.send(JSON.stringify({type: 'xctrlChange', state: [toSend]}));
+                // console.log('rowIndex ' + rowIndex + ', checkbox ' + id + ' was changed to ' + $('#' + id + rowIndex)[0].checked);
+            })
+        // $('#status' + rowIndex).append(
+            // '<table class="table table-bordered text-center" id="statusTable'+rowIndex+'" data-toggle="table"' +
+            // '       data-toolbar="#toolbar'+rowIndex+'" data-single-select="true" data-click-to-select="true" cellspacing="0"' +
+            // '       data-height="900">' +
+            // '    <thead>' +
+            // '    <tr style="">' +
+            // '        <th data-field="status">-</th>' +
+            // '    </tr>' +
+            // '    </thead>' +
+            // '    <tbody style="">' +
+            // '    </tbody>' +
+            // '</table>'
+        // );
+    } else {
+        $(td).append('<div class="custom-control custom-checkbox">\n' +
+            '<input type="checkbox" class="custom-control-input" id="' + id + rowIndex + '">\n' +
+            '<label class="custom-control-label" for="' + id + rowIndex + '"></label></div>')
+            .on('change', () => {
+                let toSend = saveShit[rowIndex];
+                toSend.switch = $('#sw' + rowIndex)[0].checked;
+                toSend.release = $('#rl' + rowIndex)[0].checked;
+                ws.send(JSON.stringify({type: 'xctrlChange', state: [toSend]}));
+                // console.log('rowIndex ' + rowIndex + ', checkbox ' + id + ' was changed to ' + $('#' + id + rowIndex)[0].checked);
+            });
+        let value = false;
+        if (id === 'sw') value = saveShit[rowIndex].switch;
+        if (id === 'rl') value = saveShit[rowIndex].release;
+        $('#' + id + rowIndex)[0].checked = value;
+        // if (id === 'st') {
+        //     $('#' + id + rowIndex)[0].className = $('#' + id + rowIndex)[0].className.toString() + ' popup';
+        //     $(td).append('<span class="popuptext" id="myPopup' + rowIndex + '">A Simple Popup!</span>');
+        //     $('#' + id + rowIndex).on('click', myFunction(rowIndex));
+        // }
+    }
 }
 
 function timeFormat(time) {

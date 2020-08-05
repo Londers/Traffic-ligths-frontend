@@ -219,6 +219,7 @@ function setRouteArea(map, box, description, routeId) {
 }
 
 ymaps.ready(function () {
+
     $('#dropdownLayersButton').trigger('click');
     $('#dropdownControlButton').trigger('click');
 
