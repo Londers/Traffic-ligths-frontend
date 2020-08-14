@@ -5,15 +5,35 @@
     <meta http-equiv="content-type" content="text/html; charset=UTF-8">
     <meta charset="UTF-8">
     <title>404</title>
-    <link rel="icon" type="image/svg" href="/icon/trafficlight.svg"/>
+    <link href="https://unpkg.com/bootstrap-table@1.15.5/dist/bootstrap-table.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
+    <script src="https://unpkg.com/bootstrap-table@1.15.5/dist/bootstrap-table.min.js"></script>
+    <link rel="icon"
+          type="image/svg"
+          href="/free/resources/trafficlight.svg"/>
 </head>
 
-<body style="padding-top:40px; background-repeat: no-repeat; background-size: 100%;
-background-image: url(/notFound.jpg)">
-
+<body>
+<div class="container text-center" style="width: 50%">
+    <div style="padding-top:50%; background-repeat: no-repeat; background-size: 100%;
+    background-image: url(/free/resources/notFound.svg)"></div>
+    <strong onclick="redirect()" style="padding-right: 30px">Вернуться к карте</strong>
+</div>
+<!--<div class="container-fluid text-center">-->
+<!--<strong onclick="redirect()">Вернуться к карте</strong>-->
+<!--</div>-->
 <!--<div class="container-sm pt-3">-->
 <!--    <h1 align="center" style="color: rgb(255, 255, 255); padding-right: 1000px;">404 - Page not found</h1>-->
 <!--</div>-->
 </body>
-
+<script>
+    function redirect() {
+        setTimeout(function () {
+                window.location.replace("/map");
+            }
+            , 100);
+    }
+</script>
 </html>

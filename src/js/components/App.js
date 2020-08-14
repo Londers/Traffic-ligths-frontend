@@ -285,13 +285,13 @@ class ChatApp extends Component {
                     shit.child.changeStatus(index, data.status);
                     break;
                 case 'close':
-                    ws.close();
+                    shit.ws.close();
                     if (data.message !== '') {
                         alert(data.message);
                     } else {
                         alert('Потеряна связь с сервером');
                     }
-                    window.close();
+                    // window.close();
                     break;
                 case "error":
                     console.log(data.user + " - " + data.error);

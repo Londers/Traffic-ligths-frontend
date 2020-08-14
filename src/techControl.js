@@ -54,7 +54,7 @@ $(function () {
     ws = new WebSocket('ws://' + location.host + location.pathname + 'W' + location.search);
 
     ws.onerror = function (evt) {
-        console.log('WebsSocket error:', evt);
+        console.log('WebSocket error:', evt);
         alert('Произошла ошибка, попробуйте снова');
         window.close();
     };

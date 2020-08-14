@@ -124,6 +124,10 @@ ymaps.ready(function () {
         openPage('/greenStreet');
     });
 
+    $('#charPointsButton').on('click', () => {
+        openPage('/charPoints');
+    });
+
     // $('#soundButton').on('click', () => {
     //     let audio = new Audio('/free/resources/zvuk-kasperskogo-vizg-svini.mp3');
     //     audio.autoplay = true;
@@ -254,7 +258,7 @@ ymaps.ready(function () {
 
     ws = new WebSocket('ws://' + location.host + '/mapW');
     ws.onerror = function (evt) {
-        console.log('WebsSocket error:' + evt);
+        console.log('WebSocket error:' + evt);
     };
 
     ws.onopen = function () {
@@ -467,7 +471,7 @@ ymaps.ready(function () {
 
     ws.onclose = function (evt) {
         console.log('disconnected', evt);
-        // alert('Связь была разорвана');
+        alert('Связь с сервером была разорвана');
         location.reload();
         // automatically try to reconnect on connection loss
     };
@@ -582,13 +586,13 @@ function authorize() {
     if (!authorizedFlag) {
         $('#loginButton').show();
         $('#logoutButton').hide();
-        // $('#changeButton').hide();
-        // $('#workPlace').hide();
-        $('#serverLogButton').hide();
-        $('#DUJournalButton').hide();
-        $('#standardZUButton').hide();
-        $('#arbitraryZUButton').hide();
-        $('#soundButton').hide();
+        $('#leftToolbar').hide();
+        // $('#serverLogButton').hide();
+        // $('#DUJournalButton').hide();
+        // $('#standardZUButton').hide();
+        // $('#arbitraryZUButton').hide();
+        // $('#charPointsButton').hide();
+        // $('#soundButton').hide();
         $('#switchLayout').parent().hide();
         $('button[class*="dropdown"]').each(function () {
             $(this).hide();
@@ -596,13 +600,13 @@ function authorize() {
     } else {
         $('#loginButton').hide();
         $('#logoutButton').show();
-        // $('#changeButton').show();
-        // $('#workPlace').show();
-        $('#serverLogButton').show();
-        $('#DUJournalButton').show();
-        $('#standardZUButton').show();
-        $('#arbitraryZUButton').show();
-        $('#soundButton').show();
+        $('#leftToolbar').show();
+        // $('#serverLogButton').show();
+        // $('#DUJournalButton').show();
+        // $('#standardZUButton').show();
+        // $('#arbitraryZUButton').show();
+        // $('#charPointsButton').show();
+        // $('#soundButton').show();
         $('#switchLayout').parent().show();
         $('button[class*="dropdown"]').each(function () {
             $(this).show();
@@ -819,7 +823,7 @@ function check(sendFlag, msg) {
 
     if (sendFlag) {
         ws.send(JSON.stringify({
-            type: ((localStorage.getItem('login') !== '') ? 'changeAcc' : 'login'),
+            type: (authorizedFlag ? 'changeAcc' : 'login'),
             login: $('#login').val(),
             password: $('#password').val()
         }));
@@ -1066,4 +1070,4 @@ function createEye() {
     $(() => {
         $('[data-toggle="password"]').password()
     })
-};
+}

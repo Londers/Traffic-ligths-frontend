@@ -6,9 +6,9 @@ let ID = 0;
 let loopFunc;
 let phaseFlags = [];
 let editFlag = false;
-let status;
+let control;
 let idevice = undefined;
-let noConnectionStatusArray = [17, 18, 37, 38, 39];
+// let noConnectionStatusArray = [17, 18, 37, 38, 39];
 let ws;
 
 $(function () {
@@ -35,6 +35,7 @@ $(function () {
         switch (allData.type) {
             case 'crossBuild':
                 let state = data.state;
+                let cross = data.cross;
                 let controlCrossFlag = data.controlCrossFlag;
                 let region = data.cross.region.num;
                 let area = data.cross.area.num;
@@ -80,7 +81,6 @@ $(function () {
                             .append('<a class="btn btn-light border" id="secret" data-toggle="tooltip" title="Включить 1 фазу" role="button"\n' +
                                 '        onclick="setPhase(randomInt(1, 12))"><img class="img-fluid" src="/file/static/img/buttons/p1.svg" height="50" alt="1 фаза"></a>');
                         $('#secret').hide();
-                        let counter = 0;
 
                         // $('svg').each(function () {
                         //     $(this).attr('id', 'svg' + counter++);
@@ -137,10 +137,8 @@ $(function () {
                         });
 
                         //Начало и остановка отправки фаз на контроллер
-                        counter = 0;
                         $('a').each(function () {
                             phaseFlags.push(false);
-                            counter++;
                             $(this).on('click', function () {
                                 let id = $(this)[0].id;
                                 stopSendingCommands(id);
@@ -159,7 +157,7 @@ $(function () {
                             });
                         });
                         checkEdit();
-                        checkConnection(state.status);
+                        checkConnection(cross.tlsost.control);
                     },
                     error: function (request) {
                         console.log(request.status + ' ' + request.responseText);
@@ -233,7 +231,7 @@ $(function () {
                 strTime += (time.getMinutes().toString().length === 2) ? time.getMinutes() : '0' + time.getMinutes();
                 strTime += (':');
                 strTime += (time.getSeconds().toString().length === 2) ? time.getSeconds() : '0' + time.getSeconds();
-                if (data.message === 'TCP Server not responding') {
+                if (!data.status) {
                     $('#verification').bootstrapTable('prepend', {
                         status: 'Отсутствует связь с сервером',
                         time: strTime,
@@ -279,9 +277,11 @@ $(function () {
                 $('#sk option[value=' + data.state.ck + ']').attr('selected', 'selected');
                 $('#nk option[value=' + data.state.nk + ']').attr('selected', 'selected');
 
-                checkConnection(data.status.num);
+                checkConnection(data.status.control);
                 break;
             case 'stateChange':
+                $('#description').html(data.cross.description);
+
                 $('#pk').find('option').remove();
                 $('#sk').find('option').remove();
                 $('#nk').find('option').remove();
@@ -349,7 +349,7 @@ $(function () {
     };
 
     ws.onerror = function (evt) {
-        console.log('WebsSocket error:' + evt);
+        console.log('WebSocket error:' + evt);
     };
 
     $('#verification').bootstrapTable('removeAll');
@@ -420,8 +420,8 @@ function buildTable(data) {
 
 function checkConnection(connectionFlag) {
     // console.log('checkConnection', connectionFlag);
-    connectionFlag = (connectionFlag === undefined) ? status : connectionFlag;
-    if (noConnectionStatusArray.includes(connectionFlag)) {
+    connectionFlag = (connectionFlag === undefined) ? control : connectionFlag;
+    if (!connectionFlag) {
         $('a').each(function () {
             this.className = checkButton(this.className.toString(), false);
         });
@@ -440,7 +440,7 @@ function checkConnection(connectionFlag) {
         $('#table').show();
         $('#verificationRow').show();
     }
-    status = connectionFlag;
+    control = connectionFlag;
 }
 
 //Остановка отправки фаз на контроллер
@@ -568,11 +568,11 @@ function stopSendingCommands(id) {
 //     });
 // }
 
-function compare(a, b) {
-    if (a.phaseNum > b.phaseNum) return 1;
-    if (b.phaseNum > a.phaseNum) return -1;
-    return 0;
-}
+// function compare(a, b) {
+//     if (a.phaseNum > b.phaseNum) return 1;
+//     if (b.phaseNum > a.phaseNum) return -1;
+//     return 0;
+// }
 
 function buttonClick(button, id) {
     let toSend = {id: id, cmd: 9, param: 0};
@@ -704,9 +704,4 @@ function checkEdit() {
     $('select').each(function () {
         checkSelect($(this), editFlag);
     });
-}
-
-//TODO delete this
-function randomInt(min, max) {
-    return min + Math.floor((max - min) * Math.random());
 }

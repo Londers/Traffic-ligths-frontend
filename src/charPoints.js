@@ -1,4 +1,6 @@
 let ws;
+let regionInfo = [];
+let areaInfo = [];
 let saveShit = [];
 let multiples = [1, 2, 3, 4, 5, 6, 10, 12, 15, 20, 30];
 
@@ -9,9 +11,50 @@ function sortByPlace(a, b) {
     let aName = Number('' + a.region + a.area + a.subarea);
     let bName = Number('' + b.region + b.area + b.subarea);
     return ((aName < bName) ? -1 : ((aName > bName) ? 1 : 0));
+}//TODO сортировка говно
+
+function createCharPoint() {
+    let charPoint = {
+        region: Number($('#region').find(':selected').text()),
+        area: Number($('#area').find(':selected').text()),
+        subarea: Number($('#subarea').val()),
+        switch: false,
+        release: false,
+        step: Number($('#step').find(':selected').text()),
+        rem: Number($('#step').find(':selected').text()),
+        ltime: new Date(0).toISOString(),
+        pknow: 0,
+        pklast: 0,
+        xnum: 0,
+        status: [],
+        Strategys: $('#strategyTable').bootstrapTable('getData'),
+        Calculates: $('#calcTable').bootstrapTable('getData')
+    };
+    charPoint.Strategys.forEach(strategy => {
+        delete strategy.state;
+    });
+    charPoint.Calculates.forEach(calc => {
+        delete calc.state;
+    });
+    // console.log(charPoint);
+    ws.send(JSON.stringify({type: 'xctrlCreate', state: charPoint}));
+}
+
+function checkRange(xleft, xright) {
+    let left = Number($('#' + xleft).val());
+    let right = Number($('#' + xright).val());
+    if (left >= right) {
+        $('#' + xright).parent().append('<div style="color: red;" id="invalid' + xright + '"><h5>Правая граница должна быть больше левой</h5></div>');;
+        return false;
+    }
+    return true;
 }
 
 $(function () {
+    multiples.forEach(number => {
+        $('#step').append(new Option(Number(number), Number(number)));
+    });
+
     let $table = $('#table');
     $table.bootstrapTable('hideColumn', 'ltime')
         .bootstrapTable('hideColumn', 'pknow')
@@ -37,9 +80,29 @@ $(function () {
         // let counter = 0;
         switch (allData.type) {
             case 'xctrlInfo':
+                regionInfo = data.regionInfo;
+                areaInfo = data.areaInfo;
+
+                let keys = Object.keys(regionInfo);
+                keys.forEach(key => {
+                    $('#region').append(new Option(key, key));
+                });
+
                 data.xctrlInfo.sort(sortByPlace);
                 data.xctrlInfo.forEach(row => {
-                    row.data = makeShit(row.ltime, row.pknow, row.pklast, row.xnum, row.status);
+                    row.data = makeDataCol(row.ltime, row.pknow, row.pklast, row.xnum);
+                    statusCB = '-';
+                });
+                $table.bootstrapTable('load', data.xctrlInfo);
+                saveShit = data.xctrlInfo;
+                dataArr = $table.bootstrapTable('getData');
+                buildTable();
+                fillAreas();
+                break;
+            case 'xctrlReInfo':
+                data.xctrlInfo.sort(sortByPlace);
+                data.xctrlInfo.forEach(row => {
+                    row.data = makeDataCol(row.ltime, row.pknow, row.pklast, row.xnum);
                     statusCB = '-';
                 });
                 $table.bootstrapTable('load', data.xctrlInfo);
@@ -56,11 +119,17 @@ $(function () {
                             index = i;
                         }
                     });
-                    newRow.data = makeShit(newRow.ltime, newRow.pknow, newRow.pklast, newRow.xnum, newRow.status);
+                    newRow.data = makeDataCol(newRow.ltime, newRow.pknow, newRow.pklast, newRow.xnum);
                     $table.bootstrapTable('updateRow', {index: index, row: newRow});
                     saveShit[index] = newRow;
                 });
                 buildTable();
+                break;
+            case 'getArea':
+                $('#id').empty();
+                data.tflight.forEach(tflight => {
+                    $('#id').append(new Option(tflight.ID + ' - ' + tflight.description, tflight.ID));
+                });
                 break;
             case 'close':
                 ws.close();
@@ -78,7 +147,7 @@ $(function () {
     };
 
     ws.onerror = function (evt) {
-        console.log('WebsSocket error:' + evt);
+        console.log('WebSocket error:' + evt);
     };
 
     $('#switchCheck').on('change', function () {
@@ -94,6 +163,231 @@ $(function () {
         });
         massControl();
     });
+
+    $('#region').on('change', function () {
+        fillAreas();
+    });
+
+    $('#appendButton').on('click', function () {
+        $('#subarea').val('');
+        $('#addDialog1').dialog('open');
+    });
+
+    //Всплывающее окно для изменения пользователя
+    $('#addDialog1').dialog({
+        autoOpen: false,
+        buttons: {
+            'Далее': function () {
+                if (validateInput('subarea')) {
+                    $('#addDialog2').dialog('open');
+                    $(this).dialog('close');
+                }
+            },
+            'Отмена': function () {
+                $(this).dialog('close');
+            }
+        },
+        modal: true,
+        resizable: false
+    });
+
+    $('#addDialog2').dialog({
+        autoOpen: false,
+        buttons: {
+            'Далее': function () {
+                ws.send(JSON.stringify({
+                    type: 'getArea',
+                    region: Number($('#region').find(':selected').text()),
+                    area: Number($('#area2').find(':selected').text())
+                }));
+                if (validateTable('strategyTable')) {
+                    $('#addDialog3').dialog('open');
+                    $(this).dialog('close');
+                }
+            },
+            'Назад': function () {
+                $('#addDialog1').dialog('open');
+                $(this).dialog('close');
+            }
+        },
+        minWidth: 800,
+        modal: true,
+        resizable: false
+    });
+
+    $('#appendButton2').on('click', function () {
+        $('#xleft').val('');
+        $('#xright').val('');
+        $('#pk').val('');
+        $('#addStrategyDialog').dialog('open');
+    });
+
+    $('#updateButton2').on('click', function () {
+        let selected = $('#strategyTable').bootstrapTable('getSelections')[0];
+        $('#updateXleft').val(selected.xleft);
+        $('#updateXright').val(selected.xright);
+        $('#updatePk').val(selected.pk);
+        $('#updateStrategyDialog').dialog('open');
+    });
+
+    $('#deleteButton2').on('click', function () {
+        $('#strategyTable').bootstrapTable('remove', {field: 'state', values: [true]});
+    });
+
+    $('#addStrategyDialog').dialog({
+        autoOpen: false,
+        buttons: {
+            'Создать': function () {
+                if (validateInput('xleft') & validateInput('xright') & validateInput('pk')) {
+                    if (checkRange('xleft', 'xright')) {
+                        $('#strategyTable').bootstrapTable('append', {
+                            xleft: Number($('#xleft').val()),
+                            xright: Number($('#xright').val()),
+                            pk: Number($('#pk').val())
+                        });
+                        $(this).dialog('close');
+                    }
+                }
+            },
+            'Отмена': function () {
+                $(this).dialog('close');
+            }
+        },
+        modal: true,
+        resizable: false
+    });
+
+    $('#updateStrategyDialog').dialog({
+        autoOpen: false,
+        buttons: {
+            'Изменить': function () {
+                let target = -1;
+                $('#strategyTable').find('tr').each((i, tr) => {
+                    if (i !== 0) if (tr.cells[0].children[0].children[0].checked) target = i - 1;
+                });
+                if (validateInput('updateXleft') & validateInput('updateXright') & validateInput('updatePk')) {
+                    if (checkRange('updateXleft', 'updateXright')) {
+                        $('#strategyTable').bootstrapTable('updateRow', {
+                            index: target,
+                            row: {
+                                xleft: Number($('#updateXleft').val()),
+                                xright: Number($('#updateXright').val()),
+                                pk: Number($('#updatePk').val())
+                            }
+                        });
+                        $(this).dialog('close');
+                    }
+                }
+            },
+            'Отмена': function () {
+                $(this).dialog('close');
+            }
+        },
+        modal: true,
+        resizable: false
+    });
+
+    $('#addDialog3').dialog({
+        autoOpen: false,
+        buttons: {
+            'Создать': function () {
+                if (validateTable('calcTable')) {
+                    createCharPoint();
+                    $('#strategyTable').bootstrapTable('removeAll');
+                    $('#calcTable').bootstrapTable('removeAll');
+                    $(this).dialog('close');
+                }
+            },
+            'Назад': function () {
+                $('#addDialog2').dialog('open');
+                $(this).dialog('close');
+            }
+        },
+        minWidth: 800,
+        modal: true,
+        resizable: false
+    });
+
+
+    $('#appendButton3').on('click', function () {
+        $('#id').val('');
+        $('#chan').val('');
+        $('#mult').val('');
+        $('#addCalcDialog').dialog('open');
+    });
+
+    $('#updateButton3').on('click', function () {
+        let selected = $('#calcTable').bootstrapTable('getSelections')[0];
+        $('#updateId').val(selected.id);
+        $('#updateChan').val(selected.chan);
+        $('#updateMult').val(selected.mult);
+        $('#updateCalcDialog').dialog('open');
+    });
+
+    $('#deleteButton3').on('click', function () {
+        $('#calcTable').bootstrapTable('remove', {field: 'state', values: [true]});
+    });
+
+    $('#addCalcDialog').dialog({
+        autoOpen: false,
+        buttons: {
+            'Создать': function () {
+                if (validateInput('chan') & validateInput('mult')) {
+                    $('#calcTable').bootstrapTable('append', {
+                        region: Number($('#region').find(':selected').text()),
+                        area: Number($('#area2').find(':selected').text()),
+                        id: Number($('#id').val()),
+                        chan: Number($('#chan').val()),
+                        mult: Number($('#mult').val())
+                    });
+                    $(this).dialog('close');
+                }
+            },
+            'Отмена': function () {
+                $(this).dialog('close');
+            }
+        },
+        modal: true,
+        resizable: false
+    });
+
+    $('#updateCalcDialog').dialog({
+        autoOpen: false,
+        buttons: {
+            'Изменить': function () {
+                let target = -1;
+                $('#calcTable').find('tr').each((i, tr) => {
+                    if (i !== 0) if (tr.cells[0].children[0].children[0].checked) target = i - 1;
+                });
+                if (validateInput('updateChan') & validateInput('updateMult')) {
+                    $('#calcTable').bootstrapTable('updateRow', {
+                        index: target,
+                        row: {
+                            region: Number($('#region').find(':selected').text()),
+                            area: Number($('#area').find(':selected').text()),
+                            id: Number($('#updateId').val()),
+                            chan: Number($('#updateChan').val()),
+                            mult: Number($('#updateMult').val())
+                        }
+                    });
+                    $(this).dialog('close');
+                }
+            },
+            'Отмена': function () {
+                $(this).dialog('close');
+            }
+        },
+        modal: true,
+        resizable: false
+    });
+
+    $('#area2').on('change', function () {
+        ws.send(JSON.stringify({
+            type: 'getArea',
+            region: Number($('#region').find(':selected').text()),
+            area: Number($('#area2').find(':selected').text())
+        }));
+    })
 });
 
 function massControl() {
@@ -141,7 +435,7 @@ function buildTable() {
             }
             switchFlag = !switchFlag;
         }
-        if (td.cellIndex === 3) {
+        if (td.cellIndex === 4) {
             td.innerText = '';
             buildTimeSelect(td, rowIndex, value);
         }
@@ -172,17 +466,17 @@ function buildCheckbox(td, id, rowIndex) {
                 // console.log('rowIndex ' + rowIndex + ', checkbox ' + id + ' was changed to ' + $('#' + id + rowIndex)[0].checked);
             })
         // $('#status' + rowIndex).append(
-            // '<table class="table table-bordered text-center" id="statusTable'+rowIndex+'" data-toggle="table"' +
-            // '       data-toolbar="#toolbar'+rowIndex+'" data-single-select="true" data-click-to-select="true" cellspacing="0"' +
-            // '       data-height="900">' +
-            // '    <thead>' +
-            // '    <tr style="">' +
-            // '        <th data-field="status">-</th>' +
-            // '    </tr>' +
-            // '    </thead>' +
-            // '    <tbody style="">' +
-            // '    </tbody>' +
-            // '</table>'
+        // '<table class="table table-bordered text-center" id="statusTable'+rowIndex+'" data-toggle="table"' +
+        // '       data-toolbar="#toolbar'+rowIndex+'" data-single-select="true" data-click-to-select="true" cellspacing="0"' +
+        // '       data-height="900">' +
+        // '    <thead>' +
+        // '    <tr style="">' +
+        // '        <th data-field="status">-</th>' +
+        // '    </tr>' +
+        // '    </thead>' +
+        // '    <tbody style="">' +
+        // '    </tbody>' +
+        // '</table>'
         // );
     } else {
         $(td).append('<div class="custom-control custom-checkbox">\n' +
@@ -222,9 +516,42 @@ function timeFormat(time) {
     return dateTimeFormat.format(date);
 }
 
-function makeShit(ltime, pknow, pklast, xnum, status) {
+function makeDataCol(ltime, pknow, pklast, xnum) {
     let ret = 'Время: ' + timeFormat(ltime) +
         ',Предыдущий ПК: ' + ((pklast === 0) ? 'нет' : pklast) + ', новый ПК: ' + ((pknow === 0) ? 'нет' : pknow) +
         ',Характерное число: ' + xnum;
     return ret;
+}
+
+
+//Заполнение поля выбора районов для создания или изменения пользователя
+function fillAreas() {
+    $('#area').empty();
+    $('#area2').empty();
+    for (let regAreaJson in areaInfo) {
+        for (let areaJson in areaInfo[regAreaJson]) {
+            if (regAreaJson === regionInfo[$('#region').find(':selected').text()]) {
+                $('#area').append(new Option(areaJson, areaJson));
+                $('#area2').append(new Option(areaJson, areaJson));
+            }
+        }
+    }
+}
+
+function validateInput(id) {
+    $('#invalid' + id).remove();
+    if ($('#' + id)[0].value.length === 0) {
+        $('#' + id).parent().append('<div style="color: red;" id="invalid' + id + '"><h5>Пожалуйста, заполните поле</h5></div>');
+        return false;
+    }
+    return true;
+}
+
+function validateTable(id) {
+    $('#invalid' + id).remove();
+    if ($('#' + id).bootstrapTable('getData').length === 0) {
+        $('#' + id).parent().parent().prepend('<div style="color: red;" id="invalid' + id + '"><h5>Пожалуйста, заполните таблицу</h5></div>');
+        return false;
+    }
+    return true;
 }

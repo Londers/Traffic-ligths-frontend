@@ -15,15 +15,10 @@ let allRoutesList = [];
 let lastRoute = {};
 let circlesList = [];
 let zoom = 19;
-let tflights = [];
+// let tflights = [];
 // let login = '';
 let fixationFlag = false;
 let ws;
-
-//Функция для открытия вкладки
-function openPage(url) {
-    window.open(location.origin + '/user/' + localStorage.getItem('login') + url);
-}
 
 function getRandomColor() {
     var letters = '0123456789A';
@@ -285,7 +280,7 @@ ymaps.ready(function () {
     ws = new WebSocket('ws://' + location.host + location.pathname + 'W');
 
     ws.onerror = function (evt) {
-        console.log('WebsSocket error:', evt);
+        console.log('WebSocket error:', evt);
     };
 
     ws.onopen = function () {
@@ -304,7 +299,7 @@ ymaps.ready(function () {
                 allRoutesList = data.routes;
                 regionInfo = data.regionInfo;
                 areaInfo = data.areaInfo;
-                tflights = data.tflight;
+                // tflights = data.tflight;
                 if ((areaZone === undefined) && (data.areaZone !== undefined)) {
                     areaZone = data.areaZone;
                     createAreasLayout(map);
