@@ -4,14 +4,24 @@ let areaInfo = [];
 let saveShit = [];
 let multiples = [1, 2, 3, 4, 5, 6, 10, 12, 15, 20, 30];
 
+let changeFlag = false;
+
 /**
  * @return {number}
  */
 function sortByPlace(a, b) {
-    let aName = Number('' + a.region + a.area + a.subarea);
-    let bName = Number('' + b.region + b.area + b.subarea);
-    return ((aName < bName) ? -1 : ((aName > bName) ? 1 : 0));
-}//TODO сортировка говно
+    return (a.region !== b.region) ? (a.region - b.region) : (a.area !== b.area) ? (a.area - b.area) : (a.subarea - b.subarea);
+}
+
+function findInSave(selected) {
+    let ret = {};
+    saveShit.forEach(save => {
+        if ((save.region === selected.region) && (save.area === selected.area) && (save.subarea === selected.subarea)) {
+            ret = save;
+        }
+    });
+    return ret;
+}
 
 function createCharPoint() {
     let charPoint = {
@@ -22,7 +32,7 @@ function createCharPoint() {
         release: false,
         step: Number($('#step').find(':selected').text()),
         rem: Number($('#step').find(':selected').text()),
-        ltime: new Date(0).toISOString(),
+        ltime: (changeFlag) ? findInSave($('#table').bootstrapTable('getSelections')[0]).ltime : new Date(0).toISOString(),
         pknow: 0,
         pklast: 0,
         xnum: 0,
@@ -37,17 +47,51 @@ function createCharPoint() {
         delete calc.state;
     });
     // console.log(charPoint);
-    ws.send(JSON.stringify({type: 'xctrlCreate', state: charPoint}));
+    ws.send(JSON.stringify({type: (changeFlag) ? 'xctrlChange' : 'xctrlCreate', state: (changeFlag) ? [charPoint] : charPoint}));
 }
 
 function checkRange(xleft, xright) {
     let left = Number($('#' + xleft).val());
     let right = Number($('#' + xright).val());
     if (left >= right) {
-        $('#' + xright).parent().append('<div style="color: red;" id="invalid' + xright + '"><h5>Правая граница должна быть больше левой</h5></div>');;
+        $('#' + xright).parent().append('<div style="color: red;" id="invalid' + xright + '"><h5>Правая граница должна быть больше левой</h5></div>');
         return false;
     }
     return true;
+}
+
+function checkCoincidence(region, area, subarea) {
+    let ret = true;
+    saveShit.forEach(save => {
+        if ((save.region === region) && (save.area === area) && (save.subarea === subarea)) {
+            $('#subarea').parent().append('<div style="color: red;" id="invalidsubarea"><h5>Подрайон занят</h5></div>');
+            ret = false;
+        }
+    });
+    return ret;
+}
+
+function fillStrategyTable(selected) {
+    $('#strategyTable').bootstrapTable('removeAll');
+    let save = findInSave(selected);
+    save.Strategys.forEach(strategy => {
+        $('#strategyTable').bootstrapTable('append', {xleft: strategy.xleft, xright: strategy.xright, pk: strategy.pk});
+    })
+
+}
+
+function fillCalcTable(selected) {
+    $('#calcTable').bootstrapTable('removeAll');
+    let save = findInSave(selected);
+    save.Calculates.forEach(calculate => {
+        $('#calcTable').bootstrapTable('append', {
+            region: calculate.region,
+            area: calculate.area,
+            id: calculate.id,
+            chan: calculate.chan,
+            mult: calculate.mult
+        });
+    })
 }
 
 $(function () {
@@ -169,8 +213,30 @@ $(function () {
     });
 
     $('#appendButton').on('click', function () {
+        changeFlag = false;
         $('#subarea').val('');
         $('#addDialog1').dialog('open');
+    });
+
+    $('#updateButton').on('click', function () {
+        let selected = $('#table').bootstrapTable('getSelections')[0];
+        changeFlag = true;
+        $('#region')[0].value = selected.region;
+        $('#area')[0].value = selected.area;
+        $('#subarea').val(selected.subarea);
+        $('#step')[0].value = selected.step;
+        $('#addDialog1').dialog('open');
+    });
+
+    $('#deleteButton').on('click', function () {
+        let selected = $('#table').bootstrapTable('getSelections')[0];
+        ws.send(JSON.stringify({
+            type: 'xctrlDelete',
+            region: Number(selected.region),
+            area: Number(selected.area),
+            subarea: Number(selected.subarea)
+        }));
+        // $('#table').bootstrapTable('remove', {field: 'state', values: [true]});
     });
 
     //Всплывающее окно для изменения пользователя
@@ -179,8 +245,29 @@ $(function () {
         buttons: {
             'Далее': function () {
                 if (validateInput('subarea')) {
-                    $('#addDialog2').dialog('open');
-                    $(this).dialog('close');
+                    if (changeFlag) {
+                        let selected = $('#table').bootstrapTable('getSelections')[0];
+                        if (!((selected.region == $('#region').find(':selected').text()) &&
+                            (selected.area == $('#area').find(':selected').text()) &&
+                            (selected.subarea == $('#subarea').val()))) {
+                            if (checkCoincidence(Number($('#region').find(':selected').text()),
+                                Number($('#area').find(':selected').text()),
+                                Number($('#subarea').val()))) {
+                                fillStrategyTable(selected);
+                                $('#addDialog2').dialog('open');
+                                $(this).dialog('close');
+                            }
+                        } else {
+                            fillStrategyTable(selected);
+                            $('#addDialog2').dialog('open');
+                            $(this).dialog('close');
+                        }
+                    } else if (checkCoincidence(Number($('#region').find(':selected').text()),
+                        Number($('#area').find(':selected').text()),
+                        Number($('#subarea').val()))) {
+                        $('#addDialog2').dialog('open');
+                        $(this).dialog('close');
+                    }
                 }
             },
             'Отмена': function () {
@@ -201,6 +288,7 @@ $(function () {
                     area: Number($('#area2').find(':selected').text())
                 }));
                 if (validateTable('strategyTable')) {
+                    if (changeFlag) fillCalcTable($('#table').bootstrapTable('getSelections')[0]);
                     $('#addDialog3').dialog('open');
                     $(this).dialog('close');
                 }

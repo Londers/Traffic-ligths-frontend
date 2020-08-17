@@ -622,12 +622,12 @@ $(function () {
                 let coords = e.get('coords');
                 points.Y = coords[0].toPrecision(9);
                 points.X = coords[1].toPrecision(9);
+                map.setCenter([points.Y, points.X], zoom);
                 map.balloon.open(coords, {
                     contentHeader: 'Светофор появится на этом месте карты!',
                     contentBody: '<p>Щелкните на крестик в левом верхнем углу</p>'
                 });
-                $('.areaMap').show().attr('style', 'overflow: auto; position: absolute; z-index: 2; top:' +
-                    (y-225) + 'px; left:' + (x-600) + 'px');
+                $('.areaMap').show().attr('style', 'overflow: auto; position: absolute; z-index: 2; top: 30%; left:30%');
             } else {
                 map.balloon.close();
                 $('.areaMap').hide();

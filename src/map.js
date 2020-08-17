@@ -185,7 +185,7 @@ ymaps.ready(function () {
                     success: function (data) {
                         console.log(data.message);
                         $('#changeDialog').dialog('close');
-                        alert('Пожалуйста, войдите в систему снова');
+                        // alert('Пожалуйста, войдите в систему снова');
                         authorizedFlag = false;
                         manageFlag = false;
                         logDeviceFlag = false;
@@ -471,7 +471,7 @@ ymaps.ready(function () {
 
     ws.onclose = function (evt) {
         console.log('disconnected', evt);
-        alert('Связь с сервером была разорвана');
+        // alert('Связь с сервером была разорвана');
         location.reload();
         // automatically try to reconnect on connection loss
     };
