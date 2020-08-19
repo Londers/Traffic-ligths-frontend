@@ -369,6 +369,7 @@ function buildTable(data) {
     (data.pdk) ? toWrite.tPr = data.tdk : toWrite.tMain = data.tdk;
 
     if (lastRow === undefined){
+        toWrite.duration = data.tdk;
         $table.bootstrapTable('append', toWrite);
         return;
     }
@@ -382,9 +383,10 @@ function buildTable(data) {
             lastRow.tMain = tMain + data.tdk;
         }
         // lastRow.duration = Number((dur !== '') ? dur : 0) + data.tdk;
-        lastRow.duration = tPr + tMain;
+        lastRow.duration = tPr + tMain + data.tdk;
         $table.bootstrapTable('updateRow', {index: dataArr.length - 1, row: lastRow});
     } else {
+        toWrite.duration = data.tdk;
         dataArr.push(toWrite);
         $table.bootstrapTable('removeAll');
         $table.bootstrapTable('append', dataArr);

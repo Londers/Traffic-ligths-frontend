@@ -13,7 +13,7 @@ let routeList = [];
 let routeListLength = 0;
 let allRoutesList = [];
 let lastRoute = {};
-let circlesList = [];
+let circlesMap = new Map();
 let zoom = 19;
 // let tflights = [];
 // let login = '';
@@ -29,6 +29,17 @@ function getRandomColor() {
     return color;
 }
 
+function deleteCircle(map, circle, pos, description) {
+    map.geoObjects.remove(circle);
+    circlesMap.delete(pos);
+    routeList.forEach((route, index) => {
+        if ((route.pos.region === pos.region) && (route.pos.area === pos.area) && (route.pos.id === pos.id)) routeList.splice(index, 1);
+    });
+    routeListLength -= 1;
+    $('#table').bootstrapTable('remove', {field: 'desc', values: [description]});
+
+    makeSelects();
+}
 
 function handleClick(map, trafficLight) {
     let coordinates = [trafficLight.points.Y, trafficLight.points.X];
@@ -37,12 +48,16 @@ function handleClick(map, trafficLight) {
     let id = trafficLight.ID;
     let description = trafficLight.description;
     let phases = trafficLight.phases;
-    let dupCheck = false;
+    let returnFlag = false;
 
-    routeList.forEach(route => {
-        if ((route.pos.region === region) && (route.pos.area === area) && (route.pos.id === id)) dupCheck = true;
+    circlesMap.forEach((value, key) => {
+        if ((key.region === region) && (key.area === area) && (key.id === id)) {
+            deleteCircle(map, value, key, description);
+            returnFlag = true;
+        }
     });
-    if (dupCheck) return;
+
+    if (returnFlag) return;
 
     if (routeListLength > 0) {
         if (routeList[routeListLength - 1].pos.region !== region) return;
@@ -83,7 +98,7 @@ function handleClick(map, trafficLight) {
         strokeWidth: 5
     });
 
-    circlesList.push(myCircle);
+    circlesMap.set({region: region, area: area, id: id}, myCircle);
 
     // Добавляем круг на карту.
     map.geoObjects.add(myCircle);
@@ -179,10 +194,10 @@ function radiusCalculate(zoom) {
 
 function circlesControl(map) {
     if (zoom !== map._zoom) {
-        circlesList.forEach(circle => {
+        circlesMap.forEach(circle => {
             map.geoObjects.remove(circle);
         });
-        circlesList.forEach(circle => {
+        circlesMap.forEach(circle => {
             circle.geometry.setRadius(radiusCalculate(map._zoom));
             map.geoObjects.add(circle);
         });
@@ -424,7 +439,7 @@ ymaps.ready(function () {
     ws.onclose = function (evt) {
         console.log('disconnected', evt);
         // alert('Связь была разорвана');
-        window.close();
+        // window.close();
         // automatically try to reconnect on connection loss
     };
 

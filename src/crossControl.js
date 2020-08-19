@@ -616,6 +616,7 @@ $(function () {
             x = event.clientX;
             y = event.clientY;
         });
+        // $('#map').css({height: $(window).height/2, width: $(window).width/2});
         map.events.add('click', function (e) {
             zoom = map._zoom;
             if (!map.balloon.isOpen()) {
@@ -627,7 +628,14 @@ $(function () {
                     contentHeader: 'Светофор появится на этом месте карты!',
                     contentBody: '<p>Щелкните на крестик в левом верхнем углу</p>'
                 });
-                $('.areaMap').show().attr('style', 'overflow: auto; position: absolute; z-index: 2; top: 30%; left:30%');
+                var $this = $('#map');
+                var offset = $this.offset();
+                var width = $this.width();
+                var height = $this.height();
+
+                var centerX =  offset.left + width/2 - 225;
+                var centerY = offset.top + height/2 - 225;
+                $('.areaMap').show().attr('style', 'overflow: auto; position: absolute; z-index: 2;').css({top: centerY, left: centerX});
             } else {
                 map.balloon.close();
                 $('.areaMap').hide();
@@ -941,6 +949,7 @@ function pkTabFill2(newData, firstLoadFlag) {
         setChange('shift', 'input', 'arrays.SetDK.dk', numberFlag, longPathFlag);
         setChange('tpu', 'select', 'arrays.SetDK.dk', !numberFlag, longPathFlag);
         setChange('razlen', 'checkbox', 'arrays.SetDK.dk', !numberFlag, longPathFlag);
+        setChange('desc', 'input', 'arrays.SetDK.dk', !numberFlag, longPathFlag);
     }
     pkTabFill('pkTable');
 }
@@ -1235,6 +1244,7 @@ function pkTabFill(table) {
     });
     $('#tpu option[value="' + currPK.tpu + '"]').attr('selected', 'selected');
     $('#razlen').prop('checked', currPK.razlen);
+    $('#desc').val(currPK.desc);
 
     currPK.sts.forEach(function () {
         $('#' + table).bootstrapTable('append', '');
@@ -1351,9 +1361,9 @@ function setChange(element, type, fullPath, numFlag, hardFlag) {
             $('#' + element).on('change', function () {
                 if (numFlag) {
                     hardFlag ? data.state[path[0]][path[1]][path[2]][$('#pkSelect').val()][element] = Number($('#' + element).val())
-                        : data.state[path[0]][path[1]][element] = Number($('#' + element).val());
+                        : data.state[path[0]][path[1]][path[2]][element] = Number($('#' + element).val());
                 } else {
-                    data.state[path[0]][path[1]][element] = $('#' + element).val();
+                    data.state[path[0]][path[1]][path[2]][$('#pkSelect').val()][element] = $('#' + element).val();
                 }
             });
         }
