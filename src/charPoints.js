@@ -47,17 +47,8 @@ function createCharPoint() {
         delete strategy.state;
     });
     charPoint.Calculates.forEach(calc => {
-        let tempArr = calc.chanL.trim().split(',');
-        calc.chanL = [];
-        tempArr.forEach(chan => {
-            calc.chanL.push(Number(chan));
-        });
-
-        tempArr = calc.chanR.trim().split(',');
-        calc.chanR = [];
-        tempArr.forEach(chan => {
-            calc.chanR.push(Number(chan));
-        });
+        calc.chanL = calc.chanL.trim().split(',').map(Number);
+        calc.chanR = calc.chanR.trim().split(',').map(Number);
         delete calc.state;
     });
     // console.log(charPoint);
@@ -108,8 +99,8 @@ function fillCalcTable(selected) {
             region: calculate.region,
             area: calculate.area,
             id: calculate.id,
-            chanL: calculate.chanL,
-            chanR: calculate.chanR
+            chanL: calculate.chanL.toString(),
+            chanR: calculate.chanR.toString()
         });
     })
 }
@@ -241,6 +232,10 @@ $(function () {
     $('#appendButton').on('click', function () {
         changeFlag = false;
         $('#subarea').val('');
+        $('#left').val('');
+        $('#right').val('');
+        $('#strategyTable').bootstrapTable('removeAll');
+        $('#calcTable').bootstrapTable('removeAll');
         $('#addDialog1').dialog('open');
     });
 
@@ -444,17 +439,9 @@ $(function () {
 
     $('#updateButton3').on('click', function () {
         let selected = $('#calcTable').bootstrapTable('getSelections')[0];
-        let chanL = '';
-        let chanR = '';
-        selected.chanL.forEach(chan => {
-            chanL += chan + ',';
-        });
-        selected.chanR.forEach(chan => {
-            chanR += chan + ',';
-        });
         $('#updateId').val(selected.id);
-        $('#updateChanL').val(chanL.slice(0, -1));
-        $('#updateChanR').val(chanR.slice(0, -1));
+        $('#updateChanL').val(selected.chanL.toString());
+        $('#updateChanR').val(selected.chanR.toString());
         $('#updateCalcDialog').dialog('open');
     });
 

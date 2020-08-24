@@ -75,9 +75,9 @@ $(function () {
                 $.ajax({
                     url: window.location.origin + '/file/static/cross/' + region + '/' + area + '/' + ID + '/cross.svg',
                     type: 'GET',
-                    success: function (data) {
-                        console.log(data);
-                        $('div[class="col-sm-3 text-left mt-3"]').prepend(data.children[0].outerHTML)
+                    success: function (svgData) {
+                        console.log(svgData);
+                        $('div[class="col-sm-3 text-left mt-3"]').prepend(svgData.children[0].outerHTML)
                             .append('<a class="btn btn-light border" id="secret" data-toggle="tooltip" title="Включить 1 фазу" role="button"\n' +
                                 '        onclick="setPhase(randomInt(1, 12))"><img class="img-fluid" src="/file/static/img/buttons/p1.svg" height="50" alt="1 фаза"></a>');
                         $('#secret').hide();
@@ -158,6 +158,7 @@ $(function () {
                         });
                         checkEdit();
                         checkConnection(cross.tlsost.control);
+                        buildTable(data.phase);
                     },
                     error: function (request) {
                         console.log(request.status + ' ' + request.responseText);
@@ -213,7 +214,6 @@ $(function () {
                 $('#nk').on('change keyup', function () {
                     selectChange('#nk', data.state.idevice);
                 });
-                buildTable(data.phase);
                 break;
             case 'changeEdit':
                 console.log('edit:' + data.edit);
