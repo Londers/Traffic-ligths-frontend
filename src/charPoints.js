@@ -33,21 +33,38 @@ function createCharPoint() {
         step: Number($('#step').find(':selected').text()),
         rem: Number($('#step').find(':selected').text()),
         ltime: (changeFlag) ? findInSave($('#table').bootstrapTable('getSelections')[0]).ltime : new Date(0).toISOString(),
-        pknow: 0,
+        pkcalc: 0,
         pklast: 0,
-        xnum: 0,
+        pknow: 0,
         status: [],
+        left: parseFloat($('#left').val()),
+        right: parseFloat($('#right').val()),
         Strategys: $('#strategyTable').bootstrapTable('getData'),
-        Calculates: $('#calcTable').bootstrapTable('getData')
+        Calculates: $('#calcTable').bootstrapTable('getData'),
+        Results: []
     };
     charPoint.Strategys.forEach(strategy => {
         delete strategy.state;
     });
     charPoint.Calculates.forEach(calc => {
+        let tempArr = calc.chanL.trim().split(',');
+        calc.chanL = [];
+        tempArr.forEach(chan => {
+            calc.chanL.push(Number(chan));
+        });
+
+        tempArr = calc.chanR.trim().split(',');
+        calc.chanR = [];
+        tempArr.forEach(chan => {
+            calc.chanR.push(Number(chan));
+        });
         delete calc.state;
     });
     // console.log(charPoint);
-    ws.send(JSON.stringify({type: (changeFlag) ? 'xctrlChange' : 'xctrlCreate', state: (changeFlag) ? [charPoint] : charPoint}));
+    ws.send(JSON.stringify({
+        type: (changeFlag) ? 'xctrlChange' : 'xctrlCreate',
+        state: (changeFlag) ? [charPoint] : charPoint
+    }));
 }
 
 function checkRange(xleft, xright) {
@@ -75,7 +92,10 @@ function fillStrategyTable(selected) {
     $('#strategyTable').bootstrapTable('removeAll');
     let save = findInSave(selected);
     save.Strategys.forEach(strategy => {
-        $('#strategyTable').bootstrapTable('append', {xleft: strategy.xleft, xright: strategy.xright, pk: strategy.pk});
+        $('#strategyTable').bootstrapTable('append', {
+            xleft: strategy.xleft, xright: strategy.xright, pkl: strategy.pkl,
+            pks: strategy.pks, pkr: strategy.pkr
+        });
     })
 
 }
@@ -88,8 +108,8 @@ function fillCalcTable(selected) {
             region: calculate.region,
             area: calculate.area,
             id: calculate.id,
-            chan: calculate.chan,
-            mult: calculate.mult
+            chanL: calculate.chanL,
+            chanR: calculate.chanR
         });
     })
 }
@@ -101,10 +121,13 @@ $(function () {
 
     let $table = $('#table');
     $table.bootstrapTable('hideColumn', 'ltime')
-        .bootstrapTable('hideColumn', 'pknow')
+        .bootstrapTable('hideColumn', 'pkcalc')
         .bootstrapTable('hideColumn', 'pklast')
-        .bootstrapTable('hideColumn', 'xnum')
-        .bootstrapTable('hideColumn', 'status');
+        .bootstrapTable('hideColumn', 'pknow')
+        .bootstrapTable('hideColumn', 'status')
+        .bootstrapTable('hideColumn', 'left')
+        .bootstrapTable('hideColumn', 'right')
+        .bootstrapTable('hideColumn', 'result');
 
     ws = new WebSocket('ws://' + location.host + location.pathname + 'W');
     ws.onopen = function () {
@@ -134,7 +157,8 @@ $(function () {
 
                 data.xctrlInfo.sort(sortByPlace);
                 data.xctrlInfo.forEach(row => {
-                    row.data = makeDataCol(row.ltime, row.pknow, row.pklast, row.xnum);
+                    row.data = makeDataCol(row.ltime, row.pkcalc, row.pknow, row.pklast);
+                    row.attitude = makeAttitudeCol(row.left, row.right);
                     statusCB = '-';
                 });
                 $table.bootstrapTable('load', data.xctrlInfo);
@@ -146,7 +170,8 @@ $(function () {
             case 'xctrlReInfo':
                 data.xctrlInfo.sort(sortByPlace);
                 data.xctrlInfo.forEach(row => {
-                    row.data = makeDataCol(row.ltime, row.pknow, row.pklast, row.xnum);
+                    row.data = makeDataCol(row.ltime, row.pkcalc, row.pknow, row.pklast);
+                    row.attitude = makeAttitudeCol(row.left, row.right);
                     statusCB = '-';
                 });
                 $table.bootstrapTable('load', data.xctrlInfo);
@@ -163,7 +188,8 @@ $(function () {
                             index = i;
                         }
                     });
-                    newRow.data = makeDataCol(newRow.ltime, newRow.pknow, newRow.pklast, newRow.xnum);
+                    newRow.data = makeDataCol(newRow.ltime, newRow.pkcalc, newRow.pknow, newRow.pklast);
+                    newRow.attitude = makeAttitudeCol(newRow.left, newRow.right);
                     $table.bootstrapTable('updateRow', {index: index, row: newRow});
                     saveShit[index] = newRow;
                 });
@@ -225,6 +251,8 @@ $(function () {
         $('#area')[0].value = selected.area;
         $('#subarea').val(selected.subarea);
         $('#step')[0].value = selected.step;
+        $('#left').val(selected.left);
+        $('#right').val(selected.right);
         $('#addDialog1').dialog('open');
     });
 
@@ -244,7 +272,7 @@ $(function () {
         autoOpen: false,
         buttons: {
             'Далее': function () {
-                if (validateInput('subarea')) {
+                if (validateInput('subarea') & validateInput('left') & validateInput('right')) {
                     if (changeFlag) {
                         let selected = $('#table').bootstrapTable('getSelections')[0];
                         if (!((selected.region == $('#region').find(':selected').text()) &&
@@ -298,7 +326,7 @@ $(function () {
                 $(this).dialog('close');
             }
         },
-        minWidth: 800,
+        minWidth: 1000,
         modal: true,
         resizable: false
     });
@@ -306,7 +334,9 @@ $(function () {
     $('#appendButton2').on('click', function () {
         $('#xleft').val('');
         $('#xright').val('');
-        $('#pk').val('');
+        $('#pkl').val('');
+        $('#pks').val('');
+        $('#pkr').val('');
         $('#addStrategyDialog').dialog('open');
     });
 
@@ -314,7 +344,9 @@ $(function () {
         let selected = $('#strategyTable').bootstrapTable('getSelections')[0];
         $('#updateXleft').val(selected.xleft);
         $('#updateXright').val(selected.xright);
-        $('#updatePk').val(selected.pk);
+        $('#updatePkl').val(selected.pkl);
+        $('#updatePks').val(selected.pks);
+        $('#updatePkr').val(selected.pkr);
         $('#updateStrategyDialog').dialog('open');
     });
 
@@ -326,12 +358,15 @@ $(function () {
         autoOpen: false,
         buttons: {
             'Создать': function () {
-                if (validateInput('xleft') & validateInput('xright') & validateInput('pk')) {
+                if (validateInput('xleft') & validateInput('xright') & validateInput('pkl')
+                    & validateInput('pks') & validateInput('pkr')) {
                     if (checkRange('xleft', 'xright')) {
                         $('#strategyTable').bootstrapTable('append', {
                             xleft: Number($('#xleft').val()),
                             xright: Number($('#xright').val()),
-                            pk: Number($('#pk').val())
+                            pkl: Number($('#pkl').val()),
+                            pks: Number($('#pks').val()),
+                            pkr: Number($('#pkr').val())
                         });
                         $(this).dialog('close');
                     }
@@ -353,14 +388,17 @@ $(function () {
                 $('#strategyTable').find('tr').each((i, tr) => {
                     if (i !== 0) if (tr.cells[0].children[0].children[0].checked) target = i - 1;
                 });
-                if (validateInput('updateXleft') & validateInput('updateXright') & validateInput('updatePk')) {
+                if (validateInput('updateXleft') & validateInput('updateXright') & validateInput('updatePkl')
+                    & validateInput('updatePks') & validateInput('updatePkr')) {
                     if (checkRange('updateXleft', 'updateXright')) {
                         $('#strategyTable').bootstrapTable('updateRow', {
                             index: target,
                             row: {
                                 xleft: Number($('#updateXleft').val()),
                                 xright: Number($('#updateXright').val()),
-                                pk: Number($('#updatePk').val())
+                                pkl: Number($('#updatePkl').val()),
+                                pks: Number($('#updatePks').val()),
+                                pkr: Number($('#updatePkr').val())
                             }
                         });
                         $(this).dialog('close');
@@ -391,7 +429,7 @@ $(function () {
                 $(this).dialog('close');
             }
         },
-        minWidth: 800,
+        minWidth: 1200,
         modal: true,
         resizable: false
     });
@@ -399,16 +437,24 @@ $(function () {
 
     $('#appendButton3').on('click', function () {
         $('#id').val('');
-        $('#chan').val('');
-        $('#mult').val('');
+        $('#chanL').val('');
+        $('#chanR').val('');
         $('#addCalcDialog').dialog('open');
     });
 
     $('#updateButton3').on('click', function () {
         let selected = $('#calcTable').bootstrapTable('getSelections')[0];
+        let chanL = '';
+        let chanR = '';
+        selected.chanL.forEach(chan => {
+            chanL += chan + ',';
+        });
+        selected.chanR.forEach(chan => {
+            chanR += chan + ',';
+        });
         $('#updateId').val(selected.id);
-        $('#updateChan').val(selected.chan);
-        $('#updateMult').val(selected.mult);
+        $('#updateChanL').val(chanL.slice(0, -1));
+        $('#updateChanR').val(chanR.slice(0, -1));
         $('#updateCalcDialog').dialog('open');
     });
 
@@ -420,13 +466,13 @@ $(function () {
         autoOpen: false,
         buttons: {
             'Создать': function () {
-                if (validateInput('chan') & validateInput('mult')) {
+                if ((validateInput('chanL') & validateInput('chanR'))) {
                     $('#calcTable').bootstrapTable('append', {
                         region: Number($('#region').find(':selected').text()),
                         area: Number($('#area2').find(':selected').text()),
                         id: Number($('#id').val()),
-                        chan: Number($('#chan').val()),
-                        mult: Number($('#mult').val())
+                        chanL: $('#chanL').val(),
+                        chanR: $('#chanR').val()
                     });
                     $(this).dialog('close');
                 }
@@ -447,15 +493,15 @@ $(function () {
                 $('#calcTable').find('tr').each((i, tr) => {
                     if (i !== 0) if (tr.cells[0].children[0].children[0].checked) target = i - 1;
                 });
-                if (validateInput('updateChan') & validateInput('updateMult')) {
+                if (validateInput('updateChanL') & validateInput('updateChanR')) {
                     $('#calcTable').bootstrapTable('updateRow', {
                         index: target,
                         row: {
                             region: Number($('#region').find(':selected').text()),
                             area: Number($('#area').find(':selected').text()),
                             id: Number($('#updateId').val()),
-                            chan: Number($('#updateChan').val()),
-                            mult: Number($('#updateMult').val())
+                            chanL: $('#updateChanL').val(),
+                            chanR: $('#updateChanR').val()
                         }
                     });
                     $(this).dialog('close');
@@ -527,17 +573,22 @@ function buildTable() {
             td.innerText = '';
             buildTimeSelect(td, rowIndex, value);
         }
-        if (value === '-') {
+        if (td.cellIndex === 8) {
             td.innerText = '';
             buildCheckbox(td, 'st', rowIndex);
+        }
+        if (td.cellIndex === 10) {
+            td.innerText = '';
+            buildCheckbox(td, 'rs', rowIndex);
         }
     });
 }
 
 function buildCheckbox(td, id, rowIndex) {
+    // $(td).css('style', 'max-width: 100px; max-height: 100px');
     if (id === 'st') {
         $(td).append('<div class="custom-control custom-checkbox popup">\n' +
-            '<input type="checkbox" class="custom-control-input" id="' + id + rowIndex + '">\n' +
+            '<input type="checkbox" class="custom-control-input"style="position: relative; z-index: 0"  id="' + id + rowIndex + '">\n' +
             '<label class="custom-control-label" for="' + id + rowIndex + '"></label>' +
             '<div class="popuptext" id="status' + rowIndex + '"></div></div>')
             .on('change', () => {
@@ -566,10 +617,24 @@ function buildCheckbox(td, id, rowIndex) {
         // '    </tbody>' +
         // '</table>'
         // );
+    } else if (id === 'rs') {
+        $(td).append('<div class="custom-control custom-checkbox popup">\n' +
+            '<input type="checkbox" class="custom-control-input" id="' + id + rowIndex + '">\n' +
+            '<label class="custom-control-label" for="' + id + rowIndex + '"></label>' +
+            '<div class="popuptext" id="result' + rowIndex + '"></div></div>')
+            .on('change', () => {
+                $('#result' + rowIndex)[0].classList.toggle("show");
+                $('#result' + rowIndex)[0].innerHTML = '';
+                saveShit[rowIndex].Results.forEach(result => {
+                    $('#result' + rowIndex)[0].innerHTML += 'Интенсивность прямого направления ' + result.il
+                        + ', Интенсивность обратного направления ' + result.ir + ', отношение: ' + Number((result.il / result.ir).toFixed(2)) + '<br>';
+                });
+            })
     } else {
         $(td).append('<div class="custom-control custom-checkbox">\n' +
-            '<input type="checkbox" class="custom-control-input" id="' + id + rowIndex + '">\n' +
-            '<label class="custom-control-label" for="' + id + rowIndex + '"></label></div>')
+            '<input type="checkbox" class="custom-control-input" id="' + id + rowIndex + '">\n'
+            + '<label class="custom-control-label" for="' + id + rowIndex + '"></label></div>'
+        )
             .on('change', () => {
                 let toSend = saveShit[rowIndex];
                 toSend.switch = $('#sw' + rowIndex)[0].checked;
@@ -604,13 +669,16 @@ function timeFormat(time) {
     return dateTimeFormat.format(date);
 }
 
-function makeDataCol(ltime, pknow, pklast, xnum) {
-    let ret = 'Время: ' + timeFormat(ltime) +
-        ',Предыдущий ПК: ' + ((pklast === 0) ? 'нет' : pklast) + ', новый ПК: ' + ((pknow === 0) ? 'нет' : pknow) +
-        ',Характерное число: ' + xnum;
-    return ret;
+function makeDataCol(ltime, pkcalc, pknow, pklast) {
+    return 'Время: ' + timeFormat(ltime) +
+        ', рассчитанный ПК: ' + ((pkcalc === 0) ? 'нет' : pkcalc) +
+        ', текущий ПК: ' + ((pknow === 0) ? 'нет' : pknow) +
+        ', предыдущий ПК: ' + ((pklast === 0) ? 'нет' : pklast);
 }
 
+function makeAttitudeCol(left, right) {
+    return 'Для прямого направления: ' + left + ', для обратного направления: ' + right;
+}
 
 //Заполнение поля выбора районов для создания или изменения пользователя
 function fillAreas() {
