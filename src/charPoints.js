@@ -4,13 +4,23 @@ let areaInfo = [];
 let saveShit = [];
 let multiples = [1, 2, 3, 4, 5, 6, 10, 12, 15, 20, 30];
 
+let swSum = true;
+let rlSum = true;
+let swSwitch = true;
+let rlSwitch = true;
 let changeFlag = false;
 
-/**
- * @return {number}
- */
 function sortByPlace(a, b) {
     return (a.region !== b.region) ? (a.region - b.region) : (a.area !== b.area) ? (a.area - b.area) : (a.subarea - b.subarea);
+}
+
+function checkIfChecked(selected, table, txt) {
+    $('#updateMsg' + table).remove();
+    if (selected === undefined) {
+        $('#' + table).parent().parent().prepend('<div style="color: red;" id="updateMsg' + table + '"><h5>Выберите ' + txt + '</h5></div>');
+        return false;
+    }
+    return true;
 }
 
 function findInSave(selected) {
@@ -132,10 +142,8 @@ $(function () {
     ws.onmessage = function (evt) {
         let allData = JSON.parse(evt.data);
         let data = allData.data;
-        // let switchFlag = true;
         let dataArr = [];
 
-        // let counter = 0;
         switch (allData.type) {
             case 'xctrlInfo':
                 regionInfo = data.regionInfo;
@@ -157,6 +165,9 @@ $(function () {
                 dataArr = $table.bootstrapTable('getData');
                 buildTable();
                 fillAreas();
+
+                swSwitch = swSum;
+                rlSwitch = !rlSum;
                 break;
             case 'xctrlReInfo':
                 data.xctrlInfo.sort(sortByPlace);
@@ -213,15 +224,21 @@ $(function () {
 
     $('#switchCheck').on('change', function () {
         $('#table tbody').find('input[id*="sw"]').each((i, checkBox) => {
-            $(checkBox).prop('checked', $('#switchCheck')[0].checked);
+            $(checkBox).prop('checked', !swSum);
         });
         massControl();
     });
 
     $('#releaseCheck').on('change', function () {
+        let sum = true;
         $('#table tbody').find('input[id*="rl"]').each((i, checkBox) => {
-            $(checkBox).prop('checked', $('#releaseCheck')[0].checked);
+            let swValue = $('#sw' + i)[0].checked;
+            sum = sum && !swValue;
+            $(checkBox).prop('checked', rlSwitch ? swValue : false);
         });
+        if (!sum) {
+            // if (!swSum) rlSwitch = !rlSwitch;
+        }
         massControl();
     });
 
@@ -241,6 +258,7 @@ $(function () {
 
     $('#updateButton').on('click', function () {
         let selected = $('#table').bootstrapTable('getSelections')[0];
+        if (!checkIfChecked(selected, 'table', 'характерную точку')) return;
         changeFlag = true;
         $('#region')[0].value = selected.region;
         $('#area')[0].value = selected.area;
@@ -253,6 +271,7 @@ $(function () {
 
     $('#deleteButton').on('click', function () {
         let selected = $('#table').bootstrapTable('getSelections')[0];
+        if (!checkIfChecked(selected, 'table', 'характерную точку')) return;
         ws.send(JSON.stringify({
             type: 'xctrlDelete',
             region: Number(selected.region),
@@ -337,6 +356,7 @@ $(function () {
 
     $('#updateButton2').on('click', function () {
         let selected = $('#strategyTable').bootstrapTable('getSelections')[0];
+        if (!checkIfChecked(selected, 'strategyTable', 'стратегию')) return;
         $('#updateXleft').val(selected.xleft);
         $('#updateXright').val(selected.xright);
         $('#updatePkl').val(selected.pkl);
@@ -439,6 +459,7 @@ $(function () {
 
     $('#updateButton3').on('click', function () {
         let selected = $('#calcTable').bootstrapTable('getSelections')[0];
+        if (!checkIfChecked(selected, 'calcTable', 'расчёт')) return;
         $('#updateId').val(selected.id);
         $('#updateChanL').val(selected.chanL.toString());
         $('#updateChanR').val(selected.chanR.toString());
@@ -544,9 +565,13 @@ function buildTimeSelect(td, rowIndex, value) {
 
 function buildTable() {
     let switchFlag = true;
+    swSum = rlSum = true;
     $('#table').find('tr').find('td').each((i, td) => {
         let value = td.innerText;
         let rowIndex = td.parentElement.rowIndex - 1;
+
+        // $('#rl' + rowIndex)[0].checked;
+
         if ((value === 'true') || (value === 'false')) {
             td.innerText = '';
             if (switchFlag) {
@@ -623,6 +648,17 @@ function buildCheckbox(td, id, rowIndex) {
             + '<label class="custom-control-label" for="' + id + rowIndex + '"></label></div>'
         )
             .on('change', () => {
+                if (id === 'rl') {
+                    if (!$('#sw' + rowIndex)[0].checked) {
+                        $('#rl' + rowIndex)[0].checked = false;
+                        return;
+                    }
+                } else if (id === 'sw') {
+                    if (!$('#sw' + rowIndex)[0].checked) {
+                        $('#rl' + rowIndex)[0].checked = false;
+                        // return;
+                    }
+                }
                 let toSend = saveShit[rowIndex];
                 toSend.switch = $('#sw' + rowIndex)[0].checked;
                 toSend.release = $('#rl' + rowIndex)[0].checked;
@@ -630,8 +666,14 @@ function buildCheckbox(td, id, rowIndex) {
                 // console.log('rowIndex ' + rowIndex + ', checkbox ' + id + ' was changed to ' + $('#' + id + rowIndex)[0].checked);
             });
         let value = false;
-        if (id === 'sw') value = saveShit[rowIndex].switch;
-        if (id === 'rl') value = saveShit[rowIndex].release;
+        if (id === 'sw') {
+            value = saveShit[rowIndex].switch;
+            swSum = swSum && value;
+        }
+        if (id === 'rl') {
+            value = saveShit[rowIndex].release;
+            rlSum = rlSum && value;
+        }
         $('#' + id + rowIndex)[0].checked = value;
         // if (id === 'st') {
         //     $('#' + id + rowIndex)[0].className = $('#' + id + rowIndex)[0].className.toString() + ' popup';

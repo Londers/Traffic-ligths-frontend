@@ -916,26 +916,34 @@ function mainTabFill(data, firstLoadFlag) {
         if ($('#id').val() > 255) $('#id').val(255);
         checkNew(false);
     });
-    if (firstLoadFlag) setChange('id', 'input', '', numberFlag);
-    if (firstLoadFlag) setChange('idevice', 'input', '', numberFlag);
+    setChange('id', 'input', '', numberFlag);
+    setChange('idevice', 'input', '', numberFlag);
     $('#idevice').val(data.state.idevice).on('change', function () {
         checkNew(false);
     });
-    if (firstLoadFlag) setChange('area', 'select', '');
+    setChange('area', 'select', '');
     $('#area option[value=' + data.state.area + ']').attr('selected', 'selected');
-    if (firstLoadFlag) setChange('type', 'select', 'arrays');
+    setChange('type', 'select', 'arrays');
     $('#type option[value=' + data.state.arrays.type + ']').attr('selected', 'selected');
     $('#subarea').val(data.state.subarea);
-    if (firstLoadFlag) setChange('subarea', 'input', '', numberFlag);
+    setChange('subarea', 'input', '', numberFlag);
     $('#name').val(data.state.name);
-    if (firstLoadFlag) setChange('name', 'input', '', !numberFlag);
+    setChange('name', 'input', '', !numberFlag);
     $('#phone').val(data.state.phone);
-    if (firstLoadFlag) setChange('phone', 'input', '', !numberFlag);
+    setChange('phone', 'input', '', !numberFlag);
     $('#tz').val(data.state.arrays.timedev.tz);
-    if (firstLoadFlag) setChange('tz', 'input', 'arrays.timedev', numberFlag);
+    setChange('tz', 'input', 'arrays.timedev', numberFlag);
     $('#summer').prop('checked', data.state.arrays.timedev.summer);
-    if (firstLoadFlag) setChange('summer', 'checkbox', 'arrays.timedev', !numberFlag, !longPathFlag);
-
+    setChange('summer', 'checkbox', 'arrays.timedev', !numberFlag, !longPathFlag);
+    $('#vpcpdl').val(data.state.Model.vpcpdl);
+    setChange('vpcpdl', 'input', 'Model', numberFlag);
+    $('#vpcpdr').val(data.state.Model.vpcpdr);
+    setChange('vpcpdr', 'input', 'Model', numberFlag);
+    $('#vpbsl').val(data.state.Model.vpbsl);
+    setChange('vpbsl', 'input', 'Model', numberFlag);
+    $('#vpbsr').val(data.state.Model.vpbsr);
+    setChange('vpbsr', 'input', 'Model', numberFlag);
+    
     anotherTableFill('table', mainTableFlag);
 }
 
@@ -981,9 +989,9 @@ function vvTabFill(firstLoadFlag) {
     anotherTableFill('vvTable', vvTableFlag);
 
     $('#ite').val(data.state.arrays.SetTimeUse.ite);
-    if (firstLoadFlag) setChange('ite', 'input', 'arrays.SetTimeUse', numberFlag);
+    setChange('ite', 'input', 'arrays.SetTimeUse', numberFlag);
     $('#tuin').val(data.state.arrays.SetTimeUse.tuin);
-    if (firstLoadFlag) setChange('tuin', 'input', 'arrays.SetTimeUse', numberFlag);
+    setChange('tuin', 'input', 'arrays.SetTimeUse', numberFlag);
 
     tableFill([0], 'vv2Table', vv2TableFlag);
 }
@@ -1352,6 +1360,7 @@ function handsomeNumbers(num) {
     return (num < 10) ? '0' + num : num;
 }
 
+// setChange('vpcpdr', 'input', 'Model', numberFlag);
 //Функция для сохранения изменений всех не табличных элементов
 function setChange(element, type, fullPath, numFlag, hardFlag) {
     if (!firstLoad) return;
@@ -1383,7 +1392,11 @@ function setChange(element, type, fullPath, numFlag, hardFlag) {
         if (type === 'input') {
             $('#' + element).on('change', function () {
                 if (numFlag) {
-                    data.state[element] = Number($('#' + element).val());
+                    if (fullPath === '') {
+                        data.state[element] = Number($('#' + element).val());
+                    } else {
+                        data.state[path[0]][element] = Number($('#' + element).val());
+                    }
                 } else {
                     data.state[element] = $('#' + element).val();
                 }

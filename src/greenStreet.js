@@ -208,8 +208,10 @@ function circlesControl(map) {
 function setRouteArea(map, box, description, routeId) {
     map.geoObjects.remove(lastRoute);
     let coordinates = [];
+    let tableData = [];
     allRoutesList[routeId].listTL.forEach(tf => {
-        coordinates.push([tf.point.Y, tf.point.X])
+        coordinates.push([tf.point.Y, tf.point.X]);
+        tableData.push({desc: tf.description, phase: tf.phase});
     });
 
     // Построение маршрута.
@@ -226,6 +228,9 @@ function setRouteArea(map, box, description, routeId) {
 
     lastRoute = multiRoute;
     map.geoObjects.add(multiRoute);
+
+    $('#table').bootstrapTable('load', tableData);
+    makeSelects();
 }
 
 ymaps.ready(function () {
