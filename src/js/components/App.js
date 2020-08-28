@@ -144,8 +144,8 @@ class UserList extends Component {
     }
 
     createUsers() {
-        console.log("createUsers");
-        console.log(this.props.users);
+        console.log("chat - createUsers");
+        console.log('chat - ' + this.props.users);
         if (this.props.users === undefined) {
             // this.createUsers();
             // console.log("??????????????");
@@ -176,7 +176,7 @@ class UserList extends Component {
         // console.log(index + "---" + status);
         // console.log(this.props.users);
         // console.log(elem.children.length);
-        console.log("changeStatus");
+        console.log("chat - changeStatus");
         // console.log(elem);
         let child = elem.children[index].innerHTML;
         if (child.includes("offline")) {
@@ -223,15 +223,15 @@ class ChatApp extends Component {
         });
         shit.ws.onopen = function () {
             // on connecting, do nothing but log it to the console
-            console.log('connected')
+            console.log('chat - connected')
         };
 
-        shit.ws.onmessage = function (evt) {console.log(evt.data);
+        shit.ws.onmessage = function (evt) {console.log('chat - ', evt.data);
             // listen to data sent from the websocket server
             const dataType = JSON.parse(evt.data);
             const data = dataType.data;
-            console.log('received ' + dataType.type);
-            console.log(data);
+            console.log('chat - received ', dataType.type);
+            console.log('chat - ', data);
             switch (dataType.type) {
                 case "message":
                     // eslint-disable-next-line no-restricted-globals
@@ -268,7 +268,7 @@ class ChatApp extends Component {
                 case "users":
                     shit.state.users = data.users;
                     shit.child.props.users = data.users;
-                    console.log("users");
+                    console.log("chat - users");
                     // console.log(data);
                     // console.log(shit.state.users);
                     shit.child.createUsers();
@@ -287,14 +287,14 @@ class ChatApp extends Component {
                 case 'close':
                     shit.ws.close();
                     if (data.message !== '') {
-                        alert(data.message);
+                        console.log('chat - ', data.message);
                     } else {
-                        alert('Потеряна связь с сервером');
+                        console.log('Потеряна связь с сервером');
                     }
                     // window.close();
                     break;
                 case "error":
-                    console.log(data.user + " - " + data.error);
+                    console.log('chat - ' + data.user + " - " + data.error);
                     break;
             }
             // if (message.time === undefined) return;
@@ -302,7 +302,7 @@ class ChatApp extends Component {
         };
 
         shit.ws.onclose = function () {
-            console.log('disconnected')
+            console.log('chat - disconnected')
             // automatically try to reconnect on connection loss
 
         };

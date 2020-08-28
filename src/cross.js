@@ -36,7 +36,7 @@ $(function () {
             case 'crossBuild':
                 let state = data.state;
                 let cross = data.cross;
-                let controlCrossFlag = data.controlCrossFlag;
+                let controlCrossFlag = data.access[4];
                 let region = data.cross.region.num;
                 let area = data.cross.area.num;
                 ID = data.cross.ID;
@@ -49,7 +49,7 @@ $(function () {
                     if (editFlag) controlSend({id: idevice, cmd: 4, param: 0});
                 });
 
-                if (data.controlCrossFlag) {
+                if (controlCrossFlag) {
                     $('a').each(function () {
                         $(this).show();
                     });
@@ -64,7 +64,7 @@ $(function () {
                 counter = 0;
 
                 $('select').each(function () {
-                    checkSelect($(this), data.controlCrossFlag);
+                    checkSelect($(this), controlCrossFlag);
                 });
 
                 //TODO uncomment

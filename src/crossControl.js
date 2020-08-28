@@ -1360,7 +1360,6 @@ function handsomeNumbers(num) {
     return (num < 10) ? '0' + num : num;
 }
 
-// setChange('vpcpdr', 'input', 'Model', numberFlag);
 //Функция для сохранения изменений всех не табличных элементов
 function setChange(element, type, fullPath, numFlag, hardFlag) {
     if (!firstLoad) return;

@@ -121,14 +121,6 @@ $(function () {
     });
 
     let $table = $('#table');
-    $table.bootstrapTable('hideColumn', 'ltime')
-        .bootstrapTable('hideColumn', 'pkcalc')
-        .bootstrapTable('hideColumn', 'pklast')
-        .bootstrapTable('hideColumn', 'pknow')
-        .bootstrapTable('hideColumn', 'status')
-        .bootstrapTable('hideColumn', 'left')
-        .bootstrapTable('hideColumn', 'right')
-        .bootstrapTable('hideColumn', 'result');
 
     ws = new WebSocket('ws://' + location.host + location.pathname + 'W');
     ws.onopen = function () {
@@ -236,9 +228,7 @@ $(function () {
             sum = sum && !swValue;
             $(checkBox).prop('checked', rlSwitch ? swValue : false);
         });
-        if (!sum) {
-            // if (!swSum) rlSwitch = !rlSwitch;
-        }
+        if (!sum) rlSwitch = !rlSwitch;
         massControl();
     });
 

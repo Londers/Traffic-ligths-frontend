@@ -53,7 +53,7 @@ $(function () {
                 //Сбор данных для отправки на сервер
                 let toSend = {
                     login: $('#login').val(),
-                    workTime: parseInt($('#workTime option:selected').text()),
+                    workTime: parseInt($('#workTime option:selected').text()) * 60,
                     role: {name: $('#privileges option:selected').text(), permissions: permissionControl('a')},
                     region: {num: $('#region option:selected').val()},
                     area: areas,

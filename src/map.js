@@ -13,6 +13,9 @@ let authorizedFlag = false;
 let logDeviceFlag = false;
 let manageFlag = false;
 let techFlag = false;
+let licenceFlag = false;
+let gsFlag = false;
+let xctrlFlag = false;
 let chatFlag = true;
 let fixationFlag = false;
 let ws;
@@ -189,7 +192,10 @@ ymaps.ready(function () {
                         authorizedFlag = false;
                         manageFlag = false;
                         logDeviceFlag = false;
+                        licenceFlag = false;
                         techFlag = false;
+                        gsFlag = false;
+                        xctrlFlag = false;
                         authorize();
                         // location.href = location.origin;
                     },
@@ -279,9 +285,12 @@ ymaps.ready(function () {
                 // let techRegionInfo = (data.region === '*') ? regionInfo : data.region;
                 // let techAreaInfo = (data.area === null) ? areaInfo : data.area;
                 authorizedFlag = data.authorizedFlag;
-                manageFlag = data.manageFlag;
-                logDeviceFlag = data.logDeviceFlag;
-                techFlag = data.techArmFlag;
+                manageFlag = data.access[2];
+                logDeviceFlag = data.access[5];
+                licenceFlag = data.access[6];
+                techFlag = data.access[7];
+                gsFlag = data.access[8];
+                xctrlFlag = data.access[9];
                 if ((areaZone === undefined) && (data.areaZone !== undefined)) {
                     areaZone = data.areaZone;
                     createAreasLayout(map);
@@ -409,9 +418,12 @@ ymaps.ready(function () {
                     localStorage.setItem('login', data.login);
                     // console.log('QqQqQ', data.areaZone);
                     authorizedFlag = data.authorizedFlag;
-                    manageFlag = data.manageFlag;
-                    logDeviceFlag = data.logDeviceFlag;
-                    techFlag = data.techArmFlag;
+                    manageFlag = data.access[2];
+                    logDeviceFlag = data.access[5];
+                    licenceFlag = data.access[6];
+                    techFlag = data.access[7];
+                    gsFlag = data.access[8];
+                    xctrlFlag = data.access[9];
                     areaZone = data.areaZone;
                     createAreasLayout(map);
 
@@ -436,7 +448,10 @@ ymaps.ready(function () {
                 authorizedFlag = false;
                 manageFlag = false;
                 logDeviceFlag = false;
+                licenceFlag = false;
                 techFlag = false;
+                gsFlag = false;
+                xctrlFlag = false;
                 localStorage.setItem('login', '');
                 authorize();
                 $('#myForm').remove();
@@ -616,9 +631,12 @@ function authorize() {
             chatFlag = false;
         }
     }
-    (logDeviceFlag) ? $('#deviceLogButton').show() : $('#deviceLogButton').hide();
     (manageFlag) ? $('#manageButton').show() : $('#manageButton').hide();
+    //licenceFlag
+    (logDeviceFlag) ? $('#deviceLogButton').show() : $('#deviceLogButton').hide();
     (techFlag) ? $('#techArmButton').show() : $('#techArmButton').hide();
+    (gsFlag) ? $('#standardZUButton').show() : $('#standardZUButton').hide();
+    (xctrlFlag) ? $('#charPointsButton').show() : $('#charPointsButton').hide();
 }
 
 let createChipsLayout = function (calculateSize) {

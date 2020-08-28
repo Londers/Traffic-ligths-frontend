@@ -9,13 +9,13 @@ let areaInfo;
 let areaZone;
 let boxRemember = {Y: 0, X: 0};
 let description = '';
+let tflights = [];
 let routeList = [];
 let routeListLength = 0;
 let allRoutesList = [];
 let lastRoute = {};
 let circlesMap = new Map();
 let zoom = 19;
-// let tflights = [];
 // let login = '';
 let fixationFlag = false;
 let ws;
@@ -107,8 +107,9 @@ function handleClick(map, trafficLight) {
     let tflight = [{
         desc: description,
         phase: phases,
-        id: routeListLength - 1
-        // pos: {region: region, area: area, id: id}
+        region: region,
+        area: area,
+        id: id
     }];
 
     $('#table').bootstrapTable('append', tflight);
@@ -117,19 +118,30 @@ function handleClick(map, trafficLight) {
     makeSelects();
 }
 
+function getPhases(index) {
+    let rowData = $('#table').bootstrapTable('getData')[index];
+    let returnData = {currPhase: -1, phases: []};
+    tflights.forEach(trafficLight => {
+        if ((trafficLight.region.num === rowData.region) && (trafficLight.area.num === rowData.area) && (trafficLight.ID === rowData.id)) {
+            returnData.currPhase = (rowData.phase.length === 1) ? rowData.phase[0] : 1;
+            returnData.phases = trafficLight.phases;
+        }
+    });
+    return returnData;
+}
+
 function makeSelects() {
-    let counter = 0;
-    $('#table tbody tr').each(function () {
-        counter = 0;
-        $(this).find('td').each(function () {
-            if ((counter++ % 2) !== 0) {
-                let phases = $(this)[0].innerText.split(',');
+    $('#table tbody tr').each((i, tr) => {
+        $(tr).find('td').each((i, td) => {
+            if (td.cellIndex === 2) {
+                let phases = getPhases(tr.rowIndex - 1);//$(this)[0].innerText.split(',');
                 let selectTxt = '';
-                phases.forEach(phase => {
-                    selectTxt += '<option value="' + phase + '">' + phase + '</option>';
+                phases.phases.forEach(phase => {
+                    selectTxt += '<option value="' + phase + '"' + ((phase === phases.currPhase) ? ' selected="selected"' : '') + '>' + phase + '</option>';
                 });
-                $(this)[0].innerText = '';
-                $(this)[0].innerHTML = '<select>' + selectTxt + '</select>';
+                $(td)[0].innerText = '';
+                $(td)[0].innerHTML = '<select>' + selectTxt + '</select>';
+
             }
         })
     })
@@ -211,7 +223,13 @@ function setRouteArea(map, box, description, routeId) {
     let tableData = [];
     allRoutesList[routeId].listTL.forEach(tf => {
         coordinates.push([tf.point.Y, tf.point.X]);
-        tableData.push({desc: tf.description, phase: tf.phase});
+        tableData.push({
+            desc: tf.description,
+            phase: [tf.phase],
+            region: tf.pos.region,
+            area: tf.pos.area,
+            id: tf.pos.id
+        });
     });
 
     // Построение маршрута.
@@ -235,14 +253,6 @@ function setRouteArea(map, box, description, routeId) {
 
 ymaps.ready(function () {
 
-    $('#dropdownLayersButton').trigger('click');
-    $('#dropdownControlButton').trigger('click');
-
-    //Выбор места для открытия на карте
-    $('#locationButton').on('click', function () {
-        $('#locationDialog').dialog('open');
-    });
-
     //Создание и первичная настройка карты
     let map = new ymaps.Map('map', {
         center: [54.9912, 73.3685],
@@ -251,6 +261,31 @@ ymaps.ready(function () {
 
     map.events.add(['wheel', 'mousemove', 'click'], function () {
         circlesControl(map);
+    });
+
+    $('#dropdownLayersButton').trigger('click');
+    $('#dropdownControlButton').trigger('click');
+
+    //Выбор места для открытия на карте
+    $('#locationButton').on('click', function () {
+        $('#locationDialog').dialog('open');
+    });
+
+    $('#phaseTableButton').on('click', function () {
+        $('#phaseTableDialog').dialog('open');
+    });
+
+    $('#deleteButton').on('click', function () {
+        let selected = $('#table').bootstrapTable('getSelections')[0];
+        allRoutesList.forEach((route, index) => {
+            if (route.id === Number($('#routes').val())) {
+                route.listTL.forEach((tf, index) => {
+                    if ((tf.pos.region === selected.region) && (tf.pos.area === selected.area) && (tf.pos.id === selected.id)) route.listTL.splice(index, 1);
+                })
+            }
+            setRouteArea(map, route.box, route.description, index);
+        });
+        $('#table').bootstrapTable('remove', {field: 'state', values: [true]});
     });
 
     $('#fixationButton').on('click', function () {
@@ -289,11 +324,9 @@ ymaps.ready(function () {
     });
 
     $('#routes').on('change', function () {
-        let counter = 0;
         let selected = Number($(this)[0].selectedOptions[0].value);
-        allRoutesList.forEach(route => {
-            if (route.id === selected) setRouteArea(map, route.box, route.description, counter);
-            counter++;
+        allRoutesList.forEach((route, index) => {
+            if (route.id === selected) setRouteArea(map, route.box, route.description, index);
         });
     });
 
@@ -319,7 +352,7 @@ ymaps.ready(function () {
                 allRoutesList = data.routes;
                 regionInfo = data.regionInfo;
                 areaInfo = data.areaInfo;
-                // tflights = data.tflight;
+                tflights = data.tflight;
                 if ((areaZone === undefined) && (data.areaZone !== undefined)) {
                     areaZone = data.areaZone;
                     createAreasLayout(map);
@@ -482,6 +515,21 @@ ymaps.ready(function () {
         close: function () {
             $('#areasMsg').remove();
         }
+    });
+
+    $('#phaseTableDialog').dialog({
+        autoOpen: false,
+        buttons: {
+            'Ок': function () {
+                $(this).dialog('close');
+            }
+            // 'Отмена': function () {
+            //     $(this).dialog('close');
+            // }
+        },
+        minWidth: 1000,
+        modal: true,
+        resizable: false
     });
 
     $('#newRouteDialog').dialog({
