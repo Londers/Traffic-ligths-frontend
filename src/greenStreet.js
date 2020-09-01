@@ -8,6 +8,7 @@ let regionInfo;
 let areaInfo;
 let areaZone;
 let boxRemember = {Y: 0, X: 0};
+let boxPoint = [];
 let description = '';
 let tflights = [];
 let routeList = [];
@@ -18,6 +19,7 @@ let circlesMap = new Map();
 let zoom = 19;
 // let login = '';
 let fixationFlag = false;
+let creatingFlag = true;
 let ws;
 
 function getRandomColor() {
@@ -49,6 +51,18 @@ function handleClick(map, trafficLight) {
     let description = trafficLight.description;
     let phases = trafficLight.phases;
     let returnFlag = false;
+
+    if (!creatingFlag) {
+        let phase = -1;
+        let dataArr = $('#table').bootstrapTable('getData');
+        dataArr.forEach((tf, index) => {
+            if ((tf.region === region) && (tf.area === area) && (tf.id === id)) {
+                phase = Number($('#phase' + index).val());
+            }
+        });
+        controlSend({id: trafficLight.idevice, cmd: 9, param: phase});
+        return;
+    }
 
     circlesMap.forEach((value, key) => {
         if ((key.region === region) && (key.area === area) && (key.id === id)) {
@@ -132,7 +146,7 @@ function getPhases(index) {
 
 function makeSelects() {
     $('#table tbody tr').each((i, tr) => {
-        $(tr).find('td').each((i, td) => {
+        $(tr).find('td').each((j, td) => {
             if (td.cellIndex === 2) {
                 let phases = getPhases(tr.rowIndex - 1);//$(this)[0].innerText.split(',');
                 let selectTxt = '';
@@ -140,7 +154,7 @@ function makeSelects() {
                     selectTxt += '<option value="' + phase + '"' + ((phase === phases.currPhase) ? ' selected="selected"' : '') + '>' + phase + '</option>';
                 });
                 $(td)[0].innerText = '';
-                $(td)[0].innerHTML = '<select>' + selectTxt + '</select>';
+                $(td)[0].innerHTML = '<select id="phase' + i + '">' + selectTxt + '</select>';
 
             }
         })
@@ -157,8 +171,8 @@ function fillPhases() {
     });
     ws.send(JSON.stringify({
         type: 'createRoute',
-        description: description,
         region: routeList[0].pos.region,
+        description: description,
         listTL: routeList
     }))
 }
@@ -182,25 +196,25 @@ function radiusCalculate(zoom) {
         case 10:
             return 500;
         case 11:
-            return 300;
+            return 400;
         case 12:
-            return 200;
+            return 300;
         case 13:
-            return 150;
+            return 250;
         case 14:
-            return 130;
+            return 200;
         case 15:
-            return 100;
+            return 150;
         case 16:
-            return 60;
+            return 100;
         case 17:
-            return 40;
+            return 75;
         case 18:
-            return 30;
+            return 50;
         case 19:
-            return 25;
+            return 40;
         default:
-            return 20;
+            return 30;
     }
 }
 
@@ -236,8 +250,7 @@ function setRouteArea(map, box, description, routeId) {
     // По умолчанию строится автомобильный маршрут.
     let multiRoute = new ymaps.multiRouter.MultiRoute({
         // Точки маршрута. Точки могут быть заданы как координатами, так и адресом.
-        referencePoints:
-        coordinates
+        referencePoints: coordinates
     }, {
         // Автоматически устанавливать границы карты так,
         // чтобы маршрут был виден целиком.
@@ -256,7 +269,7 @@ ymaps.ready(function () {
     //Создание и первичная настройка карты
     let map = new ymaps.Map('map', {
         center: [54.9912, 73.3685],
-        zoom: 19,
+        zoom: 19
     });
 
     map.events.add(['wheel', 'mousemove', 'click'], function () {
@@ -323,11 +336,53 @@ ymaps.ready(function () {
         $('#newRouteDialog').dialog('open');
     });
 
-    $('#routes').on('change', function () {
-        let selected = Number($(this)[0].selectedOptions[0].value);
-        allRoutesList.forEach((route, index) => {
-            if (route.id === selected) setRouteArea(map, route.box, route.description, index);
+    $('#updateRouteButton').on('click', function () {
+        let value = $('#routes').val().split('-');
+        let currRoute = {};
+        allRoutesList.forEach(route => {
+            if ((route.region === value[0]) && (route.id === Number(value[1]))) {
+                currRoute = route;
+            }
         });
+        currRoute.listTL.forEach((tl, index) => {
+            tl.phase = Number($('#phase' + index).val());
+        });
+        ws.send(JSON.stringify({
+            id: currRoute.id,
+            type: 'updateRoute',
+            region: currRoute.region,
+            description: currRoute.description,
+            listTL: currRoute.listTL
+        }))
+    });
+
+    $('#deleteRouteButton').on('click', function () {
+        let value = $('#routes').val().split('-');
+        allRoutesList.forEach(route => {
+            if ((route.region === value[0]) && (route.id === Number(value[1]))) {
+                ws.send(JSON.stringify({type: 'deleteRoute', region: route.region, id: route.id}));
+            }
+        })
+    });
+
+    $('#routes').on('change', function () {
+        let value = $('#routes').val().split('-');
+        if ((value[0] === '0') && (value[1] === '0')) {
+            map.geoObjects.remove(lastRoute);
+            map.setBounds([
+                [boxPoint.point0.Y, boxPoint.point0.X],
+                [boxPoint.point1.Y, boxPoint.point1.X]
+            ]);
+            $('#table').bootstrapTable('removeAll');
+            creatingFlag = true;
+            return;
+        }
+        allRoutesList.forEach((route, index) => {
+            if ((route.region === value[0]) && (route.id === Number(value[1]))) {
+                setRouteArea(map, route.box, route.description, index);
+            }
+        });
+        creatingFlag = false;
     });
 
     ws = new WebSocket('ws://' + location.host + location.pathname + 'W');
@@ -370,6 +425,7 @@ ymaps.ready(function () {
                     fillAreas($('#area'), $('#region'), areaInfo);
                 });
 
+                boxPoint = data.boxPoint;
                 map.setBounds([
                     [data.boxPoint.point0.Y, data.boxPoint.point0.X],
                     [data.boxPoint.point1.Y, data.boxPoint.point1.X]
@@ -397,7 +453,7 @@ ymaps.ready(function () {
                 });
 
                 data.routes.forEach(route => {
-                    $('#routes').append(new Option(route.description, route.id));
+                    $('#routes').append(new Option(route.description, route.region + '-' + route.id));
                 });
                 // .append(new Option(regionInfo[reg], reg));
                 break;
@@ -463,13 +519,23 @@ ymaps.ready(function () {
                     alert(data.error);
                     return;
                 }
-                $('#routes').append(new Option(data.route.description, data.route.id));
-                $('#routes option[value=' + data.route.id + ']').attr('selected', 'selected');
+                $('#routes').append(new Option(data.route.description, data.route.region + '-' + data.route.id));
+                $('#routes option[value=' + data.route.region + '-' + data.route.id + ']').attr('selected', 'selected');
 
                 allRoutesList.push(data.route);
                 setRouteArea(map, data.route.box, data.route.description, allRoutesList.length - 1);
                 break;
+            case 'deleteRoute':
+                $("#routes option[value='" + data.route.region + '-' + data.route.id + "']").remove();
+                map.geoObjects.remove(lastRoute);
+                map.setBounds([
+                    [boxPoint.point0.Y, boxPoint.point0.X],
+                    [boxPoint.point1.Y, boxPoint.point1.X]
+                ]);
+                $('#table').bootstrapTable('removeAll');
+                break;
             case 'error':
+                console.log('Error', allData);
                 break;
         }
     };
@@ -704,3 +770,10 @@ function fillAreas($area, $region, areaInfo) {
         }
     }
 }
+
+//Отправка выбранной команды на сервер
+function controlSend(toSend) {
+    ws.send(JSON.stringify({type: 'dispatch', id: toSend.id, cmd: toSend.cmd, param: toSend.param}));
+}
+
+//                controlSend({id: id, cmd: 9, param: phase}) :

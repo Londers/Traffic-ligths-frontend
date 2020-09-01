@@ -90,7 +90,7 @@
            id="table"
            data-toggle="table"
            data-toolbar="#toolbar"
-           data-height="960"
+           data-height="800"
            data-single-select="true"
            data-click-to-select="true">
         <thead>
@@ -151,7 +151,7 @@
     </div>
 </div>
 <div class="row">
-    <div class="col-md-3 text-center">
+    <div class="col-md-2 text-center">
         <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownControlButton"
                 data-toggle="dropdown"
                 aria-haspopup="true" aria-expanded="false">Управление картой
@@ -163,15 +163,21 @@
             <button class="dropdown-item" type="button" id="fixationReset">Снять фиксацию</button>
         </div>
     </div>
-    <div class="col-md-3 text-center">
+    <div class="col-md-2 text-center">
         <button id="phaseTableButton" class="btn btn-secondary">Назначить фазы</button>
     </div>
-    <div class="col-md-3 text-center">
+    <div class="col-md-2 text-center">
         <button id="sendRouteButton" class="btn btn-secondary">Создать режим</button>
     </div>
-    <div class="col-md-3 text-center mt-2">
+    <div class="col-md-2 text-center">
+        <button id="updateRouteButton" class="btn btn-secondary">Изменить режим</button>
+    </div>
+    <div class="col-md-2 text-center">
+        <button id="deleteRouteButton" class="btn btn-secondary">Удалить режим</button>
+    </div>
+    <div class="col-md-2 text-center mt-2">
         <select id="routes">
-            <option>-</option>
+            <option value="0-0">Создание</option>
         </select>
     </div>
 </div>

@@ -145,7 +145,7 @@ class UserList extends Component {
 
     createUsers() {
         console.log("chat - createUsers");
-        console.log('chat - ' + this.props.users);
+        console.log(this.props.users);
         if (this.props.users === undefined) {
             // this.createUsers();
             // console.log("??????????????");
