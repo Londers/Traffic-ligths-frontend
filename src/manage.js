@@ -126,7 +126,7 @@ $(function () {
                     role: {name: $('#updatePrivileges option:selected').text(), permissions: permissionControl('u')},
                     region: {num: $('#updateRegion option:selected').val()},
                     area: areas,
-                    workTime: parseInt($('#updateWorkTime option:selected').text()),
+                    workTime: parseInt($('#updateWorkTime option:selected').text()) * 60,
                     description: $('#updateDescription').val()
                 };
 
@@ -229,7 +229,7 @@ $(function () {
         $.each(currAreas, function (index, element) {
             $("#updateArea option[value='" + element.num + "']").prop("selected", true);
         });
-        $('#updateWorkTime').val(currWorkTime);
+        $('#updateWorkTime').val(currWorkTime / 60);
         $('#updateDescription').val(currDescription);
 
         if ((currPrivileges.name !== 'User') && (currPrivileges.name !== 'Viewer')) {
@@ -378,7 +378,7 @@ function getUsers($table) {
                         region: account.region.nameRegion,
                         area: (areas !== '') ? areas.substring(0, areas.length - 2) : areas,
                         desc: account.description,
-                        workTime: account.workTime
+                        workTime: account.workTime / 60
                     });
                     $table.bootstrapTable('append', info);
                     $table.bootstrapTable('scrollTo', 'top');

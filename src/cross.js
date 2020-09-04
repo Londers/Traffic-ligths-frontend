@@ -43,11 +43,11 @@ $(function () {
                 idevice = data.state.idevice;
                 editFlag = data.edit;
                 document.title = 'ДК-' + ID;
-                if (editFlag) controlSend({id: idevice, cmd: 4, param: 1});
+                // if (editFlag) controlSend({id: idevice, cmd: 4, param: 1});
 
-                $(window).on("beforeunload", function () {
-                    if (editFlag) controlSend({id: idevice, cmd: 4, param: 0});
-                });
+                // $(window).on("beforeunload", function () {
+                //     if (editFlag) controlSend({id: idevice, cmd: 4, param: 0});
+                // });
 
                 if (controlCrossFlag) {
                     $('a').each(function () {
@@ -77,10 +77,10 @@ $(function () {
                     type: 'GET',
                     success: function (svgData) {
                         console.log(svgData);
-                        $('div[class="col-sm-3 text-left mt-3"]').prepend(svgData.children[0].outerHTML)
-                            .append('<a class="btn btn-light border" id="secret" data-toggle="tooltip" title="Включить 1 фазу" role="button"\n' +
-                                '        onclick="setPhase(randomInt(1, 12))"><img class="img-fluid" src="/file/static/img/buttons/p1.svg" height="50" alt="1 фаза"></a>');
-                        $('#secret').hide();
+                        $('div[class="col-sm-3 text-left mt-3"]').prepend(svgData.children[0].outerHTML);
+                        //     .append('<a class="btn btn-light border" id="secret" data-toggle="tooltip" title="Включить 1 фазу" role="button"\n' +
+                        //         '        onclick="setPhase(randomInt(1, 12))"><img class="img-fluid" src="/file/static/img/buttons/p1.svg" height="50" alt="1 фаза"></a>');
+                        // $('#secret').hide();
 
                         // $('svg').each(function () {
                         //     $(this).attr('id', 'svg' + counter++);
@@ -102,19 +102,10 @@ $(function () {
                         // });
                         if (typeof getPhasesMass === "function") {
                             let phases = getPhasesMass();
-                            // $('#p11').append(phases[0].phase);
-                            // $('#svg0').setPhase(1);
-                            phases.sort(function (a, b) {
-                                if (Number(a.num) > Number(b.num)) {
-                                    return -1;
-                                }
-                                if (Number(a.num) < Number(b.num)) {
-                                    return 1;
-                                }
-                                return 0;
+                            phases.sort((a, b) => {
+                                return Number(b.num) - Number(a.num);
                             });
                             phases.forEach(phase => {
-
                                 $('#buttons')
                                     .prepend('<a class="btn btn-light border disabled" id="p' + phase.num + '" data-toggle="tooltip" title="Включить ' + phase.num + ' фазу" role="button"\n' +
                                         '><svg id="example1" width="100%" height="100%" style="max-height: 50px; max-width: 50px; min-height: 30px; min-width: 30px;" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">' +
@@ -125,7 +116,19 @@ $(function () {
                                 //TODO make change request
                                 // })
                             });
+                            // phases.forEach((svgPhase, index) => {
+                            //     if (!data.phases.includes(Number(svgPhase.num))) console.log('I DID IT', phases[index])
+                            // })
+                            data.phases.forEach((phase, index) => {
+                                if (!phases.some(svgPhase => Number(svgPhase.num) === phase)) {
+                                    $('#buttons')
+                                        .prepend('<a class="btn btn-light border disabled" style="background-color: red" id="p' + data.phases[index] + '" data-toggle="tooltip" title="Включить ' + data.phases[index] + ' фазу" role="button">' +
+                                            '<div class="container-fluid" style="width: 50px; height: 50px;"><strong><big><big><big >' + data.phases[index] + '</big></big></big></big></strong></div>' +
+                                            '</a>');
+                                }
+                            })
                         }
+
                         $('a').each(function () {
                             let id = $(this).attr('id');
                             this.className = checkButton(this.className.toString(), controlCrossFlag);
@@ -218,7 +221,7 @@ $(function () {
             case 'changeEdit':
                 console.log('edit:' + data.edit);
                 editFlag = data.edit;
-                if (editFlag) controlSend({id: idevice, cmd: 4, param: 1});
+                // if (editFlag) controlSend({id: idevice, cmd: 4, param: 1});
                 checkEdit();
                 checkConnection();
                 break;
@@ -330,7 +333,7 @@ $(function () {
                 buildTable(data);
                 break;
             case 'close':
-                if (editFlag) controlSend({id: idevice, cmd: 4, param: 0});
+                // if (editFlag) controlSend({id: idevice, cmd: 4, param: 0});
                 ws.close();
                 if (data.message !== '') {
                     alert(data.message);
@@ -357,7 +360,9 @@ $(function () {
 
 function buildTable(data) {
     let $table = $('#table');
-    if($table.bootstrapTable('getData').length > 20) { $table.bootstrapTable('removeAll'); }
+    if ($table.bootstrapTable('getData').length > 20) {
+        $table.bootstrapTable('removeAll');
+    }
     let dataArr = $table.bootstrapTable('getData').slice();
     let lastRow = dataArr[dataArr.length - 1];
     let toWrite = {phaseNum: data.fdk, tPr: '', tMain: '', duration: ''};
@@ -368,7 +373,7 @@ function buildTable(data) {
     }
     (data.pdk) ? toWrite.tPr = data.tdk : toWrite.tMain = data.tdk;
 
-    if (lastRow === undefined){
+    if (lastRow === undefined) {
         toWrite.duration = data.tdk;
         $table.bootstrapTable('append', toWrite);
         return;
