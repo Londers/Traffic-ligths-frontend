@@ -103,8 +103,8 @@
         </div>
         <div class="col-md-6">
             <select class="form-control" id="techRegion" style="max-width: 335px">
-                <option value="0">Стандартный</option>
-                <option value="1">Экономический</option>
+                <option value="false">Стандартный</option>
+                <option value="true">Экономический</option>
             </select>
         </div>
     </div>
@@ -209,7 +209,7 @@
                 <div class="col-md-3">
                     <div class="row">
                         <div class="col-md-5">Модем:</div>
-                        <div class="col-md-7" id="gprs"></div>
+                        <div class="col-md-7" id="lnow"></div>
                     </div>
                 </div>
                 <div class="col-md-3 ml-4">
@@ -273,14 +273,14 @@
             </div>
         </div>
         <div class="col-md-6">
-            <!--            <div class="row">-->
-            <!--                <div class="col-md-1">-->
-            <!--                    <div class="row">-->
-            <!--                        <div class="col-md-6">НК</div>-->
-            <!--                        <div class="col-md-6" id="nk"></div>-->
-            <!--                    </div>-->
-            <!--                </div>-->
-            <!--            </div>-->
+            <div class="row">
+                <div class="col-md-5">
+                    <div class="row">
+                        <div class="col-md-6">№ модема</div>
+                        <div class="col-md-6" id="idevice"></div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
     <div class="row">
@@ -312,13 +312,13 @@
                     <div class="text-center">Дополнение</div>
                     <div>
                         <div class="row">
-                            <div class="col-md-7">ПО ПСПД </div>
+                            <div class="col-md-7">ПО ПСПД</div>
                             <div class="col-md-5" id="pspd"></div>
                         </div>
                     </div>
                     <div>
                         <div class="row">
-                            <div class="col-md-7">ПО ПБС </div>
+                            <div class="col-md-7">ПО ПБС</div>
                             <div class="col-md-5" id="pbs"></div>
                         </div>
                     </div>

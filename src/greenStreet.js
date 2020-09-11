@@ -11,6 +11,7 @@ let boxRemember = {Y: 0, X: 0};
 let boxPoint = [];
 let description = '';
 let tflights = [];
+let currentRouteTflights = new Map();
 let routeList = [];
 let routeListLength = 0;
 let allRoutesList = [];
@@ -20,6 +21,7 @@ let zoom = 19;
 // let login = '';
 let fixationFlag = false;
 let creatingFlag = true;
+let executionFlag = false;
 // let routeStartFlag = false;
 let ws;
 
@@ -40,6 +42,7 @@ function deleteCircle(map, circle, pos, description) {
     });
     routeListLength -= 1;
     $('#table').bootstrapTable('remove', {field: 'desc', values: [description]});
+    $('#navTable').bootstrapTable('remove', {field: 'tflight', values: [description]});
 
     makeSelects();
 }
@@ -47,10 +50,10 @@ function deleteCircle(map, circle, pos, description) {
 function createIdeviceArray() {
     let tflist = [];
     let idevices = [];
-    let place = $('#routes').val().split('-');
+    let place = $('#routes').val().split('---');
 
     allRoutesList.forEach(route => {
-        if ((route.region === place[0]) && (route.id === Number(place[1]))) {
+        if ((route.region === place[0]) && (route.description === place[1])) {
             tflist = route.listTL;
         }
     });
@@ -81,12 +84,13 @@ function handleClick(map, trafficLight) {
                 phase = Number($('#phase' + index).val());
             }
         });
+        map.setCenter(coordinates, 17);
         // if (routeStartFlag) {
         //     console.log(JSON.stringify(createIdeviceArray()));
         //     // ws.send(JSON.stringify(createIdeviceArray()));
         //     routeStartFlag = false;
         // }
-        controlSend({id: trafficLight.idevice, cmd: 9, param: phase});
+        if (executionFlag) controlSend({id: trafficLight.idevice, cmd: 9, param: phase});
         return;
     }
 
@@ -138,7 +142,7 @@ function handleClick(map, trafficLight) {
         strokeWidth: 5
     });
 
-    circlesMap.set({region: region, area: area, id: id}, myCircle);
+    circlesMap.set({region: region, area: area, id: id, description: description}, myCircle);
 
     // Добавляем круг на карту.
     map.geoObjects.add(myCircle);
@@ -152,8 +156,9 @@ function handleClick(map, trafficLight) {
         id: id
     }];
 
-    $('#table').bootstrapTable('append', tflight);
-    $('#table').bootstrapTable('scrollTo', 'top');
+    $('#table').bootstrapTable('append', tflight).bootstrapTable('scrollTo', 'top');
+    $('#navTable').bootstrapTable('append', {id: $('#navTable').bootstrapTable('getData').length + 1, tflight: description})
+                  .bootstrapTable('scrollTo', 'top');
 
     makeSelects();
 }
@@ -263,7 +268,8 @@ function setRouteArea(map, box, description, routeId) {
     map.geoObjects.remove(lastRoute);
     let coordinates = [];
     let tableData = [];
-    allRoutesList[routeId].listTL.forEach(tf => {
+    let navTableData = [];
+    allRoutesList[routeId].listTL.forEach((tf, index) => {
         coordinates.push([tf.point.Y, tf.point.X]);
         tableData.push({
             desc: tf.description,
@@ -272,6 +278,7 @@ function setRouteArea(map, box, description, routeId) {
             area: tf.pos.area,
             id: tf.pos.id
         });
+        navTableData.push({id: index+1, tflight: tf.description});
     });
 
     // Построение маршрута.
@@ -289,11 +296,26 @@ function setRouteArea(map, box, description, routeId) {
     map.geoObjects.add(multiRoute);
 
     $('#table').bootstrapTable('load', tableData);
+    $('#navTable').bootstrapTable('load', navTableData);
     makeSelects();
+}
+
+function findIndex(hintContent) {
+    let id = -1;
+    $('#navTable tbody tr').each((i, tr) => {
+        $(tr).find('td').each((j, td) => {
+            if (td.cellIndex === 1) {
+                if ($(td)[0].innerText === hintContent) id = i;
+            }
+        })
+    });
+    return id;
 }
 
 ymaps.ready(function () {
 
+    $('#deleteRouteButton').hide();
+    $('#updateRouteButton').hide();
     $('#startRouteButton').hide();
     $('#endRouteButton').hide();
 
@@ -321,9 +343,9 @@ ymaps.ready(function () {
 
     $('#deleteButton').on('click', function () {
         let selected = $('#table').bootstrapTable('getSelections')[0];
-        let place = $('#routes').val().split('-');
+        let place = $('#routes').val().split('---');
         allRoutesList.forEach(route => {
-            if ((route.region === place[0]) && (route.id === Number(place[1]))) {
+            if ((route.region === place[0]) && (route.description === place[1])) {
                 route.listTL.forEach((tf, index) => {
                     if ((tf.pos.region === selected.region) && (tf.pos.area === selected.area) && (tf.pos.id === selected.id)) route.listTL.splice(index, 1);
                 })
@@ -365,14 +387,15 @@ ymaps.ready(function () {
     });
 
     $('#sendRouteButton').on('click', function () {
+        $('#routeDesc').val('');
         $('#newRouteDialog').dialog('open');
     });
 
     $('#updateRouteButton').on('click', function () {
-        let place = $('#routes').val().split('-');
+        let place = $('#routes').val().split('---');
         let currRoute = {};
         allRoutesList.forEach(route => {
-            if ((route.region === place[0]) && (route.id === Number(place[1]))) {
+            if ((route.region === place[0]) && (route.description === place[1])) {
                 currRoute = route;
             }
         });
@@ -380,54 +403,79 @@ ymaps.ready(function () {
             tl.phase = Number($('#phase' + index).val());
         });
         ws.send(JSON.stringify({
-            id: currRoute.id,
             type: 'updateRoute',
-            region: currRoute.region,
             description: currRoute.description,
+            region: currRoute.region,
             listTL: currRoute.listTL
         }))
     });
 
     $('#deleteRouteButton').on('click', function () {
-        let place = $('#routes').val().split('-');
+        let place = $('#routes').val().split('---');
         allRoutesList.forEach(route => {
-            if ((route.region === place[0]) && (route.id === Number(place[1]))) {
-                ws.send(JSON.stringify({type: 'deleteRoute', region: route.region, id: route.id}));
+            if ((route.region === place[0]) && (route.description === place[1])) {
+                ws.send(JSON.stringify({type: 'deleteRoute', region: route.region, description: route.description}));
             }
         })
     });
 
     $('#startRouteButton').on('click', function () {
         $(this).hide();
+        executionFlag = true;
         $('#endRouteButton').show();
         ws.send(JSON.stringify({type: 'route', devices: createIdeviceArray(), turnOn: true}));
     });
 
     $('#endRouteButton').on('click', function () {
         $(this).hide();
+        executionFlag = false;
         $('#startRouteButton').show();
         ws.send(JSON.stringify({type: 'route', devices: [], turnOn: false}));
     });
 
     $('#routes').on('change', function () {
-        let place = $('#routes').val().split('-');
+        let place = $('#routes').val().split('---');
+        $('#endRouteButton').hide();
         if ((place[0] === '0') && (place[1] === '0')) {
             $('#startRouteButton').hide();
-            $('#endRouteButton').hide();
+            $('#deleteRouteButton').hide();
+            $('#updateRouteButton').hide();
+            $('#sendRouteButton').show();
             map.geoObjects.remove(lastRoute);
             map.setBounds([
                 [boxPoint.point0.Y, boxPoint.point0.X],
                 [boxPoint.point1.Y, boxPoint.point1.X]
             ]);
             $('#table').bootstrapTable('removeAll');
+            $('#navTable').bootstrapTable('removeAll');
             creatingFlag = true;
             return;
         }
         allRoutesList.forEach((route, index) => {
-            if ((route.region === place[0]) && (route.id === Number(place[1]))) {
+            if ((route.region === place[0]) && (route.description === place[1])) {
+                currentRouteTflights = new Map();
                 setRouteArea(map, route.box, route.description, index);
+                map.geoObjects.each(object => {
+                    if (object.geometry) {
+                        if (route.listTL.some(tl => {
+                            return (JSON.stringify([tl.point.Y, tl.point.X]) === JSON.stringify(object.geometry.getCoordinates()));
+                        })) {
+                            currentRouteTflights.set(findIndex(object.properties._data.hintContent), object);
+                        }
+                    }
+                });
             }
         });
+        currentRouteTflights = new Map([...currentRouteTflights.entries()].sort());
+        $('#navTable tbody tr').each((i, tr) => {
+            $(tr).on('click', () => {
+                map.setCenter(currentRouteTflights.get(tr.rowIndex-1).geometry.getCoordinates(), 17);
+            });
+        });
+
+        $('#sendRouteButton').hide();
+        $('#updateRouteButton').show();
+        $('#deleteRouteButton').show();
         $('#startRouteButton').show();
         // routeStartFlag = true;
         creatingFlag = false;
@@ -501,7 +549,7 @@ ymaps.ready(function () {
                 });
 
                 data.routes.forEach(route => {
-                    $('#routes').append(new Option(route.description, route.region + '-' + route.id));
+                    $('#routes').append(new Option(route.description, route.region + '---' + route.description));
                 });
                 // .append(new Option(regionInfo[reg], reg));
                 break;
@@ -567,14 +615,28 @@ ymaps.ready(function () {
                     alert(data.error);
                     return;
                 }
-                $('#routes').append(new Option(data.route.description, data.route.region + '-' + data.route.id));
-                $('#routes option[value=' + data.route.region + '-' + data.route.id + ']').attr('selected', 'selected');
-
                 allRoutesList.push(data.route);
-                setRouteArea(map, data.route.box, data.route.description, allRoutesList.length - 1);
+                $('#routes').append(new Option(data.route.description, data.route.region + '---' + data.route.description));
+
+                if (data.login === localStorage.getItem('login')) {
+                    $('#routes option[value=' + data.route.region + '---' + data.route.description + ']').attr('selected', 'selected');
+
+                    circlesMap.forEach((value, key) => {
+                        map.geoObjects.remove(value);
+                        circlesMap.delete(key);
+                    });
+
+                    setRouteArea(map, data.route.box, data.route.description, allRoutesList.length - 1);
+
+                    $('#sendRouteButton').hide();
+                    $('#updateRouteButton').show();
+                    $('#deleteRouteButton').show();
+                    $('#startRouteButton').show();
+                    creatingFlag = false;
+                }
                 break;
             case 'deleteRoute':
-                $("#routes option[value='" + data.route.region + '-' + data.route.id + "']").remove();
+                $("#routes option[value='" + data.route.region + '---' + data.route.description + "']").remove();
                 map.geoObjects.remove(lastRoute);
                 map.setBounds([
                     [boxPoint.point0.Y, boxPoint.point0.X],
@@ -822,4 +884,4 @@ function fillAreas($area, $region, areaInfo) {
 //Отправка выбранной команды на сервер
 function controlSend(toSend) {
     ws.send(JSON.stringify({type: 'dispatch', id: toSend.id, cmd: toSend.cmd, param: toSend.param}));
-} 
+}

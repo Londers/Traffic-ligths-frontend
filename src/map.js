@@ -285,12 +285,12 @@ ymaps.ready(function () {
                 // let techRegionInfo = (data.region === '*') ? regionInfo : data.region;
                 // let techAreaInfo = (data.area === null) ? areaInfo : data.area;
                 authorizedFlag = data.authorizedFlag;
-                manageFlag = data.access[2];
-                logDeviceFlag = data.access[5];
-                licenceFlag = data.access[6];
-                techFlag = data.access[7];
-                gsFlag = data.access[8];
-                xctrlFlag = data.access[9];
+                manageFlag = authorizedFlag ? data.access[2] : false;
+                logDeviceFlag = authorizedFlag ? data.access[5] : false;
+                licenceFlag = authorizedFlag ? data.access[6] : false;
+                techFlag = authorizedFlag ? data.access[7] : false;
+                gsFlag = authorizedFlag ? data.access[8] : false;
+                xctrlFlag = authorizedFlag ? data.access[9] : false;
                 if ((areaZone === undefined) && (data.areaZone !== undefined)) {
                     areaZone = data.areaZone;
                     createAreasLayout(map);
@@ -418,12 +418,12 @@ ymaps.ready(function () {
                     localStorage.setItem('login', data.login);
                     // console.log('QqQqQ', data.areaZone);
                     authorizedFlag = data.authorizedFlag;
-                    manageFlag = data.access[2];
-                    logDeviceFlag = data.access[5];
-                    licenceFlag = data.access[6];
-                    techFlag = data.access[7];
-                    gsFlag = data.access[8];
-                    xctrlFlag = data.access[9];
+                    manageFlag = authorizedFlag ? data.access[2] : false;
+                    logDeviceFlag = authorizedFlag ? data.access[5] : false;
+                    licenceFlag = authorizedFlag ? data.access[6] : false;
+                    techFlag = authorizedFlag ? data.access[7] : false;
+                    gsFlag = authorizedFlag ? data.access[8] : false;
+                    xctrlFlag = authorizedFlag ? data.access[9] : false;
                     areaZone = data.areaZone;
                     createAreasLayout(map);
 
