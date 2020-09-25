@@ -13,20 +13,21 @@ let pkFlag = true;
 let skFlag = true;
 let kvFlag = true;
 let firstLoad = true;
+// let repaintFlag = false;
 
 let map;
 
-let numberFlag = true;
-let longPathFlag = true;
+const numberFlag = true;
+const longPathFlag = true;
 let coordinatesChangeFlag = false;
 
-let mainTableFlag = true;
-let skTableFlag = true;
-let nkTableFlag = false;
-let gkTableFlag = false;
-let vvTableFlag = false;
-let vv2TableFlag = true;
-let kvTableFlag = false;
+const mainTableFlag = true;
+const skTableFlag = true;
+const nkTableFlag = false;
+const gkTableFlag = false;
+const vvTableFlag = false;
+const vv2TableFlag = true;
+const kvTableFlag = false;
 
 let tempIndex;
 let copyArray = [];
@@ -64,15 +65,6 @@ function getSelectedRowData(table, fullPath, force) {
         rowData = JSON.parse(JSON.stringify(stageSets[index]));
     }
     return rowData;
-}
-
-function renewal(table, incFlag) {
-    let counter = 0;
-    if ((incFlag !== undefined) && (incFlag)) tempIndex += 1;
-    $('#' + table + ' tbody tr').each(function () {
-        if (counter++ === tempIndex) $(this).find('td').trigger('click');
-    });
-    tempIndex = undefined;
 }
 
 //Выделение выбранной строки
@@ -155,7 +147,7 @@ $(function () {
                 //         .replace('ID=' + unmodifiedData.state.id, 'ID=' + data.pos.id);
                 //     location.href = location.pathname + search;
                 // } else {
-                    (data.status) ? window.close() : alert('Не удалось удалить перекрёсток');
+                (data.status) ? window.close() : alert('Не удалось удалить перекрёсток');
                 // }
                 break;
             case 'checkB':
@@ -215,9 +207,9 @@ $(function () {
             case 'close':
                 ws.close();
                 if (data.message !== '') {
-                    alert(data.message);
+                    if (!document.hidden) alert(data.message);
                 } else {
-                    alert('Потеряна связь с сервером');
+                    if (!document.hidden) alert('Потеряна связь с сервером');
                 }
                 window.close();
                 break;
@@ -233,12 +225,46 @@ $(function () {
 //Функционал кнопок управления
     //Кнопка для отпрвления данных на сервер
     $('#sendButton').on('click', function () {
+        data.state.dgis = points.Y + ',' + points.X;
+        prepareVVTab();
         if (data.state.area === unmodifiedData.state.area) {
-            ws.send(JSON.stringify({type: 'sendB', state: data.state}));
+            ws.send(JSON.stringify({type: 'sendB', state: data.state, rePaint: coordinatesChangeFlag, z: zoom}));
         } else {
             ws.send(JSON.stringify({type: 'createB', state: data.state}));
         }
     });
+
+    //Заполнение 3х массивов для ЮВ (useinput, pointset, defstatis)
+    function prepareVVTab() {
+        let tableData = $('#vvTable').bootstrapTable('getData');
+        let statCount = 0;
+        let shift1 = tableData.shift();
+        let shift2 = tableData.shift();
+        tableData.push(shift1);
+        tableData.push(shift2);
+
+        data.state.arrays.useinput.used = [];
+        data.state.arrays.pointset.pts = [];
+
+        for (let rec in tableData) {
+            data.state.arrays.useinput.used.push(false);
+        }
+        for (let i = 0; i < tableData.length; i++) {
+            if (tableData[i].type !== 0) data.state.arrays.pointset.pts.push({num: i + 1, typst: tableData[i].type});
+        }
+
+        tableData.forEach((rec, index) => {
+            data.state.arrays.useinput.used[index] = (rec.type !== 0);
+            if ((rec.type !== 0) && (rec.type < 8)) {
+                data.state.arrays.pointset.pts[index].num = index + 1;
+                data.state.arrays.pointset.pts[index].typst = rec.type;
+            }
+            if (statCount < rec.type) statCount = rec.type;
+        });
+        data.state.arrays.defstatis.lvs[0].typst = statCount;
+        data.state.arrays.defstatis.lvs[0].ninput = tableData.length;
+        data.state.arrays.defstatis.lvs[0].count = 0;
+    }
 
     //Кнопка для создания нового перекрёстка
     $('#addButton').on('click', function () {
@@ -599,7 +625,7 @@ $(function () {
         pkTabFill('pkTable');
     });
 
-    let x = undefined,y = undefined;
+    let x = undefined, y = undefined;
 
     //Функционирование карты для выбора координат
     ymaps.ready(function () {
@@ -633,9 +659,12 @@ $(function () {
                 var width = $this.width();
                 var height = $this.height();
 
-                var centerX =  offset.left + width/2 - 225;
-                var centerY = offset.top + height/2 - 225;
-                $('.areaMap').show().attr('style', 'overflow: auto; position: absolute; z-index: 2;').css({top: centerY, left: centerX});
+                var centerX = offset.left + width / 2 - 225;
+                var centerY = offset.top + height / 2 - 225;
+                $('.areaMap').show().attr('style', 'overflow: auto; position: absolute; z-index: 2;').css({
+                    top: centerY,
+                    left: centerX
+                });
             } else {
                 map.balloon.close();
                 $('.areaMap').hide();
@@ -660,6 +689,7 @@ function loadData(newData, firstLoadFlag) {
     data = newData;
     unmodifiedData = JSON.parse(JSON.stringify(data));
 
+    checkNew();
 
     $('#table').bootstrapTable('removeAll');
     $('#pkTable').bootstrapTable('removeAll');
@@ -694,6 +724,11 @@ function loadData(newData, firstLoadFlag) {
 
     //Вкладка внеш. входов
     vvTabFill(firstLoadFlag);
+
+    //Зануление второго элемента массива (так надо)
+    for (const [key] of Object.entries(data.state.arrays.defstatis.lvs[1])) {
+        data.state.arrays.defstatis.lvs[1][key] = 0;
+    }
 
     //Вкладка контроля входов
     kvTabFill();
@@ -943,7 +978,7 @@ function mainTabFill(data, firstLoadFlag) {
     setChange('vpbsl', 'input', 'Model', numberFlag);
     $('#vpbsr').val(data.state.Model.vpbsr);
     setChange('vpbsr', 'input', 'Model', numberFlag);
-    
+
     anotherTableFill('table', mainTableFlag);
 }
 
@@ -989,9 +1024,14 @@ function vvTabFill(firstLoadFlag) {
     anotherTableFill('vvTable', vvTableFlag);
 
     $('#ite').val(data.state.arrays.SetTimeUse.ite);
-    setChange('ite', 'input', 'arrays.SetTimeUse', numberFlag);
-    $('#tuin').val(data.state.arrays.SetTimeUse.tuin);
-    setChange('tuin', 'input', 'arrays.SetTimeUse', numberFlag);
+    if (firstLoadFlag) setChange('ite', 'input', 'arrays.SetTimeUse', numberFlag);
+    $('#tuin').val(data.state.arrays.defstatis.lvs[0].period);
+    if (firstLoadFlag) {
+        $('#tuin').on('change', function () {
+            data.state.arrays.defstatis.lvs[0].period = Number($('#tuin').val());
+        });
+    }
+    // setChange('tuin', 'input', 'arrays.SetTimeUse', numberFlag);
 
     tableFill([0], 'vv2Table', vv2TableFlag);
 }
@@ -1032,7 +1072,6 @@ function tableFill(set, table, staticFlag) {
     });
 
     if (firstLoad) tableChange(set, table, !staticFlag);
-    renewal(table, true);
 }
 
 //Функция для сохранения изменений в вышеперечисленных таблицах
@@ -1070,7 +1109,6 @@ function anotherTableFill(table, tableFlag) {
         });
     });
     if (firstLoad) anotherTableChange(table, tableFlag);
-    renewal(table);
 }
 
 //Функция для сохранения изменений в вышеперечисленных таблицах
@@ -1088,7 +1126,7 @@ function anotherTableChange(table, tableFlag) {
                 if (tableFlag) {
                     data.state.arrays.SetupDK[names[++counter]] = Number(value);
                 } else {
-                    data.state.arrays.SetTimeUse.uses[recCounter][names[++counter]] = ((counter === 0) || (counter === 4)) ? value : Number(value);
+                    if (value !== undefined) data.state.arrays.SetTimeUse.uses[recCounter][names[++counter + 1]] = (counter === 3) ? value : Number(value);
                 }
             });
             recCounter++;
@@ -1161,7 +1199,6 @@ function newTableFill(table, tableFlag) {
             }
         });
     });
-    tableFlag ? renewal(table) : renewal(table, true);
 }
 
 //Функция для сохранения изменений в таблице суточных карт, а также заполнение столбца "T начала"
@@ -1316,7 +1353,6 @@ function pkTabFill(table) {
             }
         });
     });
-    renewal(table);
 }
 
 //Функция для сохранения изменений в таблице ПК
@@ -1423,16 +1459,18 @@ function setChange(element, type, fullPath, numFlag, hardFlag) {
 //Отображение кнопки для выбора координат и разблокирование кнопки создания нового перекрёстка
 function checkNew(check) {
     let buttonClass = $('#addButton')[0].className.toString();
-    if (Number($('#id').val()) !== unmodifiedData.state.id && Number($('#idevice').val()) !== unmodifiedData.state.idevice) {
-        if ((buttonClass.indexOf('disabled') !== -1) && (check) && (coordinatesChangeFlag)) buttonClass = buttonClass.substring(0, buttonClass.length - 9);
-        if (!$('#chooseCoordinates').length) {
-            $('#forCoordinates').append(
-                '<div class="col-xs-8 ml-1">' +
-                '<button type="button" class="btn btn-light ml-5 justify-content-center border" id="chooseCoordinates" style="">Выберите координаты</button>' +
-                '</div>');
-            chooseCoordinates();
-            map.setCenter([points.Y, points.X], 15);
-        }
+
+    if (!$('#chooseCoordinates').length) {
+        $('#forCoordinates').append(
+            '<div class="col-xs-8 ml-1">' +
+            '<button type="button" class="btn btn-light ml-5 justify-content-center border" id="chooseCoordinates" style="">Выберите координаты</button>' +
+            '</div>');
+        chooseCoordinates();
+        if (map !== undefined) map.setCenter([points.Y, points.X], 15);
+    }
+
+    if ((Number($('#id').val()) !== unmodifiedData.state.id) || (Number($('#area').val()) !== unmodifiedData.state.area) || coordinatesChangeFlag) {
+        if ((buttonClass.indexOf('disabled') !== -1) && check) buttonClass = buttonClass.substring(0, buttonClass.length - 9);
     } else {
         if (buttonClass.indexOf('disabled') === -1) buttonClass = buttonClass.concat(' disabled');
     }
@@ -1486,18 +1524,10 @@ function checkEdit() {
     $('a').each(function () {
         if (counter++ < 7) this.className = checkButton($(this)[0].className.toString(), editFlag);
     });
-    $('#reloadButton').each(function () {
-        this.className = checkButton($(this)[0].className.toString(), true)
-    });
-    $('#sendButton').each(function () {
-        this.className = checkButton($(this)[0].className.toString(), false)
-    });
-    $('#forceSendButton').each(function () {
-        this.className = checkButton($(this)[0].className.toString(), false)
-    });
-    $('#addButton').each(function () {
-        this.className = checkButton($(this)[0].className.toString(), false)
-    });
+    $('#reloadButton')[0].className = checkButton($('#reloadButton')[0].className.toString(), true);
+    $('#sendButton')[0].className = checkButton($('#sendButton')[0].className.toString(), false);
+    $('#forceSendButton')[0].className = checkButton($('#forceSendButton')[0].className.toString(), false);
+    $('#addButton')[0].className = checkButton($('#addButton')[0].className.toString(), false);
     // $('select').each(function () {
     //     checkSelect($(this), editFlag);
     // });

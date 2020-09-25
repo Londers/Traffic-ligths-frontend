@@ -18,11 +18,11 @@ let allRoutesList = [];
 let lastRoute = {};
 let circlesMap = new Map();
 let zoom = 19;
-// let login = '';
 let fixationFlag = false;
 let creatingFlag = true;
 let executionFlag = false;
-// let routeStartFlag = false;
+let loopFuncMap = new Map();
+let sendedPhaseSave = new Map();
 let ws;
 
 function getRandomColor() {
@@ -85,12 +85,16 @@ function handleClick(map, trafficLight) {
             }
         });
         map.setCenter(coordinates, 17);
-        // if (routeStartFlag) {
-        //     console.log(JSON.stringify(createIdeviceArray()));
-        //     // ws.send(JSON.stringify(createIdeviceArray()));
-        //     routeStartFlag = false;
-        // }
-        if (executionFlag) controlSend({id: trafficLight.idevice, cmd: 9, param: phase});
+
+        if (executionFlag && (phase !== -1)) {
+            if (!sendedPhaseSave.get(trafficLight.region + trafficLight.area + trafficLight.ID)) {
+                sendedPhaseSave.set(trafficLight.region + trafficLight.area + trafficLight.ID, true)
+            } else {
+                phase = 9;
+                sendedPhaseSave.set(trafficLight.region + trafficLight.area + trafficLight.ID, false)
+            }
+            modifiedControlSend({id: trafficLight.idevice, cmd: 9, param: phase});
+        }
         return;
     }
 
@@ -157,8 +161,11 @@ function handleClick(map, trafficLight) {
     }];
 
     $('#table').bootstrapTable('append', tflight).bootstrapTable('scrollTo', 'top');
-    $('#navTable').bootstrapTable('append', {id: $('#navTable').bootstrapTable('getData').length + 1, tflight: description})
-                  .bootstrapTable('scrollTo', 'top');
+    $('#navTable').bootstrapTable('append', {
+        id: $('#navTable').bootstrapTable('getData').length + 1,
+        tflight: description
+    })
+        .bootstrapTable('scrollTo', 'top');
 
     makeSelects();
 }
@@ -278,7 +285,7 @@ function setRouteArea(map, box, description, routeId) {
             area: tf.pos.area,
             id: tf.pos.id
         });
-        navTableData.push({id: index+1, tflight: tf.description});
+        navTableData.push({id: index + 1, tflight: tf.description});
     });
 
     // Построение маршрута.
@@ -304,16 +311,27 @@ function findIndex(hintContent) {
     let id = -1;
     $('#navTable tbody tr').each((i, tr) => {
         $(tr).find('td').each((j, td) => {
-            if (td.cellIndex === 1) {
-                if ($(td)[0].innerText === hintContent) id = i;
+            if (td.cellIndex === 2) {
+                if ($(td)[0].innerText.trim() === hintContent.trim()) id = i;
             }
         })
     });
     return id;
 }
 
+function getStatus(position) {
+    let currPhase = -1;
+    tflights.some(element => {
+        if ((element.region.num === position.region) && (element.area.num === position.area) && (element.ID === position.id)) {
+            currPhase = element.tlsost.num;
+        }
+    });
+    return currPhase;
+}
+
 ymaps.ready(function () {
 
+    $('#tableCol').hide();
     $('#deleteRouteButton').hide();
     $('#updateRouteButton').hide();
     $('#startRouteButton').hide();
@@ -344,7 +362,7 @@ ymaps.ready(function () {
     $('#deleteButton').on('click', function () {
         let selected = $('#table').bootstrapTable('getSelections')[0];
         let place = $('#routes').val().split('---');
-        allRoutesList.forEach(route => {
+        allRoutesList.forEach((route, index) => {
             if ((route.region === place[0]) && (route.description === place[1])) {
                 route.listTL.forEach((tf, index) => {
                     if ((tf.pos.region === selected.region) && (tf.pos.area === selected.area) && (tf.pos.id === selected.id)) route.listTL.splice(index, 1);
@@ -421,14 +439,20 @@ ymaps.ready(function () {
 
     $('#startRouteButton').on('click', function () {
         $(this).hide();
+        $('#routes')[0].disabled = true;
         executionFlag = true;
+        $('#deleteRouteButton').hide();
+        $('#updateRouteButton').hide();
         $('#endRouteButton').show();
         ws.send(JSON.stringify({type: 'route', devices: createIdeviceArray(), turnOn: true}));
     });
 
     $('#endRouteButton').on('click', function () {
         $(this).hide();
+        $('#routes')[0].disabled = false;
         executionFlag = false;
+        $('#deleteRouteButton').show();
+        $('#updateRouteButton').show();
         $('#startRouteButton').show();
         ws.send(JSON.stringify({type: 'route', devices: [], turnOn: false}));
     });
@@ -437,6 +461,7 @@ ymaps.ready(function () {
         let place = $('#routes').val().split('---');
         $('#endRouteButton').hide();
         if ((place[0] === '0') && (place[1] === '0')) {
+            $('#tableCol').hide();
             $('#startRouteButton').hide();
             $('#deleteRouteButton').hide();
             $('#updateRouteButton').hide();
@@ -464,16 +489,21 @@ ymaps.ready(function () {
                         }
                     }
                 });
+                currentRouteTflights = new Map([...currentRouteTflights.entries()].sort());
+                $('#navTable tbody tr').each((i, tr) => {
+                    $(tr).on('click', () => {
+                        map.setCenter(currentRouteTflights.get(tr.rowIndex - 1).geometry.getCoordinates(), 17);
+                    });
+                    tr.cells[1].innerHTML = '<div class="placemark"  style="background-image:url(\'' + location.origin +
+                        '/free/img/trafficLights/' + getStatus(route.listTL[i].pos) + '.svg\');' +
+                        'background-repeat: no-repeat; background-size: 50%; min-height: 50px;"></div>';
+                });
             }
         });
-        currentRouteTflights = new Map([...currentRouteTflights.entries()].sort());
-        $('#navTable tbody tr').each((i, tr) => {
-            $(tr).on('click', () => {
-                map.setCenter(currentRouteTflights.get(tr.rowIndex-1).geometry.getCoordinates(), 17);
-            });
-        });
+
 
         $('#sendRouteButton').hide();
+        $('#tableCol').show();
         $('#updateRouteButton').show();
         $('#deleteRouteButton').show();
         $('#startRouteButton').show();
@@ -576,6 +606,24 @@ ymaps.ready(function () {
                         });
                         //Замена метки контроллера со старым состоянием на метку с новым
                         map.geoObjects.splice(index, 1, placemark);
+
+                        tflights.forEach((tflight, index) => {
+                            if ((tflight.region.num === trafficLight.region.num) &&
+                                (tflight.area.num === trafficLight.area.num) && (tflight.ID === trafficLight.ID)) {
+                                tflights[index].tlsost = trafficLight.tlsost;
+                            }
+                        });
+
+                        let tableIndex = findIndex(trafficLight.description);
+                        if (tableIndex !== -1) {
+                            $('#navTable tbody tr').each((i, tr) => {
+                                if (i === tableIndex) {
+                                    tr.cells[1].innerHTML = '<div class="placemark"  style="background-image:url(\'' + location.origin +
+                                        '/free/img/trafficLights/' + trafficLight.tlsost.num + '.svg\');' +
+                                        'background-repeat: no-repeat; background-size: 50%; min-height: 50px;"></div>';
+                                }
+                            });
+                        }
                     })
                 }
                 break;
@@ -629,6 +677,7 @@ ymaps.ready(function () {
                     setRouteArea(map, data.route.box, data.route.description, allRoutesList.length - 1);
 
                     $('#sendRouteButton').hide();
+                    $('#tableCol').show();
                     $('#updateRouteButton').show();
                     $('#deleteRouteButton').show();
                     $('#startRouteButton').show();
@@ -643,6 +692,16 @@ ymaps.ready(function () {
                     [boxPoint.point1.Y, boxPoint.point1.X]
                 ]);
                 $('#table').bootstrapTable('removeAll');
+                break;
+            case 'close':
+                // if (editFlag) controlSend({id: idevice, cmd: 4, param: 0});
+                ws.close();
+                if (data.message !== '') {
+                    if (!document.hidden) alert(data.message);
+                } else {
+                    if (!document.hidden) alert('Потеряна связь с сервером');
+                }
+                window.close();
                 break;
             case 'error':
                 console.log('Error', allData);
@@ -878,6 +937,23 @@ function fillAreas($area, $region, areaInfo) {
                 $area.append(new Option(areaInfo[regAreaJson][areaJson], areaJson));
             }
         }
+    }
+}
+
+function modifiedControlSend(toSend) {
+    let loopFunc;
+    if (loopFuncMap.get(toSend.id)) {
+        clearInterval(loopFuncMap.get(toSend.id));
+        loopFuncMap.set(toSend.id, undefined)
+    }
+
+    controlSend(toSend);
+
+    if (toSend.param !== 9) {
+        loopFunc = window.setInterval(function () {
+            controlSend(toSend);
+        }, 60000);
+        loopFuncMap.set(toSend.id, loopFunc);
     }
 }
 

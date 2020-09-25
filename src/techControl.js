@@ -116,9 +116,9 @@ $(function () {
             case 'close':
                 ws.close();
                 if (data.message !== '') {
-                    alert(data.message);
+                    if (!document.hidden) alert(data.message);
                 } else {
-                    alert('Потеряна связь с сервером');
+                    if (!document.hidden) alert('Потеряна связь с сервером');
                 }
                 window.close();
                 break;

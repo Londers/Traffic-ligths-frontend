@@ -1,25 +1,13 @@
-// let selected;
+let dataSave;
 let devices;
 let IDs = [];
 let regionInfo;
 let areaInfo;
-// let timeStart = '';
-// let timeEnd = '';
+//0 - технология, 1 - по устройству, 2 - двери+лампы
+let type = 0;
 
-function dateFormat(date) {
-    date = date.replace(', ', 'T');
-    let time = date.substr(date.length - 9);
-    date = date.substr(0, date.length - 9);
-    let year = date.substr(date.length - 4);
-    let month = date.substr(3, date.length - 8);
-    let day = date.substr(0, 2);
-    return year + "-" + month + "-" + day + time;
-}
-
-function sortByTime(a, b) {
-    let aName = Date.parse(dateFormat(a.time));
-    let bName = Date.parse(dateFormat(b.time));
-    return ((aName < bName) ? 1 : ((aName > bName) ? -1 : 0));
+function sortByTime(a, b) {//new Date(log.time)
+    return new Date(b.time).getTime() - new Date(a.time).getTime();
 }
 
 $(function () {
@@ -58,55 +46,50 @@ $(function () {
             // console.log(data.result);
             // disableControl('forceSendButton', true);
             // disableControl('sendButton', false);
-            counter = 0;
-            $('.fixed-table-toolbar').each(function () {
-                $(this).attr('id', 'toolbar' + counter++)
-            });
-            $('#toolbar0').append('<button id="timeButton1" class="btn btn-secondary ml-4 mt-2">30 минут</button>')
-                .append('<button id="getLog" class="btn btn-secondary ml-4 mt-2">6 часов</button>')
-                .append('<button id="timeButton2" class="btn btn-secondary ml-4 mt-2">Выбранное время</button>')
-                // .append('<input class="row" type="checkbox" id="selection">Показать изменения режима</input>')
-                .append('                                    <div class="form-check mt-3">\n' +
-                    '                                        <label class="form-check-label">\n' +
-                    '                                            <input type="checkbox" class="form-check-input" id="selection" value="">\n' +
-                    '                                            Показать изменения режима\n' +
-                    '                                        </label>\n' +
-                    '                                    </div>')
-                .append('<div class="row mt-3" style="max-width: 760px; text-align: center">' +
-                    '   <label class="col-md-1" for="dateStart">С</label>\n' +
-                    '   <div class="col-md-5"><input type="date" id="dateStart" name="date"/>' +
-                    '   <input type="time" id="timeStart" name="time"/></div>' +
-                    '   <label class="col-md-1" for="dateEnd"> до</label>\n' +
-                    '   <div class="col-md-5"><input type="date" id="dateEnd" name="date"/>' +
-                    '   <input type="time" id="timeEnd" name="time"/></div>' +
-                    '</div>');
+
+            // counter = 0;
+            // $('.fixed-table-toolbar').each(function () {
+            //     $(this).attr('id', 'toolbar' + counter++)
+            // });
+
+            // .append('<div class="form-check mt-3">\n' +
+            //     '<label class="form-check-label">\n' +
+            //     '<input type="checkbox" class="form-check-input" id="selection" value="">\n' +
+            //     'Показать изменения режима\n' +
+            //     '</label>\n' +
+            //     '</div>')
+
             let now = new Date();
             $('#dateEnd').attr('value', (now.toISOString().slice(0, 10)));
             $('#timeEnd').attr('value', (prettyNumbers(now.getHours()) + ':' + prettyNumbers(now.getMinutes())));
             now = new Date(now.getTime() - (60 * 60 * 1000)); // - (now.getTimezoneOffset() * 60 * 1000));
             $('#dateStart').attr('value', (now.toISOString().slice(0, 10)));
             $('#timeStart').attr('value', (prettyNumbers(now.getHours()) + ':' + prettyNumbers(now.getMinutes())));
-            $('#getLog').on('click', function () {
+            $('#getLog').on('click', () => {
                 let now = new Date();
                 now = new Date(now.getTime() - (now.getTimezoneOffset() * 60 * 1000));
                 let timeStart = timeCalc(now, 360 * 60);
                 let timeEnd = now.toISOString();
                 getLogs(timeStart, timeEnd);
             });
-            $('#timeButton1').on('click', function () {
+            $('#timeButton1').on('click', () => {
                 let now = new Date();
                 now = new Date(now.getTime() - (now.getTimezoneOffset() * 60 * 1000));
                 let timeStart = timeCalc(now, 30 * 60);
                 let timeEnd = now.toISOString();
                 getLogs(timeStart, timeEnd);
             });
-            $('#timeButton2').on('click', function () {
+            $('#timeButton2').on('click', () => {
                 // let now = new Date();
                 // now = new Date(now.getTime() - (now.getTimezoneOffset() * 60 * 1000));
                 let timeStart = $('#dateStart')[0].value + 'T' + $('#timeStart')[0].value;
                 let timeEnd = $('#dateEnd')[0].value + 'T' + $('#timeEnd')[0].value;
                 getLogs(timeStart + ':00Z', timeEnd + ':00Z');
             });
+            $('#type').on('click', () => {
+                type = Number($('#type').val());
+                buildLogTable();
+            })
         },
         // data: JSON.stringify(data.state),
         error: function (request) {
@@ -143,44 +126,60 @@ function getLogs(start, end) {
         data: JSON.stringify(toSend),
         dataType: 'json',
         success: function (data) {
-            // console.log(data);
-            let allData = [];
-            let sortedData = [];
-            data.deviceLogs.forEach(log => {
-                let date = new Date(log.time);
-                // date = new Date(date.getTime() + (date.getTimezoneOffset() * 60 * 1000));
-                let localDate = date.toLocaleString('ru-RU', {timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone});
-                let text = log.text;
-                let description = log.devices.description;
-                let add = {cross: description, message: text, time: localDate};
-                allData.push(add);
-            });
-            allData.sort(sortByTime);
-            if ($('#selection').prop('checked')) {
-                $.each(allData, function (i, el) {
-                    if (el.message.startsWith('Режим')) {
-                        if (sortedData.length === 0) {
-                            sortedData = [allData[i]];
-                        } else if (sortedData[sortedData.length - 1].message !== el.message) sortedData.push(el);
-                    }
-                    // if($.inArray(el.message, sortedData) === -1) sortedData.push(el);
-                });
-                console.log(sortedData);
-            }
-            $('#logsTable').bootstrapTable('removeAll')
-                .bootstrapTable('append', ($('#selection').prop('checked')) ? sortedData : allData)
-                .bootstrapTable('scrollTo', 'top')
-                .bootstrapTable('refresh', {
-                    data: allData
-                });
+            buildLogTable(data)
         },
         error: function (request) {
-            // if (!($('#passwordMsg').length)){
-            //     $('#passwordForm').append('<div style="color: red;" id="passwordMsg"><h5>Неверный логин и/или пароль</h5></div>');
-            // }
             console.log(request.status + ' ' + request.responseText);
         }
     });
+}
+
+function buildLogTable(data) {
+    (data === undefined) ? data = dataSave : dataSave = data;
+    let allData = [];
+    data.deviceLogs.sort(sortByTime);
+    data.deviceLogs.forEach((log, index) => {
+        let localPrevDate, duration;
+        let date = new Date(log.time);
+        let localDate = date.toLocaleString('ru-RU', {timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone});
+        if ((index < data.deviceLogs.length) && (index !== 0)) {
+            let prevDate = new Date(data.deviceLogs[index - 1].time);
+            localPrevDate = prevDate.toLocaleString('ru-RU', {timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone});
+            duration = Math.floor((new Date(data.deviceLogs[index - 1].time).getTime() - new Date(log.time).getTime()));// 1000);
+            let hours = new Date(duration).getHours() - 6;
+            let minutes = new Date(duration).getMinutes();
+            let seconds = new Date(duration).getSeconds();
+            duration = hours + 'ч ' + minutes + 'м ' + seconds + 'с';
+        }
+        let text = log.text;
+        let description = log.devices.description;
+        let add = {
+            cross: description, message: text, dateStart: localDate,
+            dateEnd: (localPrevDate !== undefined) ? localPrevDate : '',
+            duration: (duration !== undefined) ? duration : '',
+            time: date.getTime()
+        };
+        if (log.type === type) allData.push(add);
+    });
+
+    // if ($('#selection').prop('checked')) {
+    //     $.each(allData, function (i, el) {
+    //         if (el.message.startsWith('Режим')) {
+    //             if (sortedData.length === 0) {
+    //                 sortedData = [allData[i]];
+    //             } else if (sortedData[sortedData.length - 1].message !== el.message) sortedData.push(el);
+    //         }
+    //         // if($.inArray(el.message, sortedData) === -1) sortedData.push(el);
+    //     });
+    //     console.log(sortedData);
+    // }
+
+    $('#logsTable').bootstrapTable('removeAll')
+        .bootstrapTable('append', (allData))//$('#selection').prop('checked')) ? sortedData : allData)
+        .bootstrapTable('scrollTo', 'top')
+        .bootstrapTable('refresh', {
+            data: allData
+        });
 }
 
 function prettyNumbers(number) {

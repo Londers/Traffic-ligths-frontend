@@ -19,6 +19,8 @@ $(function () {
 
     ws.onclose = function (evt) {
         console.log('disconnected', evt);
+        alert(evt.reason);
+        window.close();
     };
 
     let $table = $('#table');
@@ -59,7 +61,7 @@ $(function () {
                 console.log(data);
 
                 //Отображение полученных данных на экране АРМа
-                $('#description').html(data.cross.description);
+                $('#description').html(data.state.name);
 
                 counter = 0;
 
@@ -119,14 +121,23 @@ $(function () {
                             // phases.forEach((svgPhase, index) => {
                             //     if (!data.phases.includes(Number(svgPhase.num))) console.log('I DID IT', phases[index])
                             // })
-                            data.phases.forEach((phase, index) => {
-                                if (!phases.some(svgPhase => Number(svgPhase.num) === phase)) {
-                                    $('#buttons')
-                                        .prepend('<a class="btn btn-light border disabled" style="background-color: red" id="p' + data.phases[index] + '" data-toggle="tooltip" title="Включить ' + data.phases[index] + ' фазу" role="button">' +
-                                            '<div class="container-fluid" style="width: 50px; height: 50px;"><strong><big><big><big >' + data.phases[index] + '</big></big></big></big></strong></div>' +
-                                            '</a>');
-                                }
-                            })
+
+                            //Проверка соотсветсвия фаз
+                            // data.phases.forEach((phase, index) => {
+                            //     if (!phases.some(svgPhase => Number(svgPhase.num) === phase)) {
+                            //         $('#buttons')
+                            //             .prepend('<a class="btn btn-light border disabled" style="background-color: red" id="p' + data.phases[index] + '" data-toggle="tooltip" title="Включить ' + data.phases[index] + ' фазу" role="button">' +
+                            //                 '<div class="container-fluid" style="width: 50px; height: 50px;"><strong><big><big><big >' + data.phases[index] + '</big></big></big></big></strong></div>' +
+                            //                 '</a>');
+                            //     }
+                            // })
+                        } else {
+                            for (let i = 8; i > 0; i--) {
+                                $('#buttons')
+                                    .prepend('<a class="btn btn-light border mt-2 disabled" id="p' + i + '" data-toggle="tooltip" title="' + i + '"'
+                                        + ' role="button"><img class="img-fluid" src="/file/static/img/buttons/' + i + '.svg" height="50"'
+                                        + '  alt="Фаза "' + i + '></a>');
+                            }
                         }
 
                         $('a').each(function () {
@@ -283,7 +294,7 @@ $(function () {
                 checkConnection(data.status.control);
                 break;
             case 'stateChange':
-                $('#description').html(data.cross.description);
+                $('#description').html(data.state.name);
 
                 $('#pk').find('option').remove();
                 $('#sk').find('option').remove();
@@ -336,9 +347,9 @@ $(function () {
                 // if (editFlag) controlSend({id: idevice, cmd: 4, param: 0});
                 ws.close();
                 if (data.message !== '') {
-                    alert(data.message);
+                    if (!document.hidden) alert(data.message);
                 } else {
-                    alert('Потеряна связь с сервером');
+                    if (!document.hidden) alert('Потеряна связь с сервером');
                 }
                 window.close();
                 break;
@@ -368,6 +379,13 @@ function buildTable(data) {
     let toWrite = {phaseNum: data.fdk, tPr: '', tMain: '', duration: ''};
 
     $('#phase')[0].innerText = 'Фаза: ' + toWrite.phaseNum;
+
+    //Обработка Пром. такта
+    if (toWrite.phaseNum === 9) {
+        toWrite.phaseNum = 'Пром. такт';
+        $('#phase')[0].innerText = 'Пром. такт';
+    }
+
     if (typeof setPhase !== "undefined") {
         setPhase(toWrite.phaseNum);
     }
@@ -376,6 +394,13 @@ function buildTable(data) {
     if (lastRow === undefined) {
         toWrite.duration = data.tdk;
         $table.bootstrapTable('append', toWrite);
+        return;
+    }
+
+    if ((lastRow.phaseNum === 'Пром. такт') && (lastRow.phaseNum !== toWrite.phaseNum)) {
+        toWrite.tPr = lastRow.tPr;
+        toWrite.duration = lastRow.duration;
+        $table.bootstrapTable('updateRow', {index: dataArr.length - 1, row: toWrite});
         return;
     }
 

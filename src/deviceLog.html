@@ -35,11 +35,48 @@
 </head>
 
 <body>
-<div class="container-fluid mt-2">
+<div class="container-fluid">
     <div class="row" id="logs">
+        <div class="col-md-5 mt-3">
+            <div class="row" style="max-width: 760px; text-align: center">
+                <label class="col-md-1" for="dateStart">С</label>
+                <div class="col-md-5"><input type="date" id="dateStart" name="date"/>
+                    <input type="time" id="timeStart" name="time"/></div>
+                <label class="col-md-1" for="dateEnd"> до</label>
+                <div class="col-md-5"><input type="date" id="dateEnd" name="date"/>
+                    <input type="time" id="timeEnd" name="time"/></div>
+            </div>
+        <button id="timeButton1" class="btn btn-secondary ml-4 mt-2">30 минут</button>
+        <button id="getLog" class="btn btn-secondary ml-4 mt-2">6 часов</button>
+        <button id="timeButton2" class="btn btn-secondary ml-4 mt-2">Выбранное время</button>
+        </div>
+
+        <div class="col-md-2 mt-3">
+            <select id="type">
+                <option value="0">Технология</option>
+                <option value="1">Устройства</option>
+                <option value="2">Двери и лампы</option>
+            </select>
+        </div>
+        <!--        <button id="timeButton1" class="btn btn-secondary ml-4 mt-2">30 минут</button>-->
+        <!--        <button id="getLog" class="btn btn-secondary ml-4 mt-2">6 часов</button>-->
+        <!--        <button id="timeButton2" class="btn btn-secondary ml-4 mt-2">Выбранное время</button>-->
+        <!--        <select id="type">-->
+        <!--            <option value="0">Технология</option>-->
+        <!--            <option value="1">Устройства</option>-->
+        <!--            <option value="2">Двери и лампы</option>-->
+        <!--        </select>-->
+        <!--        <div class="row mt-3" style="max-width: 760px; text-align: center">-->
+        <!--            <label class="col-md-1" for="dateStart">С</label>-->
+        <!--            <div class="col-md-5"><input type="date" id="dateStart" name="date"/>-->
+        <!--                <input type="time" id="timeStart" name="time"/></div>-->
+        <!--            <label class="col-md-1" for="dateEnd"> до</label>-->
+        <!--            <div class="col-md-5"><input type="date" id="dateEnd" name="date"/>-->
+        <!--                <input type="time" id="timeEnd" name="time"/></div>-->
+        <!--        </div>-->
     </div>
     <div class="row w-100">
-        <div class="col-md-6">
+        <div class="col-md-4">
             <table class="table table-bordered"
                    id="table"
                    data-show-columns="true"
@@ -63,7 +100,7 @@
                 </tbody>
             </table>
         </div>
-        <div class="col-md-6" style="top: 75px;">
+        <div class="col-md-8">
             <table class="table table-bordered"
                    id="logsTable"
                    data-show-columns="true"
@@ -73,7 +110,10 @@
                    data-height="900">
                 <thead>
                 <tr>
-                    <th data-field="time" data-sortable="true">Время</th>
+                    <th data-field="time" data-sortable="true" data-visible="false">Время</th>
+                    <th data-field="dateStart" data-sortable="true">Время начала</th>
+                    <th data-field="dateEnd" data-sortable="true">Время конца</th>
+                    <th data-field="duration" data-sortable="true">Длительность</th>
                     <th data-field="cross" data-sortable="true">Перекрёсток</th>
                     <th data-field="message" data-sortable="true">Событие</th>
                 </tr>
