@@ -62,23 +62,23 @@ $(function () {
             let now = new Date();
             $('#dateEnd').attr('value', (now.toISOString().slice(0, 10)));
             $('#timeEnd').attr('value', (prettyNumbers(now.getHours()) + ':' + prettyNumbers(now.getMinutes())));
-            now = new Date(now.getTime() - (60 * 60 * 1000)); // - (now.getTimezoneOffset() * 60 * 1000));
+            now = new Date(now.getTime() - ((24 * 60) * 60 * 1000)); // - (now.getTimezoneOffset() * 60 * 1000));
             $('#dateStart').attr('value', (now.toISOString().slice(0, 10)));
             $('#timeStart').attr('value', (prettyNumbers(now.getHours()) + ':' + prettyNumbers(now.getMinutes())));
             $('#getLog').on('click', () => {
                 let now = new Date();
                 now = new Date(now.getTime() - (now.getTimezoneOffset() * 60 * 1000));
-                let timeStart = timeCalc(now, 360 * 60);
+                let timeStart = timeCalc(now, (24 * 60) * 60);
                 let timeEnd = now.toISOString();
                 getLogs(timeStart, timeEnd);
             });
-            $('#timeButton1').on('click', () => {
-                let now = new Date();
-                now = new Date(now.getTime() - (now.getTimezoneOffset() * 60 * 1000));
-                let timeStart = timeCalc(now, 30 * 60);
-                let timeEnd = now.toISOString();
-                getLogs(timeStart, timeEnd);
-            });
+            // $('#timeButton1').on('click', () => {
+            //     let now = new Date();
+            //     now = new Date(now.getTime() - (now.getTimezoneOffset() * 60 * 1000));
+            //     let timeStart = timeCalc(now, 30 * 60);
+            //     let timeEnd = now.toISOString();
+            //     getLogs(timeStart, timeEnd);
+            // });
             $('#timeButton2').on('click', () => {
                 // let now = new Date();
                 // now = new Date(now.getTime() - (now.getTimezoneOffset() * 60 * 1000));
@@ -96,10 +96,19 @@ $(function () {
             console.log(request.status + ' ' + request.responseText);
         }
     });
+
+    if (localStorage.getItem('region') !== undefined) {
+        console.log('TUTUUTUTUTUTUUTUTUTUTU');
+        let now = new Date();
+        now = new Date(now.getTime() - (now.getTimezoneOffset() * 60 * 1000));
+        let timeStart = timeCalc(now, (24 * 60) * 60);
+        let timeEnd = now.toISOString();
+        getLogs(timeStart, timeEnd, true);
+    }
     // });
 });
 
-function getLogs(start, end) {
+function getLogs(start, end, remoteOpenFlag) {
     // {ID: '', area: '', region: ''}
     // console.log('start:' + start + '   end' + end);
     let toSend = {devices: [], timeStart: start, timeEnd: end};
@@ -114,8 +123,21 @@ function getLogs(start, end) {
     });
 
     if (!selected.length) {
-        $('#toolbar0').append('<div style="color: red;" id="toolbar0Msg"><h5>Выберите устройства</h5></div>');
-        return;
+        if (remoteOpenFlag) {
+            toSend.devices.push({
+                ID: Number(localStorage.getItem('ID')),
+                area: localStorage.getItem('area'),
+                region: localStorage.getItem('region'),
+                description: localStorage.getItem('description')
+            });
+            localStorage.setItem('ID', undefined);
+            localStorage.setItem('area', undefined);
+            localStorage.setItem('region', undefined);
+            localStorage.setItem('description', undefined);
+        } else {
+            $('#toolbar0').append('<div style="color: red;" id="toolbar0Msg"><h5>Выберите устройства</h5></div>');
+            return;
+        }
     } else {
         $('#toolbar0Msg').remove();
     }
@@ -126,12 +148,15 @@ function getLogs(start, end) {
         data: JSON.stringify(toSend),
         dataType: 'json',
         success: function (data) {
+            console.log('QUQUQUQUQUUQ', data);
+
             buildLogTable(data)
         },
         error: function (request) {
             console.log(request.status + ' ' + request.responseText);
         }
     });
+    console.log(toSend);
 }
 
 function buildLogTable(data) {
@@ -174,8 +199,8 @@ function buildLogTable(data) {
     //     console.log(sortedData);
     // }
 
-    $('#logsTable').bootstrapTable('removeAll')
-        .bootstrapTable('append', (allData))//$('#selection').prop('checked')) ? sortedData : allData)
+    $('#logsTable')
+        .bootstrapTable('load', (allData))//$('#selection').prop('checked')) ? sortedData : allData)
         .bootstrapTable('scrollTo', 'top')
         .bootstrapTable('refresh', {
             data: allData

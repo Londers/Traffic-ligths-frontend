@@ -794,7 +794,7 @@ function makeTech(data, techAreaInfo) {
     }
 
     $('#techRegionForm').on('change', function () {
-        fillAreas($('#techArea'), $('#techRegion'), areaInfo);
+        fillTechAreas($('#techArea'), $('#techRegion'), areaInfo);
     });
 }
 

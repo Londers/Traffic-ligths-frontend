@@ -204,6 +204,13 @@ $(function () {
                 // $('#trigger')[0].innerHTML = 'Список<br>Пользователей';
                 // $('#trigger').show();
                 break;
+            case 'repaintCheck':
+                if (!data.status) {
+                    alert(data.message);
+                } else {
+                    console.log(data.message);
+                }
+                break;
             case 'close':
                 ws.close();
                 if (data.message !== '') {
@@ -625,7 +632,7 @@ $(function () {
         pkTabFill('pkTable');
     });
 
-    let x = undefined, y = undefined;
+    // let x = undefined, y = undefined;
 
     //Функционирование карты для выбора координат
     ymaps.ready(function () {
@@ -638,38 +645,66 @@ $(function () {
         map.events.add(['wheel', 'mousemove'], function (e) {
             zoom = map._zoom;
         });
-        $('#map').on('click', function (event) {
-            x = event.clientX;
-            y = event.clientY;
-        });
-        // $('#map').css({height: $(window).height/2, width: $(window).width/2});
-        map.events.add('click', function (e) {
-            zoom = map._zoom;
-            if (!map.balloon.isOpen()) {
-                let coords = e.get('coords');
-                points.Y = coords[0].toPrecision(9);
-                points.X = coords[1].toPrecision(9);
-                map.setCenter([points.Y, points.X], zoom);
-                map.balloon.open(coords, {
-                    contentHeader: 'Светофор появится на этом месте карты!',
-                    contentBody: '<p>Щелкните на крестик в левом верхнем углу</p>'
-                });
-                var $this = $('#map');
-                var offset = $this.offset();
-                var width = $this.width();
-                var height = $this.height();
+        // $('#map').on('click', function (event) {
+        //     // x = event.clientX;
+        //     // y = event.clientY;
+        //     zoom = map._zoom;
+        //     let coords = event.get('coords');
+        //     points.Y = coords[0].toPrecision(9);
+        //     points.X = coords[1].toPrecision(9);
+        //     map.setCenter([points.Y, points.X], zoom);
+        //     console('center', [points.Y, points.X]);
+        //     console('minus', map.converter.clientPixelsToCoordinates(new YMaps.Point(-225, -225)));
+        //     console('plus', map.converter.clientPixelsToCoordinates(new YMaps.Point(225, 225)));
+        // });
 
-                var centerX = offset.left + width / 2 - 225;
-                var centerY = offset.top + height / 2 - 225;
+
+        map.events.add('click', function (event) {
+            zoom = map._zoom;
+            let coords = event.get('coords');
+            points.Y = coords[0].toPrecision(9);
+            points.X = coords[1].toPrecision(9);
+            map.setCenter([points.Y, points.X], zoom);
+            map.balloon.open(coords, {
+                contentHeader: 'Светофор появится на этом месте карты!',
+                contentBody: '<p>Щелкните на крестик в левом верхнем углу</p>'
+            });
+            let $this = $('#map');
+            let offset = $this.offset();
+            let width = $this.width();
+            let height = $this.height();
+
+            let centerX = offset.left + width / 2;
+            let centerY = offset.top + height / 2;
+
+            let projection = map.options.get('projection');
+
+            let minus = projection.fromGlobalPixels(
+                map.converter.pageToGlobal([centerX - 225, centerY + 225]), map.getZoom()
+            );
+            let plus = projection.fromGlobalPixels(
+                map.converter.pageToGlobal([centerX + 225, centerY - 225]), map.getZoom()
+            );
+
+            let distance = ymaps.formatter.distance(
+                ymaps.coordSystem.geo.getDistance([plus[0], minus[1]], [plus[0], plus[1]]), 10
+            ).split('&#160;');
+
+            data.state.scale = ((distance[1] === 'км') ? parseFloat(distance[0]) * 1000 : parseFloat(distance[0])) / 450;
+
+
+            if (!map.balloon.isOpen()) {
                 $('.areaMap').show().attr('style', 'overflow: auto; position: absolute; z-index: 2;').css({
-                    top: centerY,
-                    left: centerX
+                    top: centerY - 225,
+                    left: centerX - 225
                 });
             } else {
                 map.balloon.close();
                 $('.areaMap').hide();
             }
         });
+
+        $('#map').css({height: $(window).height / 2, width: $(window).width / 2});
 
         $('#map').on('click', function () {
             coordinatesChangeFlag = true;
@@ -970,10 +1005,14 @@ function mainTabFill(data, firstLoadFlag) {
     setChange('tz', 'input', 'arrays.timedev', numberFlag);
     $('#summer').prop('checked', data.state.arrays.timedev.summer);
     setChange('summer', 'checkbox', 'arrays.timedev', !numberFlag, !longPathFlag);
-    $('#vpcpdl').val(data.state.Model.vpcpdl);
-    setChange('vpcpdl', 'input', 'Model', numberFlag);
-    $('#vpcpdr').val(data.state.Model.vpcpdr);
-    setChange('vpcpdr', 'input', 'Model', numberFlag);
+
+    $('#vpcpd').val((parseFloat(data.state.Model.vpcpdl + '.' + data.state.Model.vpcpdr) <= 12.3) ? 12.3 : 12.4);
+    $('#vpcpd').on('change keyup', function () {
+        let ver = $('#vpcpd option:selected').val().split('.');
+        data.state.Model.vpcpdl = Number(ver[0]);
+        data.state.Model.vpcpdr = Number(ver[1]);
+    });
+
     $('#vpbsl').val(data.state.Model.vpbsl);
     setChange('vpbsl', 'input', 'Model', numberFlag);
     $('#vpbsr').val(data.state.Model.vpbsr);
@@ -1274,11 +1313,12 @@ function kvTableChange(table) {
 function pkTabFill(table) {
     let selected = $('#pkSelect').val();
     let currPK = setDK[selected];
+    let tableType = $('#pkTableType').val() === '0';
 
     $('#' + table).bootstrapTable('removeAll');
 
     if (pkFlag) {
-        pkTableChange(table, currPK);
+        pkTableChange(table);
     }
 
     $('#tc').val(currPK.tc);
@@ -1295,25 +1335,100 @@ function pkTabFill(table) {
         $('#' + table).bootstrapTable('append', '');
     });
 
-    let counter = -1;
-    $('#' + table + ' tbody tr').each(function () {
-        let dayCounter = 0;
-        counter++;
-        $(this).find('td').each(function () {
-            let record = currPK.sts[counter];
-            switch (dayCounter++) {
+    function pkTableDurationFunctional() {
+        let $table = $('#pkTable');
+        let cycleTime = Number($('#tc').val()) - Number($('#shift').val());
+        let shift = $('#shift').val();
+        let difLen = $('#razlen').prop('checked');
+        // let helpArray = ['start', 'tf', 'num', 'duration', 'plus'];
+        let helpMap = {start: true, tf: true, num: true, duration: true, plus: true};
+
+        currPK.sts.forEach(function (row, index) {
+            let previousRow = currPK.sts[index - 1];
+            let disabledStatusMap = Object.assign({}, helpMap);
+
+            // if (previousRow === undefined) {
+            if (index === 0) {
+                disabledStatusMap.duration = false;
+            } else if (($('[class~=num' + index + ']').val() !== '0') || ($('[class~=tf' + index + ']').val() !== '0')) {
+                disabledStatusMap.num = false;
+                disabledStatusMap.tf = false;
+                disabledStatusMap.duration = false;
+            }
+
+            disabledStatusMap.plus = !difLen;
+
+            for (const [key, value] of Object.entries(disabledStatusMap)) {
+                $('[class~=' + key + index + ']')[0].disabled = value;
+            }
+
+        });
+
+        $('#tc').on('change', () => {
+            let currSts = setDK[Number($('#pkSelect').val())].sts;
+            let cycleTime = Number($('#tc').val());
+
+            currSts.forEach((line) => {
+                cycleTime -= (line.stop - line.start);
+            });
+
+            $('#' + table + ' tbody tr').each(function (index, row) {
+                if (this.className === 'success') {
+                    console.log('+');
+                } else {
+                    console.log('-');
+                }
+            })
+        });
+
+
+        $('#shift').on('change keyup', (event) => {
+            if ((event.type === 'keyup') && (event.originalEvent.code !== 'Enter')) return;
+
+            let shift = Number($('#shift').val());
+            let shiftDiff = shift - $('[class~=start0]').val();
+            let shiftFlag = (shiftDiff < 0);
+            shiftDiff = Math.abs(shiftDiff);
+
+            for (let i = 0; i < 12; i++) {
+                if (($('[class~=num' + i + ']').val() !== '0') || ($('[class~=tf' + i + ']').val() !== '0')) {
+                    $('[class~=start' + (i) + ']').val(Number($('[class~=start' + (i) + ']').val()) + (shiftFlag ? -shiftDiff : shiftDiff));
+                    $('[class~=stop' + (i) + ']').val(Number($('[class~=stop' + (i) + ']').val()) + (shiftFlag ? -shiftDiff : shiftDiff));
+                }
+            }
+        });
+
+        $('#razlen').on('change', () => {
+            currPK.sts.forEach(function (row, index) {
+                $('[class~=plus' + index + ']')[0].disabled = !$('#razlen').prop('checked');
+            })
+        });
+    }
+
+    if (tableType) {
+        $('#' + table).bootstrapTable('hideColumn', 'stop');
+        $('#' + table).bootstrapTable('showColumn', 'duration');
+    } else {
+        $('#' + table).bootstrapTable('hideColumn', 'duration');
+        $('#' + table).bootstrapTable('showColumn', 'stop');
+    }
+
+    $('#' + table + ' tbody tr').each(function (index) {
+        $(this).find('td').each(function (switchIndex) {
+            let record = currPK.sts[index];
+            switch (switchIndex) {
                 case 0 :
                     $(this).append(record.line);
                     break;
                 case 1 :
                     $(this).append(
-                        '<input class="form-control border-0" name="number" type="number" ' +
+                        '<input class="form-control border-0 start' + index + '" name="number" type="number"' +
                         'style="max-width: 50px;" value="' + record.start + '"/>'
                     );
                     break;
                 case 2 :
                     $(this).append(
-                        '<select>' +
+                        '<select class="tf' + index + '">' +
                         '<option value="0"> </option>' +
                         '<option value="1">МГР</option>' +
                         '<option value="2">1 ТВП</option>' +
@@ -1333,52 +1448,91 @@ function pkTabFill(table) {
                     break;
                 case 3 :
                     $(this).append(
-                        '<input class="form-control border-0" name="number" type="number" ' +
+                        '<input class="form-control border-0 num' + index + '" name="number" type="number"' +
                         'style="max-width: 50px;" value="' + record.num + '"/>'
                     );
                     break;
                 case 4 :
                     $(this).attr('class', 'justify-content-center');
                     $(this).append(
-                        '<input class="form-control border-0" name="number" type="number" ' +
-                        'style="max-width: 50px;" value="' + record.stop + '"/>'
+                        '<input class="form-control border-0 duration' + index + '" name="number" type="number"' +
+                        'style="max-width: 50px;" value="' + ((tableType) ? (record.stop - record.start) : record.stop) + '"/>'
                     );
+                    $(this).find('input').on('keyup change', (event) => {
+                        if ((event.type === 'keyup') && (event.originalEvent.code !== 'Enter')) return;
+                        let $this = $(this).find('input');
+                        let cycleTime = Number($('#tc').val());
+                        let currSts = setDK[Number($('#pkSelect').val())].sts;
+                        let lastLine = ((currSts[index + 1].num === 0) && (currSts[index + 1].tf === 0));
+                        // let lastLine = -1;
+                        currSts[index].stop = Number(currSts[index].start) + Number($('[class~=duration' + index + ']').val());
+                        currSts.forEach((line) => {
+                            cycleTime -= (line.stop - line.start);
+                            // if ((lastLine === -1) && (line.num === 0)) lastLine = index - 1;
+                        });
+                        if (cycleTime !== 0) {
+                            if (!lastLine) {
+                                currSts[index + 1].stop += cycleTime;
+                                if ((currSts[index + 1].stop - currSts[index + 1].start) <= 0) {
+                                    currSts[index + 1].stop -= cycleTime;
+                                    currSts[index].stop += cycleTime;
+                                    $this.val(Number($this.val()) + cycleTime);
+                                    return;
+                                }
+                                $('[class~=duration' + (index + 1) + ']').val(currSts[index + 1].stop - currSts[index + 1].start);
+                                $('[class~=start' + (index + 1) + ']').val(currSts[index].stop)
+                            } else {
+                                currSts[0].stop += cycleTime;
+                                if ((currSts[index].stop - currSts[index].start) <= 0) {
+                                    currSts[0].stop -= cycleTime;
+                                    $this.val(Number($this.val()) + cycleTime);
+                                    return;
+                                }
+                                $('[class~=duration0]').val(currSts[0].stop - currSts[0].start);
+                                for (let i = 1; i <= index; i++) {
+                                    $('[class~=start' + (i) + ']').val(currSts[i - 1].stop);
+                                    currSts[i].stop = Number($('[class~=start' + (i) + ']').val()) + Number($('[class~=duration' + (i) + ']').val());
+                                }
+                                currSts[index].stop = Number($('#tc').val()) + Number($('#shift').val());
+                                // $('[class~=start0]').val(currSts[0].stop)
+                            }
+                        }
+                    });
                     break;
                 case 5 :
                     $(this).append(
-                        '<input class="form-control border-0" name="text" type="text" ' +
+                        '<input class="form-control border-0 plus' + index + '" name="text" type="text"' +
                         'style="max-width: 70px;" value="' + (record.plus ? '+' : '') + '"/>'
                     );
                     break;
             }
         });
     });
+    if (tableType) pkTableDurationFunctional();
 }
 
 //Функция для сохранения изменений в таблице ПК
-function pkTableChange(table, currPK) {
+function pkTableChange(table) {
     $('#' + table).on('change', function () {
-        let counter = -1;
         let selected = Number($('#pkSelect').val());
-        $('#' + table + ' tbody tr').each(function () {
-            let dayCounter = 0;
-            counter++;
-            $(this).find('td').each(function () {
-                switch (dayCounter++) {
+        let currPK = setDK[selected];
+        $('#' + table + ' tbody tr').each(function (index) {
+            $(this).find('td').each(function (switchIndex) {
+                switch (switchIndex) {
                     case 1 :
-                        currPK.sts[counter].start = Number($(this).find('input').val());
+                        currPK.sts[index].start = Number($(this).find('input').val());
                         break;
                     case 2 :
-                        currPK.sts[counter].tf = Number($(this).find('select').val());
+                        currPK.sts[index].tf = Number($(this).find('select').val());
                         break;
                     case 3 :
-                        currPK.sts[counter].num = Number($(this).find('input').val());
+                        currPK.sts[index].num = Number($(this).find('input').val());
                         break;
-                    case 4 :
-                        currPK.sts[counter].stop = Number($(this).find('input').val());
-                        break;
+                    // case 4 :
+                    //     currPK.sts[index].stop = currPK.sts[index].start + Number($(this).find('input').val());
+                    //     break;
                     case 5 :
-                        currPK.sts[counter].plus = ($(this).find('input').val() === '+');
+                        currPK.sts[index].plus = ($(this).find('input').val() === '+');
                         break;
                 }
             });

@@ -74,14 +74,18 @@
                role="button" style="display: none;"><img class="img-fluid" src="/file/static/img/buttons/ky.svg"
                                                          height="50"
                                                          alt="коорд упралвение"></a>
+            <div class="container-sm text-center" style="min-height: 50px">
+                <button id="openDeviceLog" class="btn btn-light border">Открыть лог</button>
+            </div>
         </div>
-        <div class="col-sm-3 text-left mt-3" style=" min-width: 250px;">
+<!--        <div class="col-sm-3 text-left mt-3" style=" min-width: 250px;">-->
+        <div class="col-sm-3 text-left mt-3" id="img-col">
             <img class="img-fluid" src="" style="" id="img" alt="Перекрёсток">
             <div class="container-sm ml-3 mt-5 text-center">
                 <label id="status"></label>
             </div>
             <div class="container-sm ml-3 mt-3 text-center">
-                <button id="controlButton" class="btn btn-light border" style="display: none;">Открыть АРМ</button>
+                <button id="controlButton" class="btn btn-light border" style="display: none;">Открыть привязку</button>
             </div>
             <div class="row mt-3 ml-3" id="verificationRow">
                 <div class="container col-sm-12">
@@ -147,25 +151,35 @@
             <button type="button" class="btn cancel" onclick="closeForm()">Закрыть</button>
         </form>
     </div>
-    <script>
-        function openForm() {
-            document.getElementById("myForm").style.display = "block";
-            document.getElementsByClassName("open-button")[0].style.display = "none";
-        }
-
-        function closeForm() {
-            document.getElementById("myForm").style.display = "none";
-            document.getElementsByClassName("open-button")[0].style.display = "block";
-        }
-    </script>
-    <!--<div>-->
-    <!--    <input type="checkbox" id="check" hidden>-->
-    <!--    <img class="img-fluid border" id="img1" src="/file/static/img/buttons/p2.svg" height="50">-->
-    <!--</div>-->
-
-
 </div>
+<table class="table table-bordered" id="expandedTable" cellspacing="0" data-toggle="table" data-toolbar="#toolbar"
+       data-single-select="true" data-click-to-select="true">
+    <thead>
+    <tr>
+        <th data-field="ftudk">N фазы ТУ</th>
+        <th data-field="minus">Сдвиг ПР</th>
+        <th data-field="tPr">Т пр.</th>
+        <th data-field="ftsdk">N фазы ТС</th>
+        <th data-field="tMain">Т осн.</th>
+        <th data-field="ttcdk">Т фазы ТС</th>
+        <th data-field="tdk">Т фазы ТУ</th>
+    </tr>
+    </thead>
+    <tbody>
+    </tbody>
+</table>
 
+<script>
+    function openForm() {
+        document.getElementById("myForm").style.display = "block";
+        document.getElementsByClassName("open-button")[0].style.display = "none";
+    }
+
+    function closeForm() {
+        document.getElementById("myForm").style.display = "none";
+        document.getElementsByClassName("open-button")[0].style.display = "block";
+    }
+</script>
 </body>
 
 </html>
