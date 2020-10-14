@@ -296,6 +296,8 @@ function buildBottom() {
             $('#lastOpDev').attr('style', '');
         }
 
+        $('#ip')[0].innerText = 'IP: ' + device.ip;
+
         $('#status')[0].innerText = deviceInfo.modeRdk;
         $('#type2')[0].innerText = switchArrayTypeFromDevice(device.Model);
         $('#phase')[0].innerText = device.DK.fdk;
@@ -343,6 +345,8 @@ function buildBottom() {
 
             $('#lastOpDev')[0].innerText = '';
             $('#lastOp')[0].innerText = '';
+
+            $('#ip')[0].innerText = '';
 
             $('#status')[0].innerText = '-';
             $('#type2')[0].innerText = '-';

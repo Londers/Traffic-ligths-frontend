@@ -91,6 +91,19 @@
         </div>
     </form>
 </div>
+<div id="licenseDialog" title="Информация о лицензции">
+    <form class="needs-validated">
+        <div class="form-group" id="currentLicense"> <!--onclick="fillAreas()">-->
+            <p id="license" class="text-center"></p>
+        </div>
+        <div class="form-group text-center">
+            <button id="checkNewLicense" class="btn btn-secondary mt-3">Внести новую лицензцию</button>
+        </div>
+        <div class="form-group text-center">
+            <input type="text" id="newLicenseKey" name="time"/>
+        </div>
+    </form>
+</div>
 <body style="max-height: 960px;">
 <div class="container-fluid">
     <div id="toolbar" class="row" style="min-height: 38px;">
@@ -140,6 +153,7 @@
                 <button class="dropdown-item" type="button" id="manageButton" style="display: none;">Таблица прав и
                     данных операторов, названий армов
                 </button>
+                <button class="dropdown-item" type="button" id="licenseButton">Просмотр лицензии</button>
             </div>
         </div>
         <div class="col-md-1 text-center">

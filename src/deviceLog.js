@@ -117,8 +117,7 @@ function getLogs(start, end, remoteOpenFlag) {
         toSend.devices.push({
             ID: findIdByDescription(cross.description),
             area: getAreaNum(cross.region, cross.area),
-            region: getRegionNum(cross.region),
-            description: cross.description
+            region: getRegionNum(cross.region)
         });
     });
 
@@ -148,8 +147,7 @@ function getLogs(start, end, remoteOpenFlag) {
         data: JSON.stringify(toSend),
         dataType: 'json',
         success: function (data) {
-            console.log('QUQUQUQUQUUQ', data);
-
+            // console.log('QUQUQUQUQUUQ', data);
             buildLogTable(data)
         },
         error: function (request) {

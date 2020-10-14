@@ -67,6 +67,47 @@ ymaps.ready(function () {
         openPage('/manage');
     });
 
+    $('#licenseButton').on('click', function () {
+        $.ajax({
+            type: 'POST',
+            url: location.origin + '/user/' + localStorage.getItem('login') + '/license',
+            // data: JSON.stringify(toSend),
+            dataType: 'json',
+            success: function (data) {
+                let date = new Date(data.timeEnd);
+                let localDate = date.toLocaleString('ru-RU', {timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone});
+                $('#license')[0].innerText = 'Организация: ' + data.name + '\nАдрес: ' + data.address +
+                    '\nТелефон: ' + data.phone +
+                    '\nКоличество доступных аккаунтов: ' + data.numAcc + '\nКоличество доступных устройтв: ' +
+                    data.numDev + '\nВремя окончания срока действия лицензии:\n' + localDate;
+            },
+            error: function (request) {
+                console.log(request.status + ' ' + request.responseText);5861.23
+            }
+        });
+
+        $('#newLicenseKey').val('');
+        $('#licenseDialog').dialog('open');
+    });
+
+    $('#checkNewLicense').on('click', (e) => {
+        e.preventDefault();
+        $.ajax({
+            type: 'POST',
+            url: location.origin + '/user/' + localStorage.getItem('login') + '/license/newToken',
+            data: JSON.stringify({keyStr: $('#newLicenseKey').val()}),
+            dataType: 'json',
+            // success: function (data) {
+            //
+            // },
+            error: function (request) {
+                $('#newLicenseKey').parent().find('p').remove();
+                $('#newLicenseKey').parent().append('<p style="color: red;">' + request.responseJSON.message + '</p>');
+                console.log(request.status + ' ' + request.responseText);
+            }
+        });
+    });
+
     //Открытие вкладки с логами устройств
     $('#deviceLogButton').on('click', function () {
         openPage('/deviceLog');
@@ -555,6 +596,22 @@ ymaps.ready(function () {
         },
         modal: true,
         resizable: false,
+        close: function () {
+            $('#techAreasMsg').remove();
+        }
+    });
+
+    $('#licenseDialog').dialog({
+        autoOpen: false,
+        buttons: {
+            'Закрыть': function () {
+                $(this).dialog('close');
+            }
+        },
+        width: window.screen.width / 3,
+        height: window.screen.height / 2,
+        modal: true,
+        resizable: true,
         close: function () {
             $('#techAreasMsg').remove();
         }

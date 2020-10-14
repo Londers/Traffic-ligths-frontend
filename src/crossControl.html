@@ -208,17 +208,23 @@
                             <label for="name" class="">Место размещения</label>
                         </div>
                         <div class="col-md-6 w-100">
-                            <div class="form-group"><input type="text" class="form-control" id="name" required=""
-                                                           style="	max-height: 30px;"></div>
+                            <div class="form-group">
+                                <input type="text" class="form-control" id="name" required=""
+                                                           style="max-height: 30px;"></div>
                         </div>
                     </div>
                     <div class="row my-2 ml-0" style="">
                         <div class="col-md-3 mt-1" style="">
-                            <label for="phone" class="">№ телефона, IP lan и т.д.</label>
+                            <label for="phone" class="">№ телефона и т.д.</label>
                         </div>
-                        <div class="col-md-6" style="max-width: 400px;">
-                            <div class="form-group"><input type="text" class="form-control" required="" id="phone"
-                                                           style="	max-height: 30px;"></div>
+                        <div class="col-md-3" style="max-width: 400px;">
+                            <div class="form-group">
+                                <input type="text" class="form-control" required="" id="phone"
+                                                           style="max-height: 30px;"></div>
+                        </div>
+                        <div class="col-md-3" style="max-width: 400px;">
+                            <div class="mt-3">
+                                <p id="ip" style="max-height: 30px;"></div>
                         </div>
                     </div>
                     <div class="form-group row w-100 ml-0 mt-3 mb-2" style="">
@@ -417,9 +423,30 @@
                     </div>
                     <div class="row mt-2">
                         <div class="col-md-4" style="">
-                            <button type="button" class="btn-lg btn-light mx-5 justify-content-center disabled"
+                            <button type="button" class="btn-lg btn-light ml-5 mr-2 justify-content-center disabled"
                                     id="switchCopy" style=""> Вставить перекл.
                             </button>
+                        </div>
+                        <div class="col-md-2 mt-1" style="">
+                            <div class="form-group row ml-1 mr-1">
+                                <div class="col-xs-10 ml-1">
+                                    <div class="form-group mt-2">
+                                        <label for="tpu" class="mr-2">типа</label>
+                                        <select class="" id="tf">
+                                            <option value="0"> </option>
+                                            <option value="1">МГР</option>
+                                            <option value="2">1 ТВП</option>
+                                            <option value="3">2 ТВП</option>
+                                            <option value="4">1,2 ТВП</option>
+<!--                                            <option value="5">Зам. 1ТВП</option>-->
+<!--                                            <option value="6">Зам. 2ТВП</option>-->
+<!--                                            <option value="7">Зам.</option>-->
+                                            <option value="8">МДК</option>
+                                            <option value="9">ВДК</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         <div class="col-md-4" style="">
                             <button type="button" class="btn-lg btn-light mx-5 justify-content-center disabled"

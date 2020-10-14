@@ -306,6 +306,9 @@ $(function () {
             if (!($('#subMsg').length)) $('#subarea').parent().append('<div style="color: red;" id="subMsg"><h5>Некорректный номер подрайона</h5></div>');
         } else {
             if (($('#subMsg').length)) $('#subMsg').remove();
+            for (let i = 1; i < 13; i++) {
+                data.state.arrays.SetDK.dk[i - 1].pk = i;
+            }
             ws.send(JSON.stringify({type: 'checkB', state: data.state}));
         }
     });
@@ -398,37 +401,70 @@ $(function () {
     //Кнопка для копирования всей информации выбранного ПК
     $('#switchCopy').on('click', function () {
         let index = $('#pkTable').find('tr.success').data('index');
+
+        function sortFunc(a, b) {
+            return a[0] - b[0];
+        }
+
         let selected = $('#pkSelect').val();
-        let selectVal = 0;
-        let oldData = [];
-        let counter = 0;
-
-        if (getSelectedRowData('pkTable', 'sts') === undefined) return;
-
-        $('#pkTable tbody tr').each(function () {
-            oldData.push(getSelectedRowData('pkTable', 'sts', counter));
-            // });
-            // counter = 0;
-            // $('#pkTable tbody tr').each(function () {
-            if (counter++ === index) {
-                let selectPosition = 0;
-                $(this).find('td').each(function () {
-                    if (selectPosition++ === 2) selectVal = $(this).find('select').children("option:selected").val();
-                })
-            }
+        if (index === undefined) index = 0;
+        let tf = Number($('#tf').val());
+        let currSts = setDK[selected].sts;
+        let newRow = {
+            line: index, start: currSts[(index === 0) ? 11 : (index)].stop, num: 1, tf: tf,
+            stop: currSts[(index === 0) ? 11 : (index)].stop, plus: $('#razlen').prop('checked')
+        };
+        let map = new Map();
+        currSts.forEach((sts, i) => {
+            map.set(sts.line, sts);
         });
-        counter = 0;
-        oldData.splice(index, 0, JSON.parse(JSON.stringify(oldData[index])));
-        oldData.pop();
-        oldData.forEach(rec => {
-            rec.line = ++counter;
+        map.delete(map.size-1);
+        map.set(((index+1) + (index+2))/2, newRow);
+        let sortedMap = new Map([...map.entries()].sort(sortFunc));
+        console.log(sortedMap);
+        currSts = [];
+
+        for (const rec of sortedMap) {
+            currSts.push(rec[1]);
+        }
+        currSts.forEach((rec, i) => {
+            rec.line = i + 1;
         });
-
-        oldData[index].tf = Number(selectVal);
-        oldData[index + 1].tf = Number(selectVal);
-        setDK[selected].sts = oldData;
-
+        setDK[selected].sts = currSts;
         pkTabFill('pkTable');
+        // currSts.pop();
+
+
+        // let selectVal = 0;
+        // let oldData = [];
+        // let counter = 0;
+        //
+        // if (getSelectedRowData('pkTable', 'sts') === undefined) return;
+        //
+        // $('#pkTable tbody tr').each(function () {
+        //     oldData.push(getSelectedRowData('pkTable', 'sts', counter));
+        //     // });
+        //     // counter = 0;
+        //     // $('#pkTable tbody tr').each(function () {
+        //     if (counter++ === index) {
+        //         let selectPosition = 0;
+        //         $(this).find('td').each(function () {
+        //             if (selectPosition++ === 2) selectVal = $(this).find('select').children("option:selected").val();
+        //         })
+        //     }
+        // });
+        // counter = 0;
+        // oldData.splice(index, 0, JSON.parse(JSON.stringify(oldData[index])));
+        // oldData.pop();
+        // oldData.forEach(rec => {
+        //     rec.line = ++counter;
+        // });
+        //
+        // oldData[index].tf = Number(selectVal);
+        // oldData[index + 1].tf = Number(selectVal);
+        // setDK[selected].sts = oldData;
+        //
+        // pkTabFill('pkTable');
     });
 
     //Кнопка для перезаписи всей информации выбранного ПК
@@ -437,7 +473,7 @@ $(function () {
         let selected = $('#pkSelect').val();
         let oldData = [];
         let counter = 0;
-        let emptyRow = {len: 0, line: 12, num: 0, plus: false, start: 0, tf: 0};
+        let emptyRow = {line: 0, start: 0, num: 0, tf: 0, stop: 0, plus: false};
 
         if (getSelectedRowData('pkTable', 'sts') === undefined) return;
 
@@ -445,11 +481,10 @@ $(function () {
             oldData.push(getSelectedRowData('pkTable', 'sts', counter++));
         });
 
-        counter = 0;
         oldData.splice(index, 1);
         oldData.push(emptyRow);
-        oldData.forEach(rec => {
-            rec.line = ++counter;
+        oldData.forEach((rec, i) => {
+            rec.line = i + 1;
         });
 
         setDK[selected].sts = oldData;
@@ -1001,6 +1036,7 @@ function mainTabFill(data, firstLoadFlag) {
     setChange('name', 'input', '', !numberFlag);
     $('#phone').val(data.state.phone);
     setChange('phone', 'input', '', !numberFlag);
+    $('#ip')[0].innerText = 'IP: ' + data.deviceIP;
     $('#tz').val(data.state.arrays.timedev.tz);
     setChange('tz', 'input', 'arrays.timedev', numberFlag);
     $('#summer').prop('checked', data.state.arrays.timedev.summer);
@@ -1350,7 +1386,7 @@ function pkTabFill(table) {
             // if (previousRow === undefined) {
             if (index === 0) {
                 disabledStatusMap.duration = false;
-            } else if (($('[class~=num' + index + ']').val() !== '0') || ($('[class~=tf' + index + ']').val() !== '0')) {
+            } else if ((index !== 11) && (($('[class~=num' + index + ']').val() !== '0') || ($('[class~=tf' + index + ']').val() !== '0'))) {
                 disabledStatusMap.num = false;
                 disabledStatusMap.tf = false;
                 disabledStatusMap.duration = false;
@@ -1364,45 +1400,95 @@ function pkTabFill(table) {
 
         });
 
-        $('#tc').on('change', () => {
-            let currSts = setDK[Number($('#pkSelect').val())].sts;
-            let cycleTime = Number($('#tc').val());
+        if (firstLoad) {
+            $('#tc').on('change', () => {
+                let currSts = setDK[Number($('#pkSelect').val())].sts;
+                let shift = Number($('#shift').val());
+                let cycleTime = Number($('#tc').val());
+                if ((cycleTime + shift) >= 256) {
+                    cycleTime = 255 - shift;
+                    $('#tc').val(cycleTime);
+                    data.state.arrays.SetDK.dk[selected].tc = cycleTime;
+                }
 
-            currSts.forEach((line) => {
-                cycleTime -= (line.stop - line.start);
+                currSts.forEach((line) => {
+                    cycleTime -= (line.stop - line.start);
+                });
+
+                $('#' + table + ' tbody tr').each(function (index) {
+                    if (this.className === 'success') {
+                        let $this = $('[class~=duration' + index + ']');
+                        let currSts = setDK[Number($('#pkSelect').val())].sts;
+                        let lastLine = ((currSts[index + 1].num === 0) && (currSts[index + 1].tf === 0));
+                        $this.val(Number($this.val()) + cycleTime);
+                        currSts[index].stop += cycleTime;
+
+                        if (!lastLine) {
+                            // currSts[index + 1].stop += cycleTime;
+                            // if ((currSts[index + 1].stop - currSts[index + 1].start) <= 0) {
+                            //     currSts[index + 1].stop -= cycleTime;
+                            //     currSts[index].stop += cycleTime;
+                            //     $this.val(Number($this.val()) + cycleTime);
+                            //     return;
+                            // }
+                            $('[class~=duration' + (index) + ']').val(currSts[index].stop - currSts[index].start);
+                            $('[class~=start' + (index) + ']').val(currSts[index].stop);
+                            for (let i = index; i < currSts.length; i++) {
+                                $('[class~=start' + (i) + ']').val(currSts[(i === 0) ? index : (i - 1)].stop);
+                                currSts[i].stop = Number($('[class~=start' + (i) + ']').val()) + Number($('[class~=duration' + (i) + ']').val());
+                                currSts[i].start = currSts[i].stop - Number($('[class~=duration' + (i) + ']').val());
+                                if ((i !== (currSts.length - 1)) && ((currSts[i + 1].num === 0) && (currSts[i + 1].tf === 0))) {
+                                    return;
+                                }
+                            }
+                        } else {
+                            // currSts[0].stop += cycleTime;
+                            // if ((currSts[index].stop - currSts[index].start) <= 0) {
+                            //     currSts[0].stop -= cycleTime;
+                            //     $this.val(Number($this.val()) + cycleTime);
+                            //     return;
+                            // }
+                            // $('[class~=duration0]').val(currSts[0].stop - currSts[0].start);
+                            currSts[index].stop = Number($('#tc').val()) + Number($('#shift').val());
+                            // $('[class~=start0]').val(currSts[0].stop)
+                        }
+                    }
+                })
             });
 
-            $('#' + table + ' tbody tr').each(function (index, row) {
-                if (this.className === 'success') {
-                    console.log('+');
-                } else {
-                    console.log('-');
+
+            $('#shift').on('change keyup', (event) => {
+                if ((event.type === 'keyup') && (event.originalEvent.code !== 'Enter')) return;
+
+                let shift = Number($('#shift').val());
+                let cycleTime = Number($('#tc').val());
+                if ((cycleTime + shift) >= 256) {
+                    shift = 255 - cycleTime;
+                    $('#shift').val(shift);
+                    data.state.arrays.SetDK.dk[selected].shift = shift;
                 }
-            })
-        });
 
+                let currSts = setDK[Number($('#pkSelect').val())].sts;
+                let shiftDiff = shift - $('[class~=start0]').val();
+                let shiftFlag = (shiftDiff < 0);
+                shiftDiff = Math.abs(shiftDiff);
 
-        $('#shift').on('change keyup', (event) => {
-            if ((event.type === 'keyup') && (event.originalEvent.code !== 'Enter')) return;
-
-            let shift = Number($('#shift').val());
-            let shiftDiff = shift - $('[class~=start0]').val();
-            let shiftFlag = (shiftDiff < 0);
-            shiftDiff = Math.abs(shiftDiff);
-
-            for (let i = 0; i < 12; i++) {
-                if (($('[class~=num' + i + ']').val() !== '0') || ($('[class~=tf' + i + ']').val() !== '0')) {
-                    $('[class~=start' + (i) + ']').val(Number($('[class~=start' + (i) + ']').val()) + (shiftFlag ? -shiftDiff : shiftDiff));
-                    $('[class~=stop' + (i) + ']').val(Number($('[class~=stop' + (i) + ']').val()) + (shiftFlag ? -shiftDiff : shiftDiff));
+                for (let i = 0; i < 12; i++) {
+                    if (($('[class~=num' + i + ']').val() !== '0') || ($('[class~=tf' + i + ']').val() !== '0')) {
+                        $('[class~=start' + (i) + ']').val(Number($('[class~=start' + (i) + ']').val()) + (shiftFlag ? -shiftDiff : shiftDiff));
+                        $('[class~=stop' + (i) + ']').val(Number($('[class~=stop' + (i) + ']').val()) + (shiftFlag ? -shiftDiff : shiftDiff));
+                        currSts[i].start += (shiftFlag ? -shiftDiff : shiftDiff);
+                        currSts[i].stop += (shiftFlag ? -shiftDiff : shiftDiff);
+                    }
                 }
-            }
-        });
+            });
 
-        $('#razlen').on('change', () => {
-            currPK.sts.forEach(function (row, index) {
-                $('[class~=plus' + index + ']')[0].disabled = !$('#razlen').prop('checked');
-            })
-        });
+            $('#razlen').on('change', () => {
+                currPK.sts.forEach(function (row, index) {
+                    if (index !== 11) $('[class~=plus' + index + ']')[0].disabled = !$('#razlen').prop('checked');
+                })
+            });
+        }
     }
 
     if (tableType) {
@@ -1497,6 +1583,7 @@ function pkTabFill(table) {
                                 // $('[class~=start0]').val(currSts[0].stop)
                             }
                         }
+                        validatePkTable();
                     });
                     break;
                 case 5 :
@@ -1509,6 +1596,23 @@ function pkTabFill(table) {
         });
     });
     if (tableType) pkTableDurationFunctional();
+    validatePkTable();
+    data.state.arrays.SetDK.dk[selected] = setDK[selected];
+}
+
+function validatePkTable() {
+    // let table = $('#pkTable');
+    let currSts = setDK[Number($('#pkSelect').val())].sts;
+
+    currSts.forEach((sts, index) => {
+        if (($('[class~=num' + index + ']').val() !== '0') || ($('[class~=tf' + index + ']').val() !== '0')) {
+            if ((index > 0) && (index < (currSts.length - 1))) {
+                sts.start = currSts[index - 1].stop;
+                sts.stop = currSts[index - 1].stop + Number($('[class~=duration' + (index) + ']').val());
+                $('[class~=start' + (index) + ']').val(currSts[index - 1].stop);
+            }
+        }
+    });
 }
 
 //Функция для сохранения изменений в таблице ПК
