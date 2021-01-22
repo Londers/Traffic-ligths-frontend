@@ -92,7 +92,7 @@ function colorizeSelectedRow(table) {
 
 $(function () {
 
-    ws = new WebSocket('ws://' + location.host + location.pathname + 'W' + location.search);
+    ws = new WebSocket('wss://' + location.host + location.pathname + 'W' + location.search);
     ws.onopen = function () {
         console.log('connected');
     };
@@ -418,8 +418,8 @@ $(function () {
         currSts.forEach((sts, i) => {
             map.set(sts.line, sts);
         });
-        map.delete(map.size-1);
-        map.set(((index+1) + (index+2))/2, newRow);
+        map.delete(map.size - 1);
+        map.set(((index + 1) + (index + 2)) / 2, newRow);
         let sortedMap = new Map([...map.entries()].sort(sortFunc));
         console.log(sortedMap);
         currSts = [];
@@ -1038,11 +1038,14 @@ function mainTabFill(data, firstLoadFlag) {
     setChange('phone', 'input', '', !numberFlag);
     $('#ip')[0].innerText = 'IP: ' + data.deviceIP;
     $('#tz').val(data.state.arrays.timedev.tz);
-    setChange('tz', 'input', 'arrays.timedev', numberFlag);
+    setChange('tz', 'input', 'arrays.timedev', numberFlag, null, true);
     $('#summer').prop('checked', data.state.arrays.timedev.summer);
     setChange('summer', 'checkbox', 'arrays.timedev', !numberFlag, !longPathFlag);
 
     $('#vpcpd').val((parseFloat(data.state.Model.vpcpdl + '.' + data.state.Model.vpcpdr) <= 12.3) ? 12.3 : 12.4);
+    Number($('#vpcpd').val()) <= 12.3 ?
+        sizeVerification(8) :
+        sizeVerification(16);
     $('#vpcpd').on('change keyup', function () {
         let ver = $('#vpcpd option:selected').val().split('.');
         data.state.Model.vpcpdl = Number(ver[0]);
@@ -1055,6 +1058,25 @@ function mainTabFill(data, firstLoadFlag) {
     setChange('vpbsr', 'input', 'Model', numberFlag);
 
     anotherTableFill('table', mainTableFlag);
+}
+
+function sizeVerification(length) {
+    let vvTable = data.state.arrays.SetTimeUse.uses;
+    if (vvTable.length !== length) {
+        if (vvTable.length < length) {
+            while (vvTable.length !== length) {
+                vvTable.push(Object.assign({}, vvTable[0]));
+            }
+        }
+        if (vvTable.length > length) {
+            while (vvTable.length !== length) {
+                vvTable.pop();
+            }
+        }
+    }
+    for (let i = 2; i < length; i++) {
+        vvTable[i].name = (i-1) + ' вх';
+    }
 }
 
 //Заполнение вкладки "ПК"
@@ -1655,15 +1677,16 @@ function handsomeNumbers(num) {
 }
 
 //Функция для сохранения изменений всех не табличных элементов
-function setChange(element, type, fullPath, numFlag, hardFlag) {
+function setChange(element, type, fullPath, numFlag, hardFlag, shitcodeFlag) {
     if (!firstLoad) return;
     let path = fullPath.split('.');
     if (path[1] !== undefined) {
         if (type === 'input') {
             $('#' + element).on('change', function () {
                 if (numFlag) {
-                    hardFlag ? data.state[path[0]][path[1]][path[2]][$('#pkSelect').val()][element] = Number($('#' + element).val())
-                        : data.state[path[0]][path[1]][path[2]][element] = Number($('#' + element).val());
+                    shitcodeFlag ? data.state[path[0]][path[1]][element] = Number($('#' + element).val()) :
+                        (hardFlag ? data.state[path[0]][path[1]][path[2]][$('#pkSelect').val()][element] = Number($('#' + element).val())
+                            : data.state[path[0]][path[1]][path[2]][element] = Number($('#' + element).val()));
                 } else {
                     data.state[path[0]][path[1]][path[2]][$('#pkSelect').val()][element] = $('#' + element).val();
                 }

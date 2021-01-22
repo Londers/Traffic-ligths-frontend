@@ -82,7 +82,7 @@ ymaps.ready(function () {
                     data.numDev + '\nВремя окончания срока действия лицензии:\n' + localDate;
             },
             error: function (request) {
-                console.log(request.status + ' ' + request.responseText);5861.23
+                console.log(request.status + ' ' + request.responseText);
             }
         });
 
@@ -303,7 +303,7 @@ ymaps.ready(function () {
         }
     });
 
-    ws = new WebSocket('ws://' + location.host + '/mapW');
+    ws = new WebSocket('wss://' + location.host + '/mapW');
     ws.onerror = function (evt) {
         console.log('WebSocket error:' + evt);
     };

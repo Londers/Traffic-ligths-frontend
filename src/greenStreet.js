@@ -511,7 +511,7 @@ ymaps.ready(function () {
         creatingFlag = false;
     });
 
-    ws = new WebSocket('ws://' + location.host + location.pathname + 'W');
+    ws = new WebSocket('wss://' + location.host + location.pathname + 'W');
 
     ws.onerror = function (evt) {
         console.log('WebSocket error:', evt);

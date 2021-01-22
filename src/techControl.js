@@ -68,7 +68,7 @@ function checkDifference() {
 $(function () {
     $('.fixed-table-toolbar').hide();
 
-    ws = new WebSocket('ws://' + location.host + location.pathname + 'W' + location.search);
+    ws = new WebSocket('wss://' + location.host + location.pathname + 'W' + location.search);
 
     ws.onerror = function (evt) {
         console.log('WebSocket error:', evt);

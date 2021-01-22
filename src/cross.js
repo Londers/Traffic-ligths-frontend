@@ -2,28 +2,33 @@
 
 'use strict';
 
+//37
+
 let ID = 0;
 let loopFunc;
 let phaseFlags = [];
 let editFlag = false;
 let control;
 let idevice = undefined;
-// let noConnectionStatusArray = [17, 18, 37, 38, 39];
 let ws;
 
 $(function () {
-    ws = new WebSocket('ws://' + location.host + location.pathname + 'W' + location.search);
+    ws = new WebSocket('wss://' + location.host + location.pathname + 'W' + location.search);
     ws.onopen = function () {
         console.log('connected');
     };
 
     ws.onclose = function (evt) {
         console.log('disconnected', evt);
-        alert(evt.reason);
+        if (evt.reason !== '') {
+            if (!document.hidden) alert(evt.reason);
+        } else {
+            if (!document.hidden) alert('Потеряна связь с сервером');
+        }
         window.close();
     };
 
-    let $table = $('#table');
+    let $table = $('#expandedTable');
     $table.bootstrapTable();
 
     $('#img1').on('click', function () {
@@ -45,11 +50,16 @@ $(function () {
                 idevice = data.state.idevice;
                 editFlag = data.edit;
                 document.title = 'ДК-' + ID;
+
+                $('#connection')[0].innerText = data.scon ? data.eth ? 'LAN' : 'GPRS' : '';
+
                 // if (editFlag) controlSend({id: idevice, cmd: 4, param: 1});
 
                 // $(window).on("beforeunload", function () {
                 //     if (editFlag) controlSend({id: idevice, cmd: 4, param: 0});
                 // });
+
+                (data.dk.edk === 1) ? $('#transition').show() : $('#transition').hide();
 
                 if (controlCrossFlag) {
                     $('a').each(function () {
@@ -87,7 +97,7 @@ $(function () {
                         $('#svg0').attr('width', $('#img-col')[0].offsetWidth);
 
                         $(window).resize(() => {
-                           $('#svg0').attr('width', $('#img-col')[0].offsetWidth);
+                            $('#svg0').attr('width', $('#img-col')[0].offsetWidth);
                         });
                         //     .append('<a class="btn btn-light border" id="secret" data-toggle="tooltip" title="Включить 1 фазу" role="button"\n' +
                         //         '        onclick="setPhase(randomInt(1, 12))"><img class="img-fluid" src="/file/static/img/buttons/p1.svg" height="50" alt="1 фаза"></a>');
@@ -181,7 +191,7 @@ $(function () {
                         });
                         checkEdit();
                         checkConnection(cross.tlsost.control);
-                        buildTable(data.dk);
+                        buildExpandedTable(data.dk);
                     },
                     error: function (request) {
                         console.log(request.status + ' ' + request.responseText);
@@ -352,10 +362,14 @@ $(function () {
                     $(this).removeAttr('selected');
                 });
                 break;
+            case 'crossConnection':
+                $('#connection')[0].innerText = data.scon ? data.eth ? 'LAN' : 'GPRS' : '';
+                break;
             case 'phase':
                 console.log('phase ', data);
                 //Обработка таблицы
-                buildTable(data.dk);
+                buildExpandedTable(data.dk);
+                (data.dk.edk === 1) ? $('#transition').show() : $('#transition').hide();
                 break;
             case 'close':
                 // if (editFlag) controlSend({id: idevice, cmd: 4, param: 0});
@@ -384,10 +398,11 @@ $(function () {
 });
 
 let fakeTimer;
-let fakeTimer2;
+
+// let fakeTimer2;
 
 function buildTable(data) {
-    buildExpandedTable(data);
+    // buildExpandedTable(data);
 
     let $table = $('#table');
     if ($table.bootstrapTable('getData').length > 20) {
@@ -452,66 +467,110 @@ function buildTable(data) {
         }, 1000);
     }
 
-    $('#phase')[0].innerText = 'Фаза: ' + toWrite.phaseNum;
 }
+
+
+let tableData;
 
 function buildExpandedTable(data) {
     let $expandedTable = $('#expandedTable');
-    if ($expandedTable.bootstrapTable('getData').length > 20) {
-        $expandedTable.bootstrapTable('removeAll');
-    }
     let dataArr = $expandedTable.bootstrapTable('getData').slice();
+    // if (dataArr.length > 20) {
+    //     $expandedTable.bootstrapTable('removeAll');
+    // }
     let lastRow = dataArr[dataArr.length - 1];
     if (lastRow === undefined) lastRow = {ftudk: -1};
-    // let toWrite = {ftudk: data.ftudk, minus: '???', tPr: '???', ftsdk: data.ftsdk, tMain: '???', ttcdk: '???', tdk: '???'};
-    let toWrite = {ftudk: data.ftudk, minus: '???', tPr: '', ftsdk: data.ftsdk, tMain: '', ttcdk: data.ttcdk, tdk: data.tdk};
-    // let newFlag;
+    let toWrite = {
+        column1: data.ftudk,
+        column2: data.tdk,
+        column3: 0,
+        column4: data.fdk,
+        column5: 0,
+        column6: 0,
+        column7: 0
+    };
 
-    if (typeof setPhase !== "undefined") {
-        setPhase(toWrite.ftudk);
+    toWrite.column2 = lastRow.column2;
+    switch (toWrite.column4) {
+        case 9:
+            toWrite.column4 = 'Пром. такт';
+            toWrite.column2 = data.tdk;
+            break;
+        case 10:
+            toWrite.column4 = 'ЖМ';
+            break;
+        case 11:
+            toWrite.column4 = 'ОС';
+            break;
+        case 12:
+            toWrite.column4 = 'КК';
+            break;
+        default:
+            toWrite.column3 = data.tdk - lastRow.column3;
+            break;
     }
 
-    // clearInterval(fakeTimer2);
-
-    // if (toWrite.ftsdk === 9) {
-    //     if (lastRow.ftsdk === 'Пром. такт') {
-    //         newFlag = false;
-    //     } else {
-    //         newFlag = true;
-    //     }
-    //     toWrite.ftsdk = 'Пром. такт';
+    // if (toWrite.column4 === 9) {
+    //     toWrite.column2 = data.tdk;
+    //     toWrite.column4 = 'Пром. такт';
     // } else {
-    //     if (lastRow.ftsdk === 'Пром. такт') {
-    //         newFlag = false;
-    //     } else {
-    //         newFlag = true;
-    //     }
+    //     toWrite.column2 = lastRow.column2;
+    //     toWrite.column3 = data.tdk - lastRow.column3;
     // }
 
-    // toWrite.tPr = Number(toWrite.ftudk) - Number(toWrite.tMain);
-    //toWrite.duration = Number(toWrite.tPr) + Number(toWrite.tMain);
 
-    // if (newFlag) {
-        $expandedTable.bootstrapTable('append', toWrite);
-    // } else {
-    //     $expandedTable.bootstrapTable('updateRow', {index: dataArr.length - 1, row: toWrite});
-    // }
+    clearInterval(fakeTimer);
 
-    // if (toWrite.ftudk === 'Пром. такт') {
-    //     fakeTimer2 = setInterval(() => {
-    //         toWrite.tPr++;
-    //         toWrite.duration++;
-    //         $expandedTable.bootstrapTable('updateRow', {index: dataArr.length, row: toWrite});
-    //     }, 1000);
-    // } else {
-    //     fakeTimer2 = setInterval(() => {
-    //         toWrite.tMain++;
-    //         toWrite.duration++;
-    //         $expandedTable.bootstrapTable('updateRow', {index: dataArr.length - 1, row: toWrite});
-    //     }, 1000);
-    // }
+    switch (dataArr.length) {
+        case 0:
+            $expandedTable.bootstrapTable('append', toWrite);
+            $expandedTable.bootstrapTable('hideRow', {index: 0});
+            break;
+        case 15:
+            $expandedTable.bootstrapTable('removeAll');
+            $expandedTable.bootstrapTable('append', toWrite);
+            break;
+        default:
+            if (toWrite.column4 === 'Пром. такт') {
+                $expandedTable.bootstrapTable('append', toWrite);
+            } else {
+                toWrite.column3 = lastRow.column3;
+                $expandedTable.bootstrapTable('updateRow', {index: dataArr.length, row: Object.assign({}, toWrite)});
+            }
+            break;
+    }
 
-    // $('#phase')[0].innerText = 'Фаза: ' + toWrite.ftudk;
+    if (toWrite.column4 === 'Пром. такт') {
+        toWrite.column7 = toWrite.column2;
+        $expandedTable.bootstrapTable('updateCell', {
+            index: dataArr.length - 1,
+            field: 'column7',
+            value: lastRow.column7 - toWrite.column2
+        });
+        fakeTimer = setInterval(() => {
+            toWrite.column3++;
+            toWrite.column6++;
+            toWrite.column7++;
+            $expandedTable.bootstrapTable('updateRow', {index: dataArr.length, row: Object.assign({}, toWrite)});
+        }, 1000);
+    } else {
+        toWrite.column5 += 1;
+        toWrite.column6 = toWrite.column3 + toWrite.column5;
+        toWrite.column7 = toWrite.column2 + toWrite.column3 + toWrite.column5;
+        fakeTimer = setInterval(() => {
+            toWrite.column5++;
+            toWrite.column6++;
+            toWrite.column7++;
+            $expandedTable.bootstrapTable('updateRow', {index: dataArr.length - 1, row: Object.assign({}, toWrite)});
+        }, 1000);
+    }
+
+
+    if (typeof setPhase !== "undefined") {
+        setPhase(data.fdk);
+    }
+
+    $('#phase')[0].innerText = 'Фаза: ' + toWrite.column4;
 }
 
 function checkConnection(connectionFlag) {
@@ -524,7 +583,12 @@ function checkConnection(connectionFlag) {
         $('select').each(function () {
             checkSelect($(this), false);
         });
-        $('#table').hide();
+        $('#pk').hide();
+        $('#sk').hide();
+        $('#nk').hide();
+        $('#phase').hide();
+        $('#transition').hide();
+        $('#expandedTable').hide();
         $('#verificationRow').hide();
     } else if (editFlag) {
         $('a').each(function () {
@@ -533,7 +597,11 @@ function checkConnection(connectionFlag) {
         $('select').each(function () {
             checkSelect($(this), true);
         });
-        $('#table').show();
+        $('#pk').show();
+        $('#sk').show();
+        $('#nk').show();
+        $('#phase').show();
+        $('#expandedTable').show();
         $('#verificationRow').show();
     }
     control = connectionFlag;

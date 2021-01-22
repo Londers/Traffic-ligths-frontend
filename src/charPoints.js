@@ -122,7 +122,7 @@ $(function () {
 
     let $table = $('#table');
 
-    ws = new WebSocket('ws://' + location.host + location.pathname + 'W');
+    ws = new WebSocket('wss://' + location.host + location.pathname + 'W');
     ws.onopen = function () {
         console.log('connected');
     };

@@ -217,7 +217,7 @@ class ChatApp extends Component {
 
     componentDidMount() {
         let shit = this;
-        shit.ws = new WebSocket('ws://' + location.host + '/user/' + localStorage.getItem('login') /*location.pathname.split('/')[2]*/ + '/chatW');
+        shit.ws = new WebSocket('wss://' + location.host + '/user/' + localStorage.getItem('login') /*location.pathname.split('/')[2]*/ + '/chatW');
         $(window).on("beforeunload", function () {
             shit.ws.close(1000);
         });
