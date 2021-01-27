@@ -6,6 +6,7 @@ let areaInfo;
 //0 - технология, 1 - по устройству, 2 - двери+лампы
 let type = 0;
 
+let dateSave;
 // function sortByTime(a, b) {//new Date(log.time)
 //     return new Date(b.time).getTime() - new Date(a.time).getTime();
 // }
@@ -62,15 +63,14 @@ $(function () {
             let now = new Date();
             $('#dateEnd').attr('value', (now.toISOString().slice(0, 10)));
             $('#timeEnd').attr('value', (prettyNumbers(now.getHours()) + ':' + prettyNumbers(now.getMinutes())));
-            now = new Date(now.getTime() - ((((now.getHours() * 60 + now.getMinutes()) * 60 + now.getSeconds()) * 1000) + now.getMilliseconds()));//((24 * 60) * 60 * 1000)); // - (now.getTimezoneOffset() * 60 * 1000));
+            now = new Date(now.getTime() - ((((now.getHours() * 60 + now.getMinutes() + now.getTimezoneOffset()) * 60 + now.getSeconds()) * 1000) + now.getMilliseconds()));//((24 * 60) * 60 * 1000)); // - (now.getTimezoneOffset() * 60 * 1000));
             $('#dateStart').attr('value', (now.toISOString().slice(0, 10)));
-            $('#timeStart').attr('value', (prettyNumbers(now.getHours()) + ':' + prettyNumbers(now.getMinutes())));
-            $('#getLog').on('click', () => {
-                let now = new Date();
+            $('#timeStart').attr('value', (prettyNumbers(now.getUTCHours()) + ':' + prettyNumbers(now.getUTCMinutes())));
+            $('#currentDay').on('click', () => {
                 now = new Date(now.getTime() - (now.getTimezoneOffset() * 60 * 1000));
-                let timeStart = timeCalc(now, (24 * 60) * 60);
+                let timeStart = $('#dateStart')[0].value + 'T' + $('#timeStart')[0].value + ':00Z';
                 let timeEnd = now.toISOString();
-                getLogs(timeStart, timeEnd);
+                getLogs(timeStart, timeEnd, true);
             });
             // $('#timeButton1').on('click', () => {
             //     let now = new Date();
@@ -79,16 +79,16 @@ $(function () {
             //     let timeEnd = now.toISOString();
             //     getLogs(timeStart, timeEnd);
             // });
-            $('#timeButton2').on('click', () => {
+            $('#chosenTime').on('click', () => {
                 // let now = new Date();
                 // now = new Date(now.getTime() - (now.getTimezoneOffset() * 60 * 1000));
-                let timeStart = $('#dateStart')[0].value + 'T' + $('#timeStart')[0].value;
-                let timeEnd = $('#dateEnd')[0].value + 'T' + $('#timeEnd')[0].value;
-                getLogs(timeStart + ':00Z', timeEnd + ':00Z');
+                let timeStart = $('#dateStart')[0].value + 'T' + $('#timeStart')[0].value + ':00Z';
+                let timeEnd = $('#dateEnd')[0].value + 'T' + $('#timeEnd')[0].value + ':00Z';
+                getLogs(timeStart, timeEnd, false);
             });
-            $('#type').on('click', () => {
+            $('#type').on('change', () => {
                 type = Number($('#type').val());
-                buildLogTable();
+                buildLogTable(undefined, true);
             })
         },
         // data: JSON.stringify(data.state),
@@ -97,18 +97,18 @@ $(function () {
         }
     });
 
-    if (localStorage.getItem('region') !== undefined) {
-        console.log('TUTUUTUTUTUTUUTUTUTUTU');
+    if (localStorage.getItem('region') !== 'undefined') {
+        crutchFlag = true;
         let now = new Date();
         now = new Date(now.getTime() - (now.getTimezoneOffset() * 60 * 1000));
-        let timeStart = timeCalc(now, (24 * 60) * 60);
+        let timeStart = $('#dateStart')[0].value + 'T' + $('#timeStart')[0].value + ':00Z';
         let timeEnd = now.toISOString();
-        getLogs(timeStart, timeEnd, true);
+        getLogs(timeStart, timeEnd, true, true);
     }
     // });
 });
 
-function getLogs(start, end, remoteOpenFlag) {
+function getLogs(start, end, crutchFlag, remoteOpenFlag) {
     // {ID: '', area: '', region: ''}
     // console.log('start:' + start + '   end' + end);
     let toSend = {devices: [], timeStart: start, timeEnd: end};
@@ -148,8 +148,8 @@ function getLogs(start, end, remoteOpenFlag) {
         data: JSON.stringify(toSend),
         dataType: 'json',
         success: function (data) {
-            // console.log('QUQUQUQUQUUQ', data);
-            buildLogTable(data, toSend)
+            dateSave = new Date();
+            buildLogTable(data, crutchFlag)
         },
         error: function (request) {
             console.log(request.status + ' ' + request.responseText);
@@ -158,87 +158,73 @@ function getLogs(start, end, remoteOpenFlag) {
     console.log(toSend);
 }
 
-function buildLogTable(data) {
+function filterByType(data) {
+    let filteredData = [];
+    for (let dev in data.deviceLogs) {
+        filteredData[dev] = [];
+        data.deviceLogs[dev].forEach(log => {
+            if (log.type === type) filteredData[dev].push(log);
+        })
+    }
+    return filteredData;
+}
+
+function collapseDuplicates(data) {
+    let collapsedData = [];
+    for (let dev in data) {
+        collapsedData[dev] = [];
+        data[dev].forEach((log, index) => {
+            if (index < (data[dev].length - 1)) {
+                if (log.text !== data[dev][index + 1].text) {
+                    collapsedData[dev].push(log);
+                }
+            } else {
+                collapsedData[dev].push(log);
+            }
+        })
+    }
+    return collapsedData;
+}
+
+function buildLogTable(data, crutchFlag) {
     (data === undefined) ? data = dataSave : dataSave = data;
     let allData = [];
 
+    let filteredData = collapseDuplicates(filterByType(data));
 
-    for (let dev in data.deviceLogs) {
-        // data.deviceLogs[dev].sort(sortByTime);
-        data.deviceLogs[dev].forEach((log, index) => {
+    for (let dev in filteredData) {
+        filteredData[dev].forEach((log, index) => {
             if (index === 0) {
                 allData.push({
-                    duration: JSON.parse(dev).description
+                    message: JSON.parse(dev).description
                 });
             }
-
             let localPrevDate, duration;
             let date = new Date(log.time);
-            let localDate = date.toLocaleString('ru-RU', {timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone});
-            if ((index < data.deviceLogs[dev].length) && (index !== 0)) {
-                let prevDate = new Date(data.deviceLogs[dev][index - 1].time);
+            if (index < filteredData[dev].length) {
+                if ((crutchFlag) && (index === (filteredData[dev].length - 1))) date = new Date($('#dateStart')[0].value + 'T' + $('#timeStart')[0].value + ':00.00' + log.time.slice(-6));
+                let prevDate = (index === 0) ? dateSave : new Date(filteredData[dev][index - 1].time);
                 localPrevDate = prevDate.toLocaleString('ru-RU', {timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone});
-                duration = Math.floor((new Date(data.deviceLogs[dev][index - 1].time).getTime() - new Date(log.time).getTime())) + date.getTimezoneOffset() * 60 * 1000;// 1000);
+                duration = Math.floor(prevDate.getTime() - date.getTime()) + date.getTimezoneOffset() * 60 * 1000;// 1000);
                 let hours = new Date(duration).getHours();
                 let minutes = new Date(duration).getMinutes();
                 let seconds = new Date(duration).getSeconds();
                 duration = hours + 'ч ' + minutes + 'м ' + seconds + 'с';
             }
             let text = log.text;
-            // let description = log.devices.description;
+            let localDate = date.toLocaleString('ru-RU', {timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone});
             let add = {
-                // cross: description,
-                message: text, dateStart: localDate,
+                message: text,
+                dateStart: localDate,
                 dateEnd: (localPrevDate !== undefined) ? localPrevDate : '',
                 duration: (duration !== undefined) ? duration : '',
                 time: date.getTime()
             };
-            if (log.type === type) allData.push(add);
 
-            if (index === (data.deviceLogs[dev].length-1)) {
-                allData.push({
-                    message: JSON.parse(dev).description
-                });
-            }
+            allData.push(add);
         });
+        if (!crutchFlag) allData.pop();
     }
-
-    // data.deviceLogs.sort(sortByTime);
-    // data.deviceLogs.forEach((log, index) => {
-    //     let localPrevDate, duration;
-    //     let date = new Date(log.time);
-    //     let localDate = date.toLocaleString('ru-RU', {timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone});
-    //     if ((index < data.deviceLogs.length) && (index !== 0)) {
-    //         let prevDate = new Date(data.deviceLogs[index - 1].time);
-    //         localPrevDate = prevDate.toLocaleString('ru-RU', {timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone});
-    //         duration = Math.floor((new Date(data.deviceLogs[index - 1].time).getTime() - new Date(log.time).getTime()));// 1000);
-    //         let hours = new Date(duration).getHours() + (new Date().getTimezoneOffset() * 60);
-    //         let minutes = new Date(duration).getMinutes();
-    //         let seconds = new Date(duration).getSeconds();
-    //         duration = hours + 'ч ' + minutes + 'м ' + seconds + 'с';
-    //     }
-    //     let text = log.text;
-    //     let description = log.devices.description;
-    //     let add = {
-    //         cross: description, message: text, dateStart: localDate,
-    //         dateEnd: (localPrevDate !== undefined) ? localPrevDate : '',
-    //         duration: (duration !== undefined) ? duration : '',
-    //         time: date.getTime()
-    //     };
-    //     if (log.type === type) allData.push(add);
-    // });
-
-    // if ($('#selection').prop('checked')) {
-    //     $.each(allData, function (i, el) {
-    //         if (el.message.startsWith('Режим')) {
-    //             if (sortedData.length === 0) {
-    //                 sortedData = [allData[i]];
-    //             } else if (sortedData[sortedData.length - 1].message !== el.message) sortedData.push(el);
-    //         }
-    //         // if($.inArray(el.message, sortedData) === -1) sortedData.push(el);
-    //     });
-    //     console.log(sortedData);
-    // }
 
     $('#logsTable')
         .bootstrapTable('load', (allData))//$('#selection').prop('checked')) ? sortedData : allData)
@@ -250,10 +236,6 @@ function buildLogTable(data) {
 
 function prettyNumbers(number) {
     return (number < 10) ? '0' + number : number;
-}
-
-function timeCalc(now, offset) {
-    return (new Date(now.getTime() - (offset * 1000))).toISOString();
 }
 
 function findIdByDescription(description) {

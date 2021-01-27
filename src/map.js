@@ -77,7 +77,6 @@ ymaps.ready(function () {
                 let date = new Date(data.timeEnd);
                 let localDate = date.toLocaleString('ru-RU', {timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone});
                 $('#license')[0].innerText = 'Организация: ' + data.name + '\nАдрес: ' + data.address +
-                    '\nТелефон: ' + data.phone +
                     '\nКоличество доступных аккаунтов: ' + data.numAcc + '\nКоличество доступных устройтв: ' +
                     data.numDev + '\nВремя окончания срока действия лицензии:\n' + localDate;
             },
@@ -843,7 +842,7 @@ function makeTech(data, techAreaInfo) {
         for (let reg in regionInfo) {
             $('#techRegion').append(new Option(regionInfo[reg], reg));
         }
-        fillAreas($('#techArea'), $('#techRegion'), areaInfo);
+        fillTechAreas($('#techArea'), $('#techRegion'), areaInfo);
     } else {
         $('#techRegion').append(new Option(regionInfo[data.region], data.region));
         $('#techRegion').prop('disabled', true);
@@ -871,7 +870,11 @@ function fillTechAreas($area, $region, areaInfo) {
     $area.empty();
     let num;
     for (let regAreaJson in areaInfo) {
-        $area.append(new Option(areaInfo[regAreaJson], regAreaJson))
+        for (let areaJson in areaInfo[regAreaJson]) {
+            if (regAreaJson === $region.find(':selected').text()) {
+                $area.append(new Option(areaInfo[regAreaJson][areaJson], areaJson));
+            }
+        }
         num = regAreaJson;
     }
     if (areaInfo === undefined) return;

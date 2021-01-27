@@ -135,7 +135,7 @@ $(function () {
             case 'controlInfo':
                 console.log('controlInfo');
                 loadData(data, firstLoad);
-                document.title = 'АРМ ДК-' + data.state.id;
+                document.title = 'АРМ ДК-' + data.state.area + '-' + data.state.id;
                 firstLoad = false;
                 editFlag = data.edit;
                 checkEdit();
@@ -1075,7 +1075,7 @@ function sizeVerification(length) {
         }
     }
     for (let i = 2; i < length; i++) {
-        vvTable[i].name = (i-1) + ' вх';
+        vvTable[i].name = (i - 1) + ' вх';
     }
 }
 
@@ -1394,21 +1394,19 @@ function pkTabFill(table) {
     });
 
     function pkTableDurationFunctional() {
-        let $table = $('#pkTable');
-        let cycleTime = Number($('#tc').val()) - Number($('#shift').val());
-        let shift = $('#shift').val();
+        // let $table = $('#pkTable');
+        // let cycleTime = Number($('#tc').val()) - Number($('#shift').val());
+        // let shift = $('#shift').val();
         let difLen = $('#razlen').prop('checked');
         // let helpArray = ['start', 'tf', 'num', 'duration', 'plus'];
-        let helpMap = {start: true, tf: true, num: true, duration: true, plus: true};
+        // let helpMap = {start: true, tf: true, num: true, duration: true, plus: true};
 
         currPK.sts.forEach(function (row, index) {
-            let previousRow = currPK.sts[index - 1];
-            let disabledStatusMap = Object.assign({}, helpMap);
+            let disabledStatusMap = {start: true, tf: true, num: true, duration: true, plus: true};
 
-            // if (previousRow === undefined) {
             if (index === 0) {
                 disabledStatusMap.duration = false;
-            } else if ((index !== 11) && (($('[class~=num' + index + ']').val() !== '0') || ($('[class~=tf' + index + ']').val() !== '0'))) {
+            } else if ((index < (currPK.sts.length - 1)) && (($('[class~=num' + index + ']').val() !== '0') || ($('[class~=tf' + index + ']').val() !== '0'))) {
                 disabledStatusMap.num = false;
                 disabledStatusMap.tf = false;
                 disabledStatusMap.duration = false;
@@ -1446,13 +1444,6 @@ function pkTabFill(table) {
                         currSts[index].stop += cycleTime;
 
                         if (!lastLine) {
-                            // currSts[index + 1].stop += cycleTime;
-                            // if ((currSts[index + 1].stop - currSts[index + 1].start) <= 0) {
-                            //     currSts[index + 1].stop -= cycleTime;
-                            //     currSts[index].stop += cycleTime;
-                            //     $this.val(Number($this.val()) + cycleTime);
-                            //     return;
-                            // }
                             $('[class~=duration' + (index) + ']').val(currSts[index].stop - currSts[index].start);
                             $('[class~=start' + (index) + ']').val(currSts[index].stop);
                             for (let i = index; i < currSts.length; i++) {
@@ -1464,15 +1455,7 @@ function pkTabFill(table) {
                                 }
                             }
                         } else {
-                            // currSts[0].stop += cycleTime;
-                            // if ((currSts[index].stop - currSts[index].start) <= 0) {
-                            //     currSts[0].stop -= cycleTime;
-                            //     $this.val(Number($this.val()) + cycleTime);
-                            //     return;
-                            // }
-                            // $('[class~=duration0]').val(currSts[0].stop - currSts[0].start);
                             currSts[index].stop = Number($('#tc').val()) + Number($('#shift').val());
-                            // $('[class~=start0]').val(currSts[0].stop)
                         }
                     }
                 })
@@ -1497,10 +1480,11 @@ function pkTabFill(table) {
 
                 for (let i = 0; i < 12; i++) {
                     if (($('[class~=num' + i + ']').val() !== '0') || ($('[class~=tf' + i + ']').val() !== '0')) {
-                        $('[class~=start' + (i) + ']').val(Number($('[class~=start' + (i) + ']').val()) + (shiftFlag ? -shiftDiff : shiftDiff));
-                        $('[class~=stop' + (i) + ']').val(Number($('[class~=stop' + (i) + ']').val()) + (shiftFlag ? -shiftDiff : shiftDiff));
                         currSts[i].start += (shiftFlag ? -shiftDiff : shiftDiff);
+                        if (currSts[i].start >= cycleTime) currSts[i].start -= cycleTime;
                         currSts[i].stop += (shiftFlag ? -shiftDiff : shiftDiff);
+                        $('[class~=start' + (i) + ']').val(currSts[i].start);
+                        $('[class~=stop' + (i) + ']').val(currSts[i].stop);
                     }
                 }
             });
@@ -1531,7 +1515,7 @@ function pkTabFill(table) {
                 case 1 :
                     $(this).append(
                         '<input class="form-control border-0 start' + index + '" name="number" type="number"' +
-                        'style="max-width: 50px;" value="' + record.start + '"/>'
+                        'style="max-width: 55px;" value="' + record.start + '"/>'
                     );
                     break;
                 case 2 :
@@ -1557,14 +1541,14 @@ function pkTabFill(table) {
                 case 3 :
                     $(this).append(
                         '<input class="form-control border-0 num' + index + '" name="number" type="number"' +
-                        'style="max-width: 50px;" value="' + record.num + '"/>'
+                        'style="max-width: 55px;" value="' + record.num + '"/>'
                     );
                     break;
                 case 4 :
                     $(this).attr('class', 'justify-content-center');
                     $(this).append(
                         '<input class="form-control border-0 duration' + index + '" name="number" type="number"' +
-                        'style="max-width: 50px;" value="' + ((tableType) ? (record.stop - record.start) : record.stop) + '"/>'
+                        'style="max-width: 55px;" value="' + ((tableType) ? (record.stop - record.start) : record.stop) + '"/>'
                     );
                     $(this).find('input').on('keyup change', (event) => {
                         if ((event.type === 'keyup') && (event.originalEvent.code !== 'Enter')) return;
@@ -1611,7 +1595,7 @@ function pkTabFill(table) {
                 case 5 :
                     $(this).append(
                         '<input class="form-control border-0 plus' + index + '" name="text" type="text"' +
-                        'style="max-width: 70px;" value="' + (record.plus ? '+' : '') + '"/>'
+                        'style="max-width: 55px;" value="' + (record.plus ? '+' : '') + '"/>'
                     );
                     break;
             }

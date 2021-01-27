@@ -88,7 +88,7 @@
             <label for="login">Логин</label>
             <input type="text" class="form-control" id="login" placeholder="Введите логин" name="login" required>
         </div>
-        <div class="form-group" id="privilegesForm" onclick="fillPrivileges('a')">
+        <div class="form-group" id="privilegesForm" onchange="fillPrivileges('a')">
             <label for="privileges">Права пользователя</label>
             <select id="privileges" class="form-control">
             </select>
@@ -118,7 +118,7 @@
 </div>
 <div id="updateDialog" title="Изменение пользователя">
     <form class="needs-validated">
-        <div class="form-group" id="updatePrivilegesForm" onclick="fillPrivileges('u')">
+        <div class="form-group" id="updatePrivilegesForm" onchange="fillPrivileges('u')">
             <label for="updatePrivileges">Права пользователя</label>
             <select id="updatePrivileges" class="form-control">
             </select>

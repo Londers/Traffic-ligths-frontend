@@ -186,11 +186,6 @@ $(function () {
 
     //Изменение существующего пользователя
     $('#updateButton').on('click', function () {
-        let currPrivileges;
-        let currRegion;
-        let currAreas;
-        let currWorkTime;
-        let currDescription;
         $('#updateMsg').remove();
         let login = $.map($table.bootstrapTable('getSelections'), function (row) {
             return row.login;
@@ -201,46 +196,45 @@ $(function () {
             return;
         }
 
-        accInfo.forEach(user => {
-            if (user.login === login[0]) {
-                currPrivileges = user.role;
-                currRegion = user.region.num;
-                currAreas = user.area;
-                currWorkTime = user.workTime;
-                currDescription = user.description;
-            }
-        });
+        const selectedUser = accInfo.filter(user => user.login === login[0])[0];
+
 
         //костыль для TechAutomatic
-        if ((currPrivileges.name === 'Admin') && (localStorage.getItem('login') !== 'TechAutomatic')) {
+        if ((selectedUser.role.name === 'Admin') && (localStorage.getItem('login') !== 'TechAutomatic')) {
             $('#toolbar').append('<div style="color: red;" id="updateMsg"><h5>Невозможно изменить администратора</h5></div>');
             return;
         }
 
-        currPrivileges.permissions.forEach(perm => {
+        //костыль, чтобы регадмин не мог редактировать регадмина
+        if ((selectedUser.role.name === 'RegAdmin') && (accInfo.filter(user => user.login === localStorage.getItem('login'))[0].role.name === 'RegAdmin')) {
+            $('#toolbar').append('<div style="color: red;" id="updateMsg"><h5>Невозможно изменить регионального администратора</h5></div>');
+            return;
+        }
+
+        selectedUser.role.permissions.forEach(perm => {
             $('input[id*="' + perm + '"]').each(function () {
                 $(this).prop('checked', true);
             })
         });
 
-        $('#updatePrivileges').val(currPrivileges.name);
-        $('#updateRegion').val(currRegion);
+        $('#updatePrivileges').val(selectedUser.role.name);
+        $('#updateRegion').val(selectedUser.region.num);
         fillAreas();
-        $.each(currAreas, function (index, element) {
+        $.each(selectedUser.area, function (index, element) {
             $("#updateArea option[value='" + element.num + "']").prop("selected", true);
         });
-        $('#updateWorkTime').val(currWorkTime / 60);
-        $('#updateDescription').val(currDescription);
+        $('#updateWorkTime').val(selectedUser.workTime / 60);
+        $('#updateDescription').val(selectedUser.description);
 
-        if ((currPrivileges.name !== 'User') && (currPrivileges.name !== 'Viewer')) {
-            $('input[id^="u"]').each(function () {
-                $(this).parent().hide();
-            });
-        } else {
+        // if (currPrivileges.name === 'Admin') {
+        //     $('input[id^="u"]').each(function () {
+        //         $(this).parent().hide();
+        //     });
+        // } else {
             $('input[id^="u"]').each(function () {
                 $(this).parent().show();
             });
-        }
+        // }
 
         $('#updateDialog').dialog('open');
     });
@@ -486,11 +480,12 @@ function fillAreas() {
 function fillPrivileges(type) {
     let currPrivileges = '';
     currPrivileges = (type === 'a') ? $('#privileges option:selected').text() : $('#updatePrivileges option:selected').text();
-    if ((currPrivileges !== 'User') && (currPrivileges !== 'Viewer')) {
+
+    if (currPrivileges === 'Admin') {
         $('input[id^="' + type + '"]').each(function () {
             $(this).parent().hide();
         });
-    } else if ((currPrivileges !== 'RegAdmin') && (currPrivileges !== 'Admin')) {
+    } else if ((currPrivileges === 'User') || (currPrivileges === 'Viewer') || (currPrivileges === 'RegAdmin')) {
         $('input[id^="' + type + '"]').each(function () {
             $(this).parent().show();
         });
