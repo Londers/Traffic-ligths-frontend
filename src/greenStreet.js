@@ -696,11 +696,11 @@ ymaps.ready(function () {
             case 'close':
                 // if (editFlag) controlSend({id: idevice, cmd: 4, param: 0});
                 ws.close();
-                if (data.message !== '') {
-                    if (!document.hidden) alert(data.message);
-                } else {
-                    if (!document.hidden) alert('Потеряна связь с сервером');
-                }
+                // if (data.message !== '') {
+                //     if (!document.hidden) alert(data.message);
+                // } else {
+                //     if (!document.hidden) alert('Потеряна связь с сервером');
+                // }
                 window.close();
                 break;
             case 'error':
@@ -711,9 +711,6 @@ ymaps.ready(function () {
 
     ws.onclose = function (evt) {
         console.log('disconnected', evt);
-        // alert('Связь была разорвана');
-        // window.close();
-        // automatically try to reconnect on connection loss
     };
 
     //Всплывающее окно для создания пользователя /locationButton

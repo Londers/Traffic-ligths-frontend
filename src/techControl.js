@@ -117,11 +117,11 @@ $(function () {
                 break;
             case 'close':
                 ws.close();
-                if (data.message !== '') {
-                    if (!document.hidden) alert(data.message);
-                } else {
-                    if (!document.hidden) alert('Потеряна связь с сервером');
-                }
+                // if (data.message !== '') {
+                //     if (!document.hidden) alert(data.message);
+                // } else {
+                //     if (!document.hidden) alert('Потеряна связь с сервером');
+                // }
                 window.close();
                 break;
             case 'error':
@@ -337,7 +337,7 @@ function buildBottom() {
             $('#sk')[0].innerText = '';
             $('#nk')[0].innerText = '';
 
-            $('#idevice')[0].innerText = '';
+            $('#idevice')[0].innerText = cross.idevice;
 
             $('#sfSwitchButton').unbind();
             $('#sfSwitchButton')[0].innerText = 'Вкл. СФ';

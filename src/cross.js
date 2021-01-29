@@ -2,8 +2,6 @@
 
 'use strict';
 
-//37
-
 let ID = 0;
 let loopFunc;
 let phaseFlags = [];
@@ -20,12 +18,6 @@ $(function () {
 
     ws.onclose = function (evt) {
         console.log('disconnected', evt);
-        if (evt.reason !== '') {
-            if (!document.hidden) alert(evt.reason);
-        } else {
-            if (!document.hidden) alert('Потеряна связь с сервером');
-        }
-        window.close();
     };
 
     let $table = $('#expandedTable');
@@ -220,9 +212,9 @@ $(function () {
                 //Проверка существования карт и добавление их выбора
                 counter = 0;
                 data.state.arrays.SetDK.dk.forEach(tab => {
-                    if (tab.sts[0].stop !== 0) {
+                    // if (tab.sts[0].stop !== 0) {
                         $('#pk').append(new Option('ПК ' + (counter + 1), counter + 1));
-                    }
+                    // }
                     counter++;
                 });
                 $('#pk option[value=' + data.state.pk + ']').attr('selected', 'selected');
@@ -374,11 +366,11 @@ $(function () {
             case 'close':
                 // if (editFlag) controlSend({id: idevice, cmd: 4, param: 0});
                 ws.close();
-                if (data.message !== '') {
-                    if (!document.hidden) alert(data.message);
-                } else {
-                    if (!document.hidden) alert('Потеряна связь с сервером');
-                }
+                // if (data.message !== '') {
+                //     if (!document.hidden) alert(data.message);
+                // } else {
+                //     if (!document.hidden) alert('Потеряна связь с сервером');
+                // }
                 window.close();
                 break;
             case 'error':
@@ -400,77 +392,74 @@ $(function () {
 let fakeTimer;
 
 // let fakeTimer2;
-
-function buildTable(data) {
-    // buildExpandedTable(data);
-
-    let $table = $('#table');
-    if ($table.bootstrapTable('getData').length > 20) {
-        $table.bootstrapTable('removeAll');
-    }
-    let dataArr = $table.bootstrapTable('getData').slice();
-    let lastRow = dataArr[dataArr.length - 1];
-    if (lastRow === undefined) lastRow = {phaseNum: -1};
-    let toWrite = {phaseNum: data.fdk, tPr: '', tMain: '', duration: ''};
-    let newFlag;
-
-    if (typeof setPhase !== "undefined") {
-        setPhase(toWrite.phaseNum);
-    }
-
-    clearInterval(fakeTimer);
-
-    if (toWrite.phaseNum === 9) {
-        if (lastRow.phaseNum === toWrite.phaseNum) {
-            toWrite.tPr = lastRow.tPr + data.tdk;
-            newFlag = false;
-        } else {
-            lastRow.tMain -= data.tdk;
-            lastRow.duration -= data.tdk;
-            toWrite.tPr = data.tdk;
-            newFlag = true;
-        }
-        toWrite.phaseNum = 'Пром. такт'
-    } else {
-        if (lastRow.phaseNum === toWrite.phaseNum) {
-            toWrite.tMain += lastRow.tMain + data.tdk;
-            newFlag = false;
-        } else if (lastRow.phaseNum === 'Пром. такт') {
-            toWrite.tMain = data.tdk;
-            toWrite.tPr = lastRow.tPr;
-            newFlag = false;
-        } else {
-            toWrite.tMain = data.tdk;
-            newFlag = true;
-        }
-
-    }
-    toWrite.duration = Number(toWrite.tPr) + Number(toWrite.tMain);
-
-    if (newFlag) {
-        $table.bootstrapTable('append', toWrite);
-    } else {
-        $table.bootstrapTable('updateRow', {index: dataArr.length - 1, row: toWrite});
-    }
-
-    if (toWrite.phaseNum === 'Пром. такт') {
-        fakeTimer = setInterval(() => {
-            toWrite.tPr++;
-            toWrite.duration++;
-            $table.bootstrapTable('updateRow', {index: dataArr.length, row: toWrite});
-        }, 1000);
-    } else {
-        fakeTimer = setInterval(() => {
-            toWrite.tMain++;
-            toWrite.duration++;
-            $table.bootstrapTable('updateRow', {index: dataArr.length - 1, row: toWrite});
-        }, 1000);
-    }
-
-}
-
-
-let tableData;
+// function buildTable(data) {
+//     // buildExpandedTable(data);
+//
+//     let $table = $('#table');
+//     if ($table.bootstrapTable('getData').length > 20) {
+//         $table.bootstrapTable('removeAll');
+//     }
+//     let dataArr = $table.bootstrapTable('getData').slice();
+//     let lastRow = dataArr[dataArr.length - 1];
+//     if (lastRow === undefined) lastRow = {phaseNum: -1};
+//     let toWrite = {phaseNum: data.fdk, tPr: '', tMain: '', duration: ''};
+//     let newFlag;
+//
+//     if (typeof setPhase !== "undefined") {
+//         setPhase(toWrite.phaseNum);
+//     }
+//
+//     clearInterval(fakeTimer);
+//
+//     if (toWrite.phaseNum === 9) {
+//         if (lastRow.phaseNum === toWrite.phaseNum) {
+//             toWrite.tPr = lastRow.tPr + data.tdk;
+//             newFlag = false;
+//         } else {
+//             lastRow.tMain -= data.tdk;
+//             lastRow.duration -= data.tdk;
+//             toWrite.tPr = data.tdk;
+//             newFlag = true;
+//         }
+//         toWrite.phaseNum = 'Пром. такт'
+//     } else {
+//         if (lastRow.phaseNum === toWrite.phaseNum) {
+//             toWrite.tMain += lastRow.tMain + data.tdk;
+//             newFlag = false;
+//         } else if (lastRow.phaseNum === 'Пром. такт') {
+//             toWrite.tMain = data.tdk;
+//             toWrite.tPr = lastRow.tPr;
+//             newFlag = false;
+//         } else {
+//             toWrite.tMain = data.tdk;
+//             newFlag = true;
+//         }
+//
+//     }
+//     toWrite.duration = Number(toWrite.tPr) + Number(toWrite.tMain);
+//
+//     if (newFlag) {
+//         $table.bootstrapTable('append', toWrite);
+//     } else {
+//         $table.bootstrapTable('updateRow', {index: dataArr.length - 1, row: toWrite});
+//     }
+//
+//     if (toWrite.phaseNum === 'Пром. такт') {
+//         fakeTimer = setInterval(() => {
+//             toWrite.tPr++;
+//             toWrite.duration++;
+//             $table.bootstrapTable('updateRow', {index: dataArr.length, row: toWrite});
+//         }, 1000);
+//     } else {
+//         fakeTimer = setInterval(() => {
+//             toWrite.tMain++;
+//             toWrite.duration++;
+//             $table.bootstrapTable('updateRow', {index: dataArr.length - 1, row: toWrite});
+//         }, 1000);
+//     }
+//
+// }
+// let tableData;
 
 function buildExpandedTable(data) {
     let $expandedTable = $('#expandedTable');
@@ -497,12 +486,17 @@ function buildExpandedTable(data) {
             toWrite.column2 = data.tdk;
             break;
         case 10:
+        case 14:
+            toWrite.column1 = 'ЖМ';
             toWrite.column4 = 'ЖМ';
             break;
         case 11:
+        case 15:
+            toWrite.column1 = 'ОС';
             toWrite.column4 = 'ОС';
             break;
         case 12:
+            toWrite.column1 = 'КК';
             toWrite.column4 = 'КК';
             break;
         default:

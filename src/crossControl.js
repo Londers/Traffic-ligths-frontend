@@ -90,20 +90,13 @@ function colorizeSelectedRow(table) {
     });
 }
 
-$(function () {
-
+$(() => {
     ws = new WebSocket('wss://' + location.host + location.pathname + 'W' + location.search);
-    ws.onopen = function () {
+    ws.onopen = () => {
         console.log('connected');
     };
     ws.onclose = function (evt) {
         console.log('disconnected', evt);
-        if (evt.reason !== '') {
-            alert(evt.reason);
-        } else {
-            alert('Потеряна связь с сервером');
-        }
-        window.close();
     };
     ws.onmessage = function (evt) {
         let allData = JSON.parse(evt.data);
@@ -114,7 +107,7 @@ $(function () {
             case 'sendB':
                 console.log('sendB');
                 if (!data.status) {
-                    alert('Сервер не отвечает');
+                    alert(data.message);
                     return;
                 }
                 if (localStorage.getItem('login') !== data.user) {
@@ -127,7 +120,7 @@ $(function () {
             case 'createB':
                 console.log('createB');
                 if (!data.status) {
-                    if (data.result[0].includes('занят')) alert(data.result[0]);
+                    alert(data.result.join('\n'))
                 } else {
                     location.href = location.pathname + location.search.replace('ID=' + unmodifiedData.state.id, 'ID=' + $('#id').val());
                 }
@@ -213,11 +206,11 @@ $(function () {
                 break;
             case 'close':
                 ws.close();
-                if (data.message !== '') {
-                    if (!document.hidden) alert(data.message);
-                } else {
-                    if (!document.hidden) alert('Потеряна связь с сервером');
-                }
+                // if (data.message !== '') {
+                //     if (!document.hidden) alert(data.message);
+                // } else {
+                //     if (!document.hidden) alert('Потеряна связь с сервером');
+                // }
                 window.close();
                 break;
             case 'error':
@@ -231,9 +224,10 @@ $(function () {
 
 //Функционал кнопок управления
     //Кнопка для отпрвления данных на сервер
-    $('#sendButton').on('click', function () {
+    $('#sendButton').on('click', () => {
         data.state.dgis = points.Y + ',' + points.X;
-        prepareVVTab();
+        // prepareVVTab();
+        prepareDaySets();
         if (data.state.area === unmodifiedData.state.area) {
             ws.send(JSON.stringify({type: 'sendB', state: data.state, rePaint: coordinatesChangeFlag, z: zoom}));
         } else {
@@ -273,19 +267,30 @@ $(function () {
         data.state.arrays.defstatis.lvs[0].count = 0;
     }
 
+    //Заполнение переменной count в суточных картах
+    function prepareDaySets() {
+        daySets.forEach(daySet => {
+            let index = 0;
+            daySet.lines.forEach(line => {
+                if (line.npk !== 0) index++;
+            });
+            daySet.count = index;
+        });
+    }
+
     //Кнопка для создания нового перекрёстка
-    $('#addButton').on('click', function () {
+    $('#addButton').on('click', () => {
         data.state.dgis = points.Y + ',' + points.X;
         ws.send(JSON.stringify({type: 'createB', state: data.state, z: zoom}));
     });
 
     //Кнопка для обновления данных на АРМе
-    $('#reloadButton').on('click', function () {
+    $('#reloadButton').on('click', () => {
         ws.send(JSON.stringify({type: 'updateB'}));
     });
 
     //Кнопка для удаления перекрёстка
-    $('#deleteButton').on('click', function () {
+    $('#deleteButton').on('click', () => {
         if (confirm('Вы уверены? Перекрёсток будет безвозвратно удалён.')) {
             ws.send(JSON.stringify({
                 type: 'deleteB',
@@ -295,25 +300,25 @@ $(function () {
     });
 
     //Кнопка для проверки возможности редактирования перекрестка
-    $('#checkEdit').on('click', function () {
+    $('#checkEdit').on('click', () => {
         ws.send(JSON.stringify({type: 'editInfoB'}));
     });
 
     //Кнопка для проверки валидности заполненных данных
-    $('#checkButton').on('click', function () {
+    $('#checkButton').on('click', () => {
         let sub = $('#subarea').val();
         if ((['+', '-', '.', 'e', 'E'].some(el => sub.includes(el))) || (sub === '')) {
             if (!($('#subMsg').length)) $('#subarea').parent().append('<div style="color: red;" id="subMsg"><h5>Некорректный номер подрайона</h5></div>');
         } else {
             if (($('#subMsg').length)) $('#subMsg').remove();
             for (let i = 1; i < 13; i++) {
-                data.state.arrays.SetDK.dk[i - 1].pk = i;
+                setDK[i - 1].pk = i;
             }
             ws.send(JSON.stringify({type: 'checkB', state: data.state}));
         }
     });
 
-    $('#workTrigger').on('click', function () {
+    $('#workTrigger').on('click', () => {
         if ($('#workPanel').attr('style') !== 'display: block;') {
             $('#workPanel').show();
         } else {
@@ -321,7 +326,7 @@ $(function () {
         }
     });
 
-    $('#questionTrigger').on('click', function () {
+    $('#questionTrigger').on('click', () => {
         // $('#questionPanel').show();
         if ($('#questionPanel').attr('style') !== 'display: block;') {
             $('#questionPanel').show();
@@ -330,7 +335,7 @@ $(function () {
         }
     });
 
-    $('#markdown').on('click', function () {
+    $('#markdown').on('click', () => {
         $.ajax({
             url: location.origin + '/file/static/markdown/crossControl.md',
             type: 'GET',
@@ -354,7 +359,7 @@ $(function () {
         });
     });
     //Функционирование кнопки с выводом информации о проверке
-    $(".trigger").on('click', function () {
+    $(".trigger").on('click', () => {
         $(".panel").toggle("fast");
         $(this).toggleClass("active");
         return false;
@@ -362,33 +367,33 @@ $(function () {
 
 //Функционал кнопок на вкладке "Основные"
     //Кнопка для возвращения исходных данных
-    $('#mainReloadButton').on('click', function () {
+    $('#mainReloadButton').on('click', () => {
         mainTabFill(unmodifiedData, false);
     });
 
 //Функционал кнопок на вкладке "ПК"
     //Кнопка для копирования строки
-    $('#pkCopyButton').on('click', function () {
+    $('#pkCopyButton').on('click', () => {
         let selected = $('#pkSelect').val();
         copyArray = Object.assign({}, setDK[selected]);
     });
 
     //Кнопка для перезаписи строки
-    $('#pkPasteButton').on('click', function () {
+    $('#pkPasteButton').on('click', () => {
         let selected = $('#pkSelect').val();
         setDK[selected] = Object.assign({}, copyArray);
         pkTabFill('pkTable');
     });
 
     //Кнопка для возвращения исходных данных
-    $('#pkReloadButton').on('click', function () {
+    $('#pkReloadButton').on('click', () => {
         pkTabFill2(unmodifiedData, false);
     });
 
     //Кнопка для обнуления текущего ПК
-    $('#pkNewButton').on('click', function () {
+    $('#pkNewButton').on('click', () => {
         let selected = $('#pkSelect').val();
-        data.state.arrays.SetDK.dk[selected].sts.forEach(row => {
+        setDK[selected].sts.forEach(row => {
             row.num = 0;
             row.start = 0;
             row.stop = 0;
@@ -399,7 +404,7 @@ $(function () {
     });
 
     //Кнопка для копирования всей информации выбранного ПК
-    $('#switchCopy').on('click', function () {
+    $('#switchCopy').on('click', () => {
         let index = $('#pkTable').find('tr.success').data('index');
 
         function sortFunc(a, b) {
@@ -441,14 +446,14 @@ $(function () {
         //
         // if (getSelectedRowData('pkTable', 'sts') === undefined) return;
         //
-        // $('#pkTable tbody tr').each(function () {
+        // $('#pkTable tbody tr').each(function() {
         //     oldData.push(getSelectedRowData('pkTable', 'sts', counter));
         //     // });
         //     // counter = 0;
-        //     // $('#pkTable tbody tr').each(function () {
+        //     // $('#pkTable tbody tr').each(function() {
         //     if (counter++ === index) {
         //         let selectPosition = 0;
-        //         $(this).find('td').each(function () {
+        //         $(this).find('td').each(function() {
         //             if (selectPosition++ === 2) selectVal = $(this).find('select').children("option:selected").val();
         //         })
         //     }
@@ -468,7 +473,7 @@ $(function () {
     });
 
     //Кнопка для перезаписи всей информации выбранного ПК
-    $('#switchDel').on('click', function () {
+    $('#switchDel').on('click', () => {
         let index = $('#pkTable').find('tr.success').data('index');
         let selected = $('#pkSelect').val();
         let oldData = [];
@@ -494,7 +499,7 @@ $(function () {
 
 //Функционал кнопок на вкладке "Сут. карты"
     //Кнопка для добавления новой строки
-    $('#skAddButton').on('click', function () {
+    $('#skAddButton').on('click', () => {
         let index = $('#skTable').find('tr.success').data('index');
         let selected = $('#mapNum').val();
         let oldData = [];
@@ -519,7 +524,7 @@ $(function () {
     });
 
     //Кнопка для удаления строки
-    $('#skSubButton').on('click', function () {
+    $('#skSubButton').on('click', () => {
         let index = $('#skTable').find('tr.success').data('index');
         let selected = $('#mapNum').val();
         let oldData = [];
@@ -545,25 +550,25 @@ $(function () {
     });
 
     //Кнопка для копирования суточной карты
-    $('#skCopyButton').on('click', function () {
+    $('#skCopyButton').on('click', () => {
         let selected = $('#mapNum').val();
         copyArray = Object.assign({}, daySets[selected]);
     });
 
     //Кнопка для перезаписи суточной карты
-    $('#skPasteButton').on('click', function () {
+    $('#skPasteButton').on('click', () => {
         let selected = $('#mapNum').val();
         daySets[selected] = Object.assign({}, copyArray);
         newTableFill('skTable', skTableFlag);
     });
 
     //Кнопка для загрузки исходных данных
-    $('#skReloadButton').on('click', function () {
+    $('#skReloadButton').on('click', () => {
         skTabFill(unmodifiedData, false);
     });
 
     //Кнопка для обнуления текущей карты
-    $('#skNewButton').on('click', function () {
+    $('#skNewButton').on('click', () => {
         let selected = $('#mapNum').val();
         data.state.arrays.DaySets.daysets[selected].lines.forEach(row => {
             row.npk = 0;
@@ -575,12 +580,12 @@ $(function () {
 
 //Функционал кнопок на вкладке "Нед. карты"
     //Кнопка для копирования строки
-    $('#nkCopyButton').on('click', function () {
+    $('#nkCopyButton').on('click', () => {
         copyArray = getSelectedRowData('nkTable', 'days').slice();
     });
 
     //Кнопка для перезаписи строки
-    $('#nkPasteButton').on('click', function () {
+    $('#nkPasteButton').on('click', () => {
         let index = $('#nkTable').find('tr.success').data('index');
         if (getSelectedRowData('nkTable', 'days') === undefined) return;
         weekSets[index].days = copyArray.slice();
@@ -588,18 +593,18 @@ $(function () {
     });
 
     //Кнопка для загрузки исходных данных
-    $('#nkReloadButton').on('click', function () {
+    $('#nkReloadButton').on('click', () => {
         nkTabFill(unmodifiedData);
     });
 
 //Функционал кнопок на вкладке "Карта года"
     //Кнопка для копирования строки
-    $('#gkCopyButton').on('click', function () {
+    $('#gkCopyButton').on('click', () => {
         copyArray = getSelectedRowData('gkTable', 'days').slice();
     });
 
     //Кнопка для перезаписи строки
-    $('#gkPasteButton').on('click', function () {
+    $('#gkPasteButton').on('click', () => {
         let index = $('#gkTable').find('tr.success').data('index');
         if (getSelectedRowData('gkTable', 'days') === undefined) return;
         monthSets[index].days = copyArray.slice();
@@ -607,19 +612,19 @@ $(function () {
     });
 
     //Кнопка для загрузки исходных данных
-    $('#gkReloadButton').on('click', function () {
+    $('#gkReloadButton').on('click', () => {
         gkTabFill(unmodifiedData);
     });
 
 //Функционал кнопок на вкладке "Контроль входов"
 
     //Кнопка для копирования строки
-    $('#kvCopyButton').on('click', function () {
+    $('#kvCopyButton').on('click', () => {
         copyArray = Object.assign({}, getSelectedRowData('kvTable'));
     });
 
     //Кнопка для перезаписи строки
-    $('#kvPasteButton').on('click', function () {
+    $('#kvPasteButton').on('click', () => {
         let index = $('#kvTable').find('tr.success').data('index');
         if (getSelectedRowData('kvTable') === undefined) return;
         stageSets[index] = Object.assign({}, copyArray);
@@ -627,7 +632,7 @@ $(function () {
     });
 
     //Кнопка для загрузки исходных данных
-    $('#kvReloadButton').on('click', function () {
+    $('#kvReloadButton').on('click', () => {
         kvTabFill(unmodifiedData);
     });
 
@@ -659,18 +664,18 @@ $(function () {
     });
 
     //Функционирование выбора СК и ПК
-    $('#mapNum').on('change keyup', function () {
+    $('#mapNum').on('change keyup', () => {
         newTableFill('skTable', skTableFlag);
     });
 
-    $('#pkSelect').on('change keyup', function () {
+    $('#pkSelect').on('change keyup', () => {
         pkTabFill('pkTable');
     });
 
     // let x = undefined, y = undefined;
 
     //Функционирование карты для выбора координат
-    ymaps.ready(function () {
+    ymaps.ready(() => {
         //Создание и первичная настройка карты
         map = new ymaps.Map('map', {
             center: [points.Y, points.X],
@@ -741,7 +746,7 @@ $(function () {
 
         $('#map').css({height: $(window).height / 2, width: $(window).width / 2});
 
-        $('#map').on('click', function () {
+        $('#map').on('click', () => {
             coordinatesChangeFlag = true;
         })
     });
@@ -771,7 +776,7 @@ function loadData(newData, firstLoadFlag) {
     $('#kvTable').bootstrapTable('removeAll');
 
     if (firstLoadFlag) {
-        $('#forceSendButton').on('click', function () {
+        $('#forceSendButton').on('click', () => {
             controlSend(newData.state.idevice);
             disableControl('forceSendButton', false);
         });
@@ -810,18 +815,18 @@ function loadData(newData, firstLoadFlag) {
     });
 
     $('input').each(function () {
-        $(this).on('click', function () {
+        $(this).on('click', () => {
             disableUnchecked();
         });
-        $(this).on('keypress', function () {
+        $(this).on('keypress', () => {
             disableUnchecked();
         })
     });
     $('select').each(function () {
-        $(this).on('click', function () {
+        $(this).on('click', () => {
             disableUnchecked();
         });
-        $(this).on('keypress', function () {
+        $(this).on('keypress', () => {
             disableUnchecked();
         })
     });
@@ -1017,13 +1022,13 @@ function mainTabFill(data, firstLoadFlag) {
     for (let area in data.areaMap) {
         if (firstLoadFlag) $('#area').append(new Option(data.areaMap[area], area));
     }
-    $('#id').val(data.state.id).on('change', function () {
+    $('#id').val(data.state.id).on('change', () => {
         if ($('#id').val() > 255) $('#id').val(255);
         checkNew(false);
     });
     setChange('id', 'input', '', numberFlag);
     setChange('idevice', 'input', '', numberFlag);
-    $('#idevice').val(data.state.idevice).on('change', function () {
+    $('#idevice').val(data.state.idevice).on('change', () => {
         checkNew(false);
     });
     setChange('area', 'select', '');
@@ -1046,7 +1051,7 @@ function mainTabFill(data, firstLoadFlag) {
     Number($('#vpcpd').val()) <= 12.3 ?
         sizeVerification(8) :
         sizeVerification(16);
-    $('#vpcpd').on('change keyup', function () {
+    $('#vpcpd').on('change keyup', () => {
         let ver = $('#vpcpd option:selected').val().split('.');
         data.state.Model.vpcpdl = Number(ver[0]);
         data.state.Model.vpcpdr = Number(ver[1]);
@@ -1062,10 +1067,18 @@ function mainTabFill(data, firstLoadFlag) {
 
 function sizeVerification(length) {
     let vvTable = data.state.arrays.SetTimeUse.uses;
+    let emptyRecord = {
+        'dk': 0,
+        'fazes': 0,
+        'long': 0,
+        'name': '',
+        'tvps': 0,
+        'type': 0
+    };
     if (vvTable.length !== length) {
         if (vvTable.length < length) {
             while (vvTable.length !== length) {
-                vvTable.push(Object.assign({}, vvTable[0]));
+                vvTable.push(Object.assign({}, emptyRecord));
             }
         }
         if (vvTable.length > length) {
@@ -1100,7 +1113,6 @@ function skTabFill(newData, firstLoadFlag) {
     daySets.forEach(daySet => {
         if (firstLoadFlag) $('#mapNum').append(new Option(daySet.num, daySet.num - 1));
     });
-
     newTableFill('skTable', skTableFlag);
 }
 
@@ -1124,7 +1136,7 @@ function vvTabFill(firstLoadFlag) {
     if (firstLoadFlag) setChange('ite', 'input', 'arrays.SetTimeUse', numberFlag);
     $('#tuin').val(data.state.arrays.defstatis.lvs[0].period);
     if (firstLoadFlag) {
-        $('#tuin').on('change', function () {
+        $('#tuin').on('change', () => {
             data.state.arrays.defstatis.lvs[0].period = Number($('#tuin').val());
         });
     }
@@ -1173,7 +1185,7 @@ function tableFill(set, table, staticFlag) {
 
 //Функция для сохранения изменений в вышеперечисленных таблицах
 function tableChange(set, table, daysFlag) {
-    $('#' + table).on('change', function () {
+    $('#' + table).on('change', () => {
         let counter = 0;
         $('#' + table + ' tbody tr').each(function () {
             let setArr = [];
@@ -1210,7 +1222,7 @@ function anotherTableFill(table, tableFlag) {
 
 //Функция для сохранения изменений в вышеперечисленных таблицах
 function anotherTableChange(table, tableFlag) {
-    $('#' + table).on('change', function () {
+    $('#' + table).on('change', () => {
         let names = [];
         $('#' + table + ' thead th').each(function () {
             names.push($(this).attr('data-field'));
@@ -1300,7 +1312,7 @@ function newTableFill(table, tableFlag) {
 
 //Функция для сохранения изменений в таблице суточных карт, а также заполнение столбца "T начала"
 function skTableChange(table) {
-    $('#' + table).on('change', function () {
+    $('#' + table).on('change', () => {
         let selected = $('#mapNum').val();
         let tableData = [];
         $('#' + table + ' tbody tr').each(function () {
@@ -1328,7 +1340,7 @@ function skTableChange(table) {
 
 //Функция для сохранения изменений в таблице контроля входов, а также заполнение столбца "T начала"
 function kvTableChange(table) {
-    $('#' + table).on('change', function () {
+    $('#' + table).on('change', () => {
         let tableData = [];
         $('#' + table + ' tbody tr').each(function () {
             let rec = [];
@@ -1379,7 +1391,24 @@ function pkTabFill(table) {
         pkTableChange(table);
     }
 
-    $('#tc').val(currPK.tc);
+    if (currPK.tc > 2) {
+        $('#' + table).show();
+        $('#tc').val(currPK.tc);
+    } else {
+        switch (currPK.tc) {
+            case 0:
+                $('#tc').val('ЛР');
+                break;
+            case 1:
+                $('#tc').val('ЖМ');
+                break;
+            case 2:
+                $('#tc').val('ОС');
+                break;
+        }
+        resetPkTable();
+        $('#' + table).hide();
+    }
     $('#twot').prop('checked', currPK.twot);
     $('#shift').val(currPK.shift);
     $('#tpu').find('option').each(function () {
@@ -1425,18 +1454,47 @@ function pkTabFill(table) {
                 let currSts = setDK[Number($('#pkSelect').val())].sts;
                 let shift = Number($('#shift').val());
                 let cycleTime = Number($('#tc').val());
+
+                if (isNaN(cycleTime)) {
+                    switch ($('#tc').val()) {
+                        case 'ЛР':
+                            cycleTime = 0;
+                            break;
+                        case 'ЖМ':
+                            cycleTime = 1;
+                            break;
+                        case 'ОС':
+                            cycleTime = 2;
+                            break;
+                    }
+                    setDK[$('#pkSelect').val()].tc = cycleTime;
+                }
+
                 if ((cycleTime + shift) >= 256) {
                     cycleTime = 255 - shift;
                     $('#tc').val(cycleTime);
-                    data.state.arrays.SetDK.dk[selected].tc = cycleTime;
+                    setDK[selected].tc = cycleTime;
                 }
+
+                //Для особых режимов таблица не нужна
+                if (cycleTime < 3) {
+                    resetPkTable();
+                    $('#' + table).hide();
+                    return;
+                }
+
+                $('#' + table).show();
+
+                savePkTable();
 
                 currSts.forEach((line) => {
                     cycleTime -= (line.stop - line.start);
                 });
 
+                let successCheck = false;
                 $('#' + table + ' tbody tr').each(function (index) {
                     if (this.className === 'success') {
+                        successCheck = true;
                         let $this = $('[class~=duration' + index + ']');
                         let currSts = setDK[Number($('#pkSelect').val())].sts;
                         let lastLine = ((currSts[index + 1].num === 0) && (currSts[index + 1].tf === 0));
@@ -1447,10 +1505,11 @@ function pkTabFill(table) {
                             $('[class~=duration' + (index) + ']').val(currSts[index].stop - currSts[index].start);
                             $('[class~=start' + (index) + ']').val(currSts[index].stop);
                             for (let i = index; i < currSts.length; i++) {
-                                $('[class~=start' + (i) + ']').val(currSts[(i === 0) ? index : (i - 1)].stop);
-                                currSts[i].stop = Number($('[class~=start' + (i) + ']').val()) + Number($('[class~=duration' + (i) + ']').val());
-                                currSts[i].start = currSts[i].stop - Number($('[class~=duration' + (i) + ']').val());
+                                $('[class~=start' + i + ']').val(currSts[(i === 0) ? index : (i - 1)].stop);
+                                currSts[i].stop = Number($('[class~=start' + i + ']').val()) + Number($('[class~=duration' + i + ']').val());
+                                currSts[i].start = currSts[i].stop - Number($('[class~=duration' + i + ']').val());
                                 if ((i !== (currSts.length - 1)) && ((currSts[i + 1].num === 0) && (currSts[i + 1].tf === 0))) {
+                                    $('[class~=duration' + (index) + ']').change();
                                     return;
                                 }
                             }
@@ -1458,9 +1517,11 @@ function pkTabFill(table) {
                             currSts[index].stop = Number($('#tc').val()) + Number($('#shift').val());
                         }
                     }
-                })
-            });
+                });
+                if (successCheck) {
 
+                }
+            });
 
             $('#shift').on('change keyup', (event) => {
                 if ((event.type === 'keyup') && (event.originalEvent.code !== 'Enter')) return;
@@ -1470,7 +1531,7 @@ function pkTabFill(table) {
                 if ((cycleTime + shift) >= 256) {
                     shift = 255 - cycleTime;
                     $('#shift').val(shift);
-                    data.state.arrays.SetDK.dk[selected].shift = shift;
+                    data.state.arrays.SetDK[selected].shift = shift;
                 }
 
                 let currSts = setDK[Number($('#pkSelect').val())].sts;
@@ -1483,8 +1544,8 @@ function pkTabFill(table) {
                         currSts[i].start += (shiftFlag ? -shiftDiff : shiftDiff);
                         if (currSts[i].start >= cycleTime) currSts[i].start -= cycleTime;
                         currSts[i].stop += (shiftFlag ? -shiftDiff : shiftDiff);
-                        $('[class~=start' + (i) + ']').val(currSts[i].start);
-                        $('[class~=stop' + (i) + ']').val(currSts[i].stop);
+                        $('[class~=start' + i + ']').val(currSts[i].start);
+                        $('[class~=stop' + i + ']').val(currSts[i].stop);
                     }
                 }
             });
@@ -1582,14 +1643,14 @@ function pkTabFill(table) {
                                 }
                                 $('[class~=duration0]').val(currSts[0].stop - currSts[0].start);
                                 for (let i = 1; i <= index; i++) {
-                                    $('[class~=start' + (i) + ']').val(currSts[i - 1].stop);
-                                    currSts[i].stop = Number($('[class~=start' + (i) + ']').val()) + Number($('[class~=duration' + (i) + ']').val());
+                                    $('[class~=start' + i + ']').val(currSts[i - 1].stop);
+                                    currSts[i].stop = Number($('[class~=start' + i + ']').val()) + Number($('[class~=duration' + i + ']').val());
                                 }
                                 currSts[index].stop = Number($('#tc').val()) + Number($('#shift').val());
                                 // $('[class~=start0]').val(currSts[0].stop)
                             }
                         }
-                        validatePkTable();
+                        pkTableValidate();
                     });
                     break;
                 case 5 :
@@ -1601,20 +1662,79 @@ function pkTabFill(table) {
             }
         });
     });
+
+    for (let i = 0; i < 12; i++) {
+        const allowZero = ['1', '8'];
+        $('[class~=duration' + i + ']').on('change', () => {
+            let value = Number($('[class~=duration' + i + ']').val());
+            let index = i;
+            if (value < 10) {
+                while (value < 0) {
+                    if ((allowZero.indexOf($('[class~=tf' + index + ']').val()) !== -1) || (value !== 0)) {
+                        let currValue = Number($('[class~=duration' + index + ']').val());
+                        if (((value !== currValue) ? (value + currValue) : value) < 10) {
+                            $('[class~=duration' + index + ']').val(10);
+                            value += (value !== currValue) ? (currValue - 10) : -10;
+                        } else {
+                            $('[class~=duration' + index + ']').val(currValue + value);
+                            value = 0;
+                        }
+                    }
+                    index++;
+                }
+            }
+        });
+    }
+
     if (tableType) pkTableDurationFunctional();
-    validatePkTable();
+    pkTableValidate();
     data.state.arrays.SetDK.dk[selected] = setDK[selected];
 }
 
-function validatePkTable() {
+function savePkTable() {
+    let currSts = setDK[Number($('#pkSelect').val())].sts;
+    currSts.forEach((sw, index) => {
+
+        sw.line = 0;
+        sw.start = 0;
+        sw.num = 0;
+        sw.phase = 0;
+        sw.stop = 0;
+        sw.plus = false;
+        $('[class~=start' + index + ']').val(0);
+        $('[class~=tf' + index + ']').val(0);
+        if (index !== 0) $('[class~=num' + index + ']').val(0);
+        $('[class~=duration' + index + ']').val(0);
+        $('[class~=plus' + index + ']').val('');
+    });
+}
+
+function resetPkTable() {
+    let currSts = setDK[Number($('#pkSelect').val())].sts;
+    currSts.forEach((sw, index) => {
+        sw.line = 0;
+        sw.start = 0;
+        sw.num = 0;
+        sw.phase = 0;
+        sw.stop = 0;
+        sw.plus = false;
+        $('[class~=start' + index + ']').val(0);
+        $('[class~=tf' + index + ']').val(0);
+        if (index !== 0) $('[class~=num' + index + ']').val(0);
+        $('[class~=duration' + index + ']').val(0);
+        $('[class~=plus' + index + ']').val('');
+    });
+}
+
+function pkTableValidate() {
     // let table = $('#pkTable');
     let currSts = setDK[Number($('#pkSelect').val())].sts;
 
-    currSts.forEach((sts, index) => {
+    currSts.forEach((sw, index) => {
         if (($('[class~=num' + index + ']').val() !== '0') || ($('[class~=tf' + index + ']').val() !== '0')) {
             if ((index > 0) && (index < (currSts.length - 1))) {
-                sts.start = currSts[index - 1].stop;
-                sts.stop = currSts[index - 1].stop + Number($('[class~=duration' + (index) + ']').val());
+                sw.start = currSts[index - 1].stop;
+                sw.stop = currSts[index - 1].stop + Number($('[class~=duration' + (index) + ']').val());
                 $('[class~=start' + (index) + ']').val(currSts[index - 1].stop);
             }
         }
@@ -1623,7 +1743,7 @@ function validatePkTable() {
 
 //Функция для сохранения изменений в таблице ПК
 function pkTableChange(table) {
-    $('#' + table).on('change', function () {
+    $('#' + table).on('change', () => {
         let selected = Number($('#pkSelect').val());
         let currPK = setDK[selected];
         $('#' + table + ' tbody tr').each(function (index) {
@@ -1648,7 +1768,7 @@ function pkTableChange(table) {
             });
         });
         setDK[selected] = currPK;
-//        console.log(data.state.arrays.SetDK.dk[selected].sts);
+//        console.log(setDK[selected].sts);
         data.state.arrays.SetDK.dk[selected] = setDK[selected];
     });
     pkFlag = false;
@@ -1666,7 +1786,7 @@ function setChange(element, type, fullPath, numFlag, hardFlag, shitcodeFlag) {
     let path = fullPath.split('.');
     if (path[1] !== undefined) {
         if (type === 'input') {
-            $('#' + element).on('change', function () {
+            $('#' + element).on('change', () => {
                 if (numFlag) {
                     shitcodeFlag ? data.state[path[0]][path[1]][element] = Number($('#' + element).val()) :
                         (hardFlag ? data.state[path[0]][path[1]][path[2]][$('#pkSelect').val()][element] = Number($('#' + element).val())
@@ -1677,20 +1797,20 @@ function setChange(element, type, fullPath, numFlag, hardFlag, shitcodeFlag) {
             });
         }
         if (type === 'select') {
-            $('#' + element).on('change keyup', function () {
+            $('#' + element).on('change keyup', () => {
                 hardFlag ? data.state[path[0]][path[1]][path[2]][$('#pkSelect').val()][element] = Number($('#' + element + ' option:selected').val())
                     : data.state[path[0]][path[1]][element] = Number($('#' + element + ' option:selected').val());
             });
         }
         if (type === 'checkbox') {
-            $('#' + element).on('change', function () {
+            $('#' + element).on('change', () => {
                 hardFlag ? data.state[path[0]][path[1]][path[2]][$('#pkSelect').val()][element] = $('#' + element).prop('checked')
                     : data.state[path[0]][path[1]][element] = $('#' + element).prop('checked');
             });
         }
     } else {
         if (type === 'input') {
-            $('#' + element).on('change', function () {
+            $('#' + element).on('change', () => {
                 if (numFlag) {
                     if (fullPath === '') {
                         data.state[element] = Number($('#' + element).val());
@@ -1704,17 +1824,17 @@ function setChange(element, type, fullPath, numFlag, hardFlag, shitcodeFlag) {
         }
         if (type === 'select') {
             if (fullPath === '') {
-                $('#' + element).on('change keyup', function () {
+                $('#' + element).on('change keyup', () => {
                     data.state[element] = Number($('#' + element + ' option:selected').val());
                 });
             } else {
-                $('#' + element).on('change keyup', function () {
+                $('#' + element).on('change keyup', () => {
                     data.state[fullPath][element] = Number($('#' + element + ' option:selected').val());
                 });
             }
         }
         if (type === 'checkbox') {
-            $('#' + element).on('change', function () {
+            $('#' + element).on('change', () => {
                 data.state[element] = $('#' + element).prop('checked');
             });
         }
@@ -1734,7 +1854,7 @@ function checkNew(check) {
         if (map !== undefined) map.setCenter([points.Y, points.X], 15);
     }
 
-    if ((Number($('#id').val()) !== unmodifiedData.state.id) || (Number($('#area').val()) !== unmodifiedData.state.area) || coordinatesChangeFlag) {
+    if (/*(Number($('#id').val()) !== unmodifiedData.state.id) ||*/ (Number($('#area').val()) !== unmodifiedData.state.area) || coordinatesChangeFlag) {
         if ((buttonClass.indexOf('disabled') !== -1) && check) buttonClass = buttonClass.substring(0, buttonClass.length - 9);
     } else {
         if (buttonClass.indexOf('disabled') === -1) buttonClass = buttonClass.concat(' disabled');
@@ -1755,11 +1875,11 @@ function disableControl(button, status) {
 
 //Открытие карты с выбором координат
 function chooseCoordinates() {
-    $('#chooseCoordinates').on('click', function () {
+    $('#chooseCoordinates').on('click', () => {
         $('#mapModal').attr('style', 'display : block;');
     });
 
-    $('.close').on('click', function () {
+    $('.close').on('click', () => {
         $('#mapModal').attr('style', 'display : none;');
     });
 
@@ -1793,7 +1913,7 @@ function checkEdit() {
     $('#sendButton')[0].className = checkButton($('#sendButton')[0].className.toString(), false);
     $('#forceSendButton')[0].className = checkButton($('#forceSendButton')[0].className.toString(), false);
     $('#addButton')[0].className = checkButton($('#addButton')[0].className.toString(), false);
-    // $('select').each(function () {
+    // $('select').each(function() {
     //     checkSelect($(this), editFlag);
     // });
 }

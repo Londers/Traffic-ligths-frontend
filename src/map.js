@@ -96,9 +96,9 @@ ymaps.ready(function () {
             url: location.origin + '/user/' + localStorage.getItem('login') + '/license/newToken',
             data: JSON.stringify({keyStr: $('#newLicenseKey').val()}),
             dataType: 'json',
-            // success: function (data) {
-            //
-            // },
+            success: function (data) {
+                $('#licenseDialog').dialog('close');
+            },
             error: function (request) {
                 $('#newLicenseKey').parent().find('p').remove();
                 $('#newLicenseKey').parent().append('<p style="color: red;">' + request.responseJSON.message + '</p>');
@@ -500,6 +500,7 @@ ymaps.ready(function () {
                 $('#password').val('');
                 deleteAreasLayout(map);
                 $('#workPlace')[0].innerText = 'АСУДД "Микро" ' + '\nАРМ';
+                if (data.message !== undefined) alert(data.message);
                 // location.href = location.origin;
                 break;
             case 'checkConn':

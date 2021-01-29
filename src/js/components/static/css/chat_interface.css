@@ -2,7 +2,7 @@
   box-sizing: border-box;
 }
 
-body {
+#MyForm {
   /*background-color: #edeff2;*/
   font-family: "Calibri", "Roboto", sans-serif;
 }
