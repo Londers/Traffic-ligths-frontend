@@ -51,8 +51,13 @@ $(function () {
                 //     if (editFlag) controlSend({id: idevice, cmd: 4, param: 0});
                 // });
 
-                (data.dk.edk === 1) ? $('#transition').show() : $('#transition').hide();
-
+                if (data.dk.edk === 1) {
+                    $('#transition').show();
+                    $('#status').hide();
+                } else {
+                    $('#transition').hide();
+                    $('#status').show();
+                }
                 if (controlCrossFlag) {
                     $('a').each(function () {
                         $(this).show();
@@ -213,7 +218,7 @@ $(function () {
                 counter = 0;
                 data.state.arrays.SetDK.dk.forEach(tab => {
                     // if (tab.sts[0].stop !== 0) {
-                        $('#pk').append(new Option('ПК ' + (counter + 1), counter + 1));
+                    $('#pk').append(new Option('ПК ' + (counter + 1), counter + 1));
                     // }
                     counter++;
                 });
@@ -312,37 +317,32 @@ $(function () {
             case 'stateChange':
                 $('#description').html(data.state.name);
 
-                $('#pk').find('option').remove();
+                // $('#pk').find('option').remove();
                 $('#sk').find('option').remove();
                 $('#nk').find('option').remove();
-                //Проверка существования карт и добавление их выбора
-                counter = 0;
-                data.state.arrays.SetDK.dk.forEach(tab => {
-                    if (tab.sts[0].stop !== 0) {
-                        $('#pk').append(new Option('ПК ' + (counter + 1), counter + 1));
-                    }
-                    counter++;
-                });
-                $('#pk option[value=' + data.state.pk + ']').attr('selected', 'selected');
 
-                counter = 0;
-                data.state.arrays.DaySets.daysets.forEach(rec => {
+                // data.state.arrays.SetDK.dk.forEach((rec, counter) => {
+                //     $('#pk').append(new Option('ПК ' + (counter + 1), counter + 1));
+                // });
+                // $('#pk option[value=' + data.state.pk + ']').attr('selected', 'selected');
+
+                $('#sk').append(new Option('0', 0));
+                data.state.arrays.DaySets.daysets.forEach((rec, counter) => {
                     if (rec.lines[0].npk !== 0) {
                         $('#sk').append(new Option('CК ' + (counter + 1), counter + 1));
                     }
-                    counter++;
                 });
                 $('#sk option[value=' + data.state.ck + ']').attr('selected', 'selected');
 
-                counter = 0;
-                data.state.arrays.WeekSets.wsets.forEach(rec => {
+                $('#nk').append(new Option('0', 0));
+                data.state.arrays.WeekSets.wsets.forEach((rec, counter) => {
                     let flag = true;
                     rec.days.forEach(day => {
                         if (rec.days[day] === 0) flag = false;
                     });
                     if (flag) $('#nk').append(new Option('НК ' + (counter + 1), counter + 1));
-                    counter++;
                 });
+
                 console.log('stateChange', data);
                 $('#pk').find('option').each(function () {
                     $(this).removeAttr('selected');
@@ -361,7 +361,13 @@ $(function () {
                 console.log('phase ', data);
                 //Обработка таблицы
                 buildExpandedTable(data.dk);
-                (data.dk.edk === 1) ? $('#transition').show() : $('#transition').hide();
+                if (data.dk.edk === 1) {
+                    $('#transition').show();
+                    $('#status').hide();
+                } else {
+                    $('#transition').hide();
+                    $('#status').show();
+                }
                 break;
             case 'close':
                 // if (editFlag) controlSend({id: idevice, cmd: 4, param: 0});
