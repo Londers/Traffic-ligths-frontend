@@ -67,11 +67,12 @@ $(function () {
             $('#dateStart').attr('value', (now.toISOString().slice(0, 10)));
             $('#timeStart').attr('value', (prettyNumbers(now.getUTCHours()) + ':' + prettyNumbers(now.getUTCMinutes())));
             $('#currentDay').on('click', () => {
-                now = new Date(now.getTime() - (now.getTimezoneOffset() * 60 * 1000));
+                now = new Date(new Date().getTime() - (new Date().getTimezoneOffset() * 60 * 1000));
                 let timeStart = $('#dateStart')[0].value + 'T' + $('#timeStart')[0].value + ':00Z';
                 let timeEnd = now.toISOString();
                 getLogs(timeStart, timeEnd, true);
             });
+
             // $('#timeButton1').on('click', () => {
             //     let now = new Date();
             //     now = new Date(now.getTime() - (now.getTimezoneOffset() * 60 * 1000));
@@ -79,6 +80,7 @@ $(function () {
             //     let timeEnd = now.toISOString();
             //     getLogs(timeStart, timeEnd);
             // });
+
             $('#chosenTime').on('click', () => {
                 // let now = new Date();
                 // now = new Date(now.getTime() - (now.getTimezoneOffset() * 60 * 1000));
@@ -86,25 +88,26 @@ $(function () {
                 let timeEnd = $('#dateEnd')[0].value + 'T' + $('#timeEnd')[0].value + ':00Z';
                 getLogs(timeStart, timeEnd, false);
             });
+
             $('#type').on('change', () => {
                 type = Number($('#type').val());
                 buildLogTable(undefined, true);
-            })
+            });
+
+            if (localStorage.getItem('region') !== 'undefined') {
+                crutchFlag = true;
+                let now = new Date();
+                now = new Date(now.getTime() - (now.getTimezoneOffset() * 60 * 1000));
+                let timeStart = $('#dateStart')[0].value + 'T' + $('#timeStart')[0].value + ':00Z';
+                let timeEnd = now.toISOString();
+                getLogs(timeStart, timeEnd, true, true);
+            };
         },
         // data: JSON.stringify(data.state),
         error: function (request) {
             console.log(request.status + ' ' + request.responseText);
         }
     });
-
-    if (localStorage.getItem('region') !== 'undefined') {
-        crutchFlag = true;
-        let now = new Date();
-        now = new Date(now.getTime() - (now.getTimezoneOffset() * 60 * 1000));
-        let timeStart = $('#dateStart')[0].value + 'T' + $('#timeStart')[0].value + ':00Z';
-        let timeEnd = now.toISOString();
-        getLogs(timeStart, timeEnd, true, true);
-    }
     // });
 });
 
@@ -130,6 +133,7 @@ function getLogs(start, end, crutchFlag, remoteOpenFlag) {
                 region: localStorage.getItem('region'),
                 description: localStorage.getItem('description')
             });
+            console.log(start);
             localStorage.setItem('ID', undefined);
             localStorage.setItem('area', undefined);
             localStorage.setItem('region', undefined);

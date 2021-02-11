@@ -226,45 +226,126 @@ $(() => {
     //Кнопка для отпрвления данных на сервер
     $('#sendButton').on('click', () => {
         data.state.dgis = points.Y + ',' + points.X;
-        // prepareVVTab();
+        prepareVVTab();
+        validatePk();
         prepareDaySets();
         if (data.state.area === unmodifiedData.state.area) {
             ws.send(JSON.stringify({type: 'sendB', state: data.state, rePaint: coordinatesChangeFlag, z: zoom}));
         } else {
             ws.send(JSON.stringify({type: 'createB', state: data.state}));
         }
+
+        if ($('#vpcpd').val() === '12.3') {
+            let shift4 = data.state.arrays.SetTimeUse.uses.pop();
+            let shift3 = data.state.arrays.SetTimeUse.uses.pop();
+            data.state.arrays.SetTimeUse.uses.unshift(shift4);
+            data.state.arrays.SetTimeUse.uses.unshift(shift3);
+        }
     });
 
-    //Заполнение 3х массивов для ЮВ (useinput, pointset, defstatis)
+    //Заполнение 3х массивов для статистики (defstatis, pointset, useinput)
     function prepareVVTab() {
         let tableData = $('#vvTable').bootstrapTable('getData');
-        let statCount = 0;
-        let shift1 = tableData.shift();
-        let shift2 = tableData.shift();
-        tableData.push(shift1);
-        tableData.push(shift2);
+        //true если версия пспд 12.3 и меньше
+        let oldVersion = $('#vpcpd').val() === '12.3';
+        if (oldVersion) {
+            let shift1 = tableData.shift();
+            let shift2 = tableData.shift();
+            tableData.push(shift1);
+            tableData.push(shift2);
 
-        data.state.arrays.useinput.used = [];
-        data.state.arrays.pointset.pts = [];
-
-        for (let rec in tableData) {
-            data.state.arrays.useinput.used.push(false);
-        }
-        for (let i = 0; i < tableData.length; i++) {
-            if (tableData[i].type !== 0) data.state.arrays.pointset.pts.push({num: i + 1, typst: tableData[i].type});
+            shift1 = data.state.arrays.SetTimeUse.uses.shift();
+            shift2 = data.state.arrays.SetTimeUse.uses.shift();
+            data.state.arrays.SetTimeUse.uses.push(shift1);
+            data.state.arrays.SetTimeUse.uses.push(shift2);
         }
 
-        tableData.forEach((rec, index) => {
-            data.state.arrays.useinput.used[index] = (rec.type !== 0);
-            if ((rec.type !== 0) && (rec.type < 8)) {
-                data.state.arrays.pointset.pts[index].num = index + 1;
-                data.state.arrays.pointset.pts[index].typst = rec.type;
+        //defststis
+        data.state.arrays.defstatis.lvs[0].count = oldVersion ? 0 : tableData.length;
+        data.state.arrays.defstatis.lvs[0].ninput = 0;
+        data.state.arrays.defstatis.lvs[0].typst = 0;
+        tableData.forEach(enter => {
+            if (enter.type !== 0) {
+                data.state.arrays.defstatis.lvs[0].typst = 1;
+                data.state.arrays.defstatis.lvs[0].ninput++;
             }
-            if (statCount < rec.type) statCount = rec.type;
         });
-        data.state.arrays.defstatis.lvs[0].typst = statCount;
-        data.state.arrays.defstatis.lvs[0].ninput = tableData.length;
-        data.state.arrays.defstatis.lvs[0].count = 0;
+
+        //pointset, useinput
+        data.state.arrays.pointset.pts = [];
+        data.state.arrays.useinput.used = [];
+        tableData.forEach((enter, index) => {
+
+            if (!oldVersion) {
+                if (enter.fazes === '0') enter.fazes = '';
+                if ((enter.type !== 0) || (enter.tvps !== 0) || (enter.dk !== 0) || (enter.fazes !== '') || (enter.long !== 0)) {
+                    data.state.arrays.useinput.used.push(true);
+                } else {
+                    data.state.arrays.useinput.used.push(false);
+                }
+            } else {
+                if (enter.tvps !== 0) {
+                    data.state.arrays.useinput.used.push(true);
+                } else {
+                    data.state.arrays.useinput.used.push(false);
+                }
+            }
+            if ((enter.type !== 0) && (enter.type < 8)) {
+                data.state.arrays.pointset.pts.push({num: index + 1, typst: enter.type});
+            } else {
+                data.state.arrays.pointset.pts.push({num: 0, typst: 0});
+            }
+        });
+
+
+        // let statCount = 0;
+        // let shift1 = tableData.shift();
+        // let shift2 = tableData.shift();
+        // tableData.push(shift1);
+        // tableData.push(shift2);
+        //
+        // data.state.arrays.useinput.used = [];
+        // data.state.arrays.pointset.pts = [];
+        //
+        // for (let rec in tableData) {
+        //     data.state.arrays.useinput.used.push(false);
+        // }
+        // for (let i = 0; i < tableData.length; i++) {
+        //     if (tableData[i].type !== 0) data.state.arrays.pointset.pts.push({num: i + 1, typst: tableData[i].type});
+        // }
+        //
+        // tableData.forEach((rec, index) => {
+        //     data.state.arrays.useinput.used[index] = (rec.type !== 0);
+        //     if ((rec.type !== 0) && (rec.type < 8)) {
+        //         data.state.arrays.pointset.pts[index].num = index + 1;
+        //         data.state.arrays.pointset.pts[index].typst = rec.type;
+        //     }
+        //     if (statCount < rec.type) statCount = rec.type;
+        // });
+        // data.state.arrays.defstatis.lvs[0].typst = statCount;
+        // data.state.arrays.defstatis.lvs[0].ninput = tableData.length;
+        // data.state.arrays.defstatis.lvs[0].count = 0;
+
+        if (oldVersion) {
+            let shift4 = tableData.pop();
+            let shift3 = tableData.pop();
+            tableData.unshift(shift4);
+            tableData.unshift(shift3);
+        }
+    }
+
+    //Проверка валидности ПК
+    function validatePk() {
+        data.state.arrays.SetDK.dk.forEach(pk => {
+            if (pk.shift !== 0) {
+                pk.sts.forEach(sw => {
+                    if (pk.tc === sw.stop) {
+                        pk.lastnumber = sw.num;
+                        pk.lasttype = sw.tf;
+                    }
+                })
+            }
+        })
     }
 
     //Заполнение переменной count в суточных картах
@@ -400,6 +481,9 @@ $(() => {
             row.tf = 0;
             row.plus = false;
         });
+        setDK[selected].shift = 0;
+        // setDK[selected].tc = 60;
+        generateNewPk(setDK[selected].sts);
         pkTabFill2(data, false);
     });
 
@@ -452,6 +536,8 @@ $(() => {
         $('#pkTable tbody tr').each(function () {
             oldData.push(getSelectedRowData('pkTable', 'sts', counter++));
         });
+
+        setDK[selected].tc -= (oldData[index].stop - oldData[index].start);
 
         oldData.splice(index, 1);
         oldData.push(emptyRow);
@@ -1018,7 +1104,7 @@ function mainTabFill(data, firstLoadFlag) {
     $('#vpcpd').val((parseFloat(data.state.Model.vpcpdl + '.' + data.state.Model.vpcpdr) <= 12.3) ? 12.3 : 12.4);
     Number($('#vpcpd').val()) <= 12.3 ?
         sizeVerification(8) :
-        sizeVerification(16);
+        sizeVerification(18);
     $('#vpcpd').on('change keyup', () => {
         let ver = $('#vpcpd option:selected').val().split('.');
         data.state.Model.vpcpdl = Number(ver[0]);
@@ -1037,7 +1123,7 @@ function sizeVerification(length) {
     let vvTable = data.state.arrays.SetTimeUse.uses;
     let emptyRecord = {
         'dk': 0,
-        'fazes': 0,
+        'fazes': '',
         'long': 0,
         'name': '',
         'tvps': 0,
@@ -1110,7 +1196,12 @@ function vvTabFill(firstLoadFlag) {
     anotherTableFill('vvTable', vvTableFlag);
 
     $('#ite').val(data.state.arrays.SetTimeUse.ite);
-    if (firstLoadFlag) setChange('ite', 'input', 'arrays.SetTimeUse', numberFlag);
+    if (firstLoadFlag) {
+        setChange('ite', 'input', 'arrays.SetTimeUse', numberFlag, null, true);
+        $('#ite').on('change', () => {
+            data.state.arrays.defstatis.lvs[0].ninput = Number($('#tuin').val());
+        });
+    }
     $('#tuin').val(data.state.arrays.defstatis.lvs[0].period);
     if (firstLoadFlag) {
         $('#tuin').on('change', () => {
@@ -1387,7 +1478,7 @@ function pkTabFill(table) {
         $('#' + table).hide();
     }
     $('#twot').prop('checked', currPK.twot);
-    $('#shift').val(currPK.shift);
+    $('#shift').val(currPK.shift).prop('disabled', currPK.tpu === 1);
     $('#tpu').find('option').each(function () {
         $(this).removeAttr('selected');
     });
@@ -1433,7 +1524,7 @@ function pkTabFill(table) {
                 let shift = Number($('#shift').val());
                 let cycleTime = Number($('#tc').val());
                 let prevCycleTime = unmodifiedData.state.arrays.SetDK.dk[currPk].tc;
-                let switchCount = findSwitchCount(currSts);
+                let switchCount = getSwitchCount(currSts);
 
                 //Проверка особых режимов
                 if (isNaN(cycleTime)) {
@@ -1463,28 +1554,16 @@ function pkTabFill(table) {
                     cycleTime = 255 - shift;
                     $('#tc').val(cycleTime);
                     setDK[selected].tc = cycleTime;
-                } else if ((cycleTime < (10 * switchCount)) && (prevCycleTime > 3)) { //каждая фаза минимум 10 секунд
-                    cycleTime = 10 * switchCount;
-                    $('#tc').val(10 * switchCount);
+                } else if ((cycleTime < (6 * switchCount)) && (prevCycleTime > 3)) { //каждая фаза минимум 6 секунд
+                    cycleTime = 6 * switchCount;
+                    $('#tc').val(6 * switchCount);
                 }
 
                 $('#' + table).show();
 
                 //Автоматизированное создание нового ПК
                 if ((prevCycleTime < 3) && (cycleTime > 3)) {
-                    currSts[0].start = 0;
-                    currSts[0].stop = ((cycleTime % 2) === 0) ? cycleTime / 2 : (cycleTime - 1) / 2;
-                    currSts[1].num = 1;
-                    $('[class~=num0]').val(1);
-                    $('[class~=duration0]').val(((cycleTime % 2) === 0) ? cycleTime / 2 : (cycleTime - 1) / 2);
-
-                    currSts[1].start = ((cycleTime % 2) === 0) ? cycleTime / 2 : (cycleTime + 1) / 2;
-                    currSts[1].stop = cycleTime;
-                    currSts[1].num = 2;
-                    $('[class~=tf1]').prop('disabled', false);
-                    $('[class~=num1]').val(2).prop('disabled', false);
-                    $('[class~=duration1]').val(((cycleTime % 2) === 0) ? cycleTime / 2 : (cycleTime + 1) / 2).prop('disabled', false);
-
+                    generateNewPk(currSts);
                     return;
                 }
 
@@ -1508,9 +1587,9 @@ function pkTabFill(table) {
                         // $('[class~=start' + index + ']').val(currSts[index].start);
 
 
-                    } else if ((cycleTime !== 0) && (index === (findSwitchCount(currSts) - 1))) {
+                    } else if ((cycleTime !== 0) && (index === (getSwitchCount(currSts) - 1))) {
                         let newValue = Number($('[class~=duration' + 0 + ']').val());
-                        $('[class~=duration' + 0 + ']').val(newValue + cycleTime)
+                        $('[class~=duration' + 0 + ']').val(newValue + cycleTime).change();
                     }
                 })
 
@@ -1583,7 +1662,7 @@ function pkTabFill(table) {
                 if ((cycleTime + shift) >= 256) {
                     shift = 255 - cycleTime;
                     $('#shift').val(shift);
-                    data.state.arrays.SetDK[selected].shift = shift;
+                    data.state.arrays.SetDK.dk[selected].shift = shift;
                 }
 
                 let currSts = setDK[selectedPk].sts;
@@ -1695,18 +1774,21 @@ function pkTabFill(table) {
                         const cycleTime = Number($('#tc').val());
                         const shift = Number($('#shift').val());
                         let currSts = setDK[Number($('#pkSelect').val())].sts;
-                        const swId = event.target.parentElement.parentElement.rowIndex - 1;
-                        const lastSwitch = (swId === currSts.length - 1) || (checkLastLine(currSts[swId + 1]) === -1);
+                        let swId = event.target.parentElement.parentElement.rowIndex - 1;
+                        const switchCount = getSwitchCount(currSts);
+                        const lastSwitch = (swId === currSts.length - 1) || (checkLastLine(currSts[swId + 1]));
                         let value = Number(event.target.value);
                         let inputDiff = cycleTime;
+                        // const lastLine = checkLastLine(currSts[swId]);
 
-                        if (value < 10) {
-                            $('[class~=duration' + swId + ']').val(10);
-                            $('[class~=duration' + (swId + 1) + ']').change();
+                        if (value < 6) {
+                            $('[class~=duration' + swId + ']').val(6);
+                            if (swId === (switchCount - 1)) swId = -1;
+                            $('[class~=duration' + (swId + 1) + ']').val(Number($('[class~=duration' + (swId + 1) + ']').val()) + value - 6).change();
                             return;
                         }
 
-                        for (let i = 0; i < findSwitchCount(currSts); i++) {
+                        for (let i = 0; i < getSwitchCount(currSts); i++) {
                             inputDiff -= $('[class~=duration' + (i) + ']').val();
                         }
 
@@ -1720,6 +1802,7 @@ function pkTabFill(table) {
                             $('[class~=duration' + index + ']').val(newValue).change();
                         }
 
+                        validatePkByDuration(currSts);
                         // let $this = $(this).find('input');
                         // let cycleTime = Number($('#tc').val());
                         // let currSts = setDK[Number($('#pkSelect').val())].sts;
@@ -1798,8 +1881,48 @@ function pkTabFill(table) {
     data.state.arrays.SetDK.dk[selected] = setDK[selected];
 }
 
+function validatePkByDuration(currSts) {
+    currSts.forEach((sw, index) => {
+        let shift = Number($('#shift').val());
+        let cycleTime = Number($('#tc').val());
+        if (!checkLastLine(sw)) {
+        //     $(`[class~=start${sw}]`).val();
+        // } else {
+        $(`[class~=start${index}]`).val((index === 0) ?
+            shift :
+            (Number($(`[class~=start${index - 1}]`).val()) + Number($(`[class~=duration${index - 1}]`).val()))).change();
+        }
+        // if (sw.start > cycleTime) sw.start -= cycleTime;
+
+        // if ((index !== (currSts.length-1)) && (checkLastLine(currSts[index+1]))) {
+        //     sw.stop = Number($(`[class~=duration${index}`).val()) + Number($(`[class~=start${index}`).val());
+        // } else {
+            sw.stop = Number($(`[class~=duration${index}`).val()) + Number($(`[class~=start${index}`).val());
+        // }
+        // if (sw.stop > cycleTime) sw.stop -= cycleTime;
+
+        $('#shift').change();
+    })
+}
+
+function generateNewPk(currSts) {
+    let cycleTime = Number($('#tc').val());
+    currSts[0].start = 0;
+    currSts[0].stop = ((cycleTime % 2) === 0) ? cycleTime / 2 : (cycleTime - 1) / 2;
+    currSts[1].num = 1;
+    $('[class~=num0]').val(1);
+    $('[class~=duration0]').val(((cycleTime % 2) === 0) ? cycleTime / 2 : (cycleTime - 1) / 2);
+
+    currSts[1].start = ((cycleTime % 2) === 0) ? cycleTime / 2 : (cycleTime + 1) / 2;
+    currSts[1].stop = cycleTime;
+    currSts[1].num = 2;
+    $('[class~=tf1]').prop('disabled', false);
+    $('[class~=num1]').val(2).prop('disabled', false);
+    $('[class~=duration1]').val(((cycleTime % 2) === 0) ? cycleTime / 2 : (cycleTime + 1) / 2).prop('disabled', false);
+}
+
 //Считывание количества переключений
-function findSwitchCount(currSts) {
+function getSwitchCount(currSts) {
     let switchCount = 0;
     currSts.forEach(sw => {
         if (!checkLastLine(sw)) {
@@ -1848,6 +1971,7 @@ function resetPkTable() {
         sw.start = 0;
         sw.num = 0;
         sw.phase = 0;
+        sw.tf = 0;
         sw.stop = 0;
         sw.plus = false;
         $('[class~=start' + index + ']').val(0);

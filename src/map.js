@@ -363,7 +363,7 @@ ymaps.ready(function () {
                     IDs.push(trafficLight.region.num + '-' + trafficLight.area.num + '-' + trafficLight.ID);
                     //Создание меток контроллеров на карте
                     let placemark = new ymaps.Placemark([trafficLight.points.Y, trafficLight.points.X], {
-                        hintContent: trafficLight.description
+                        hintContent: trafficLight.description  + '<br>' + trafficLight.idevice
                     }, {
                         iconLayout: createChipsLayout(function (zoom) {
                             // Размер метки будет определяться функией с оператором switch.
@@ -403,7 +403,7 @@ ymaps.ready(function () {
                         let id = trafficLight.ID;
                         let index = IDs.indexOf(trafficLight.region.num + '-' + trafficLight.area.num + '-' + id);
                         let placemark = new ymaps.Placemark([trafficLight.points.Y, trafficLight.points.X], {
-                            hintContent: trafficLight.description
+                            hintContent: trafficLight.description  + '<br>' +trafficLight.idevice
                         }, {
                             iconLayout: createChipsLayout(function (zoom) {
                                 // Размер метки будет определяться функией с оператором switch.
@@ -427,7 +427,7 @@ ymaps.ready(function () {
                     IDs.push(trafficLight.region.num + '-' + trafficLight.area.num + '-' + trafficLight.ID);
                     //Создание меток контроллеров на карте
                     let placemark = new ymaps.Placemark([trafficLight.points.Y, trafficLight.points.X], {
-                        hintContent: trafficLight.description
+                        hintContent: trafficLight.description  + '<br>' +trafficLight.idevice
                     }, {
                         iconLayout: createChipsLayout(function (zoom) {
                             // Размер метки будет определяться функией с оператором switch.

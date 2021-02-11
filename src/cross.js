@@ -53,10 +53,10 @@ $(function () {
 
                 if (data.dk.edk === 1) {
                     $('#transition').show();
-                    $('#status').hide();
+                    // $('#status').hide();
                 } else {
                     $('#transition').hide();
-                    $('#status').show();
+                    // $('#status').show();
                 }
                 if (controlCrossFlag) {
                     $('a').each(function () {
@@ -113,10 +113,10 @@ $(function () {
                         // $('image[height^="450"]').attr('height', '100%')
                         //                                .attr('width', '100%')
                         //                                .attr('style', 'max-height: 450px; max-width: 450px; min-height: 225px; min-width: 225px;');
-                        // $('svg[height^="150"]').each(function () {
+                        // $('svg[height^="140"]').each(function () {
                         //      $(this).attr('height', '36%')
                         //             .attr('width', '36%')
-                        //             .attr('style', 'max-height: 150px; max-width: 150px; min-height: 75px; min-width: 75px;');
+                        //             .attr('style', 'max-height: 140px; max-width: 140px; min-height: 75px; min-width: 75px;');
                         // });
                         if (typeof getPhasesMass === "function") {
                             let phases = getPhasesMass();
@@ -324,9 +324,12 @@ $(function () {
                 // data.state.arrays.SetDK.dk.forEach((rec, counter) => {
                 //     $('#pk').append(new Option('ПК ' + (counter + 1), counter + 1));
                 // });
-                // $('#pk option[value=' + data.state.pk + ']').attr('selected', 'selected');
+                $('#pk').find('option').each(function () {
+                    $(this).removeAttr('selected');
+                });
+                $('#pk option[value=' + data.state.pk + ']').attr('selected', 'selected');
 
-                $('#sk').append(new Option('0', 0));
+                $('#sk').append(new Option('0', '0'));
                 data.state.arrays.DaySets.daysets.forEach((rec, counter) => {
                     if (rec.lines[0].npk !== 0) {
                         $('#sk').append(new Option('CК ' + (counter + 1), counter + 1));
@@ -334,7 +337,7 @@ $(function () {
                 });
                 $('#sk option[value=' + data.state.ck + ']').attr('selected', 'selected');
 
-                $('#nk').append(new Option('0', 0));
+                $('#nk').append(new Option('0', '0'));
                 data.state.arrays.WeekSets.wsets.forEach((rec, counter) => {
                     let flag = true;
                     rec.days.forEach(day => {
@@ -363,10 +366,10 @@ $(function () {
                 buildExpandedTable(data.dk);
                 if (data.dk.edk === 1) {
                     $('#transition').show();
-                    $('#status').hide();
+                    // $('#status').hide();
                 } else {
                     $('#transition').hide();
-                    $('#status').show();
+                    // $('#status').show();
                 }
                 break;
             case 'close':
@@ -467,14 +470,218 @@ let fakeTimer;
 // }
 // let tableData;
 
+// let prevIndex = -1;
+// const maxTableSize = 5;
+// function buildExpandedTable(data) {
+//     let $expandedTable = $('#expandedTable');
+//     let dataArr = $expandedTable.bootstrapTable('getData').slice();
+//     // if (dataArr.length > 20) {
+//     //     $expandedTable.bootstrapTable('removeAll');
+//     // }
+//     let prevRow = dataArr[prevIndex - 1];
+//     console.log('prevRow', prevIndex - 1);
+//     // let prevRow = dataArr[(dataArr.length === 16) ? (prevIndex) : prevIndex - 1];
+//     if (prevRow === undefined) prevRow = {ftudk: -1};
+//     let toWrite = {
+//         column1: data.ftudk,
+//         column2: data.tdk,
+//         column3: 0,
+//         column4: data.fdk,
+//         column5: 0,
+//         column6: 0,
+//         column7: 0
+//     };
+//
+//     toWrite.column2 = prevRow.column2;
+//     switch (toWrite.column4) {
+//         case 9:
+//             toWrite.column4 = 'Пром. такт';
+//             toWrite.column2 = data.tdk;
+//             break;
+//         case 10:
+//         case 14:
+//             toWrite.column1 = 'ЖМ';
+//             toWrite.column4 = 'ЖМ';
+//             break;
+//         case 11:
+//         case 15:
+//             toWrite.column1 = 'ОС';
+//             toWrite.column4 = 'ОС';
+//             break;
+//         case 12:
+//             toWrite.column1 = 'КК';
+//             toWrite.column4 = 'КК';
+//             break;
+//         default:
+//             toWrite.column3 = data.tdk - prevRow.column3;
+//             break;
+//     }
+//
+//     if (toWrite.column1 === 0) toWrite.column1 = 'ЛР';
+//
+//     // if (toWrite.column4 === 9) {
+//     //     toWrite.column2 = data.tdk;
+//     //     toWrite.column4 = 'Пром. такт';
+//     // } else {
+//     //     toWrite.column2 = lastRow.column2;
+//     //     toWrite.column3 = data.tdk - lastRow.column3;
+//     // }
+//
+//
+//     clearInterval(fakeTimer);
+//
+//     // switch (lastIndex) {
+//     //     case 0:
+//     //         $expandedTable.bootstrapTable('append', toWrite);
+//     //         $expandedTable.bootstrapTable('hideRow', {index: 0});
+//     //         // lastIndex++;
+//     //         break;
+//     //     case 14:
+//     //         // lastIndex = 1;
+//     //         $expandedTable.bootstrapTable('updateRow', {index: lastIndex, row: Object.assign({}, toWrite)});
+//     //         break;
+//     //     default:
+//     //         if (toWrite.column4 === 'Пром. такт') {
+//     //             if (dataArr.length < 14) {
+//     //                 $expandedTable.bootstrapTable('append', toWrite);
+//     //             } else {
+//     //                 $expandedTable.bootstrapTable('updateRow', {index: lastIndex, row: Object.assign({}, toWrite)});
+//     //             }
+//     //         } else {
+//     //             toWrite.column3 = lastRow.column3;
+//     //             $expandedTable.bootstrapTable('updateRow', {index: lastIndex-1, row: Object.assign({}, toWrite)});
+//     //         }
+//     //         lastIndex++;
+//     //         break;
+//     // }
+//
+//     switch (prevIndex) {
+//         case -1:
+//             // if (dataArr.length < maxTableSize) {/
+//             // $expandedTable.bootstrapTable('append', toWrite);
+//             // console.log('append ', toWrite);
+//             // $expandedTable.bootstrapTable('hideRow', {index: 0});
+//             if (toWrite.column4 !== 'Пром. такт') prevIndex += 1;
+//             return;
+//         // } else {
+//         // prevIndex =
+//         // }
+//         // break;
+//         case maxTableSize:
+//             // $expandedTable.bootstrapTable('removeAll');
+//             // $expandedTable.bootstrapTable('append', toWrite);
+//             if (toWrite.column4 === 'Пром. такт') prevIndex = 0;
+//             // $expandedTable.bootstrapTable('updateRow', {index: prevIndex, row: Object.assign({}, toWrite)});
+//             // console.log('updateRow ' + prevIndex + ' ', toWrite);
+//             break;
+//         default:
+//             if (toWrite.column4 === 'Пром. такт') {
+//                 if (dataArr.length < maxTableSize - 1) {
+//                     $expandedTable.bootstrapTable('append', toWrite);
+//                     // console.log('append ', toWrite);
+//                     prevIndex++;
+//                 } else {
+//                     // $expandedTable.bootstrapTable('updateRow', {index: prevIndex, row: Object.assign({}, toWrite)});
+//                     // console.log('updateRow ' + prevIndex + ' ', toWrite);
+//                 }
+//             } else {
+//                 toWrite.column3 = prevRow.column3;
+//                 // $expandedTable.bootstrapTable('updateRow', {index: prevIndex - 1, row: Object.assign({}, toWrite)});
+//                 // console.log('updateRow ' + (prevIndex - 1) + ' ', toWrite);
+//             }
+//             break;
+//     }
+//
+//     let index;
+//
+//     if (dataArr.length === (maxTableSize - 1)) {
+//         if (prevIndex === 0) {
+//             index = maxTableSize - 2;
+//         } else {
+//             index = prevIndex - 1;
+//         }
+//     } else {
+//         // if (prevIndex === 1) {
+//         //     index = 0;
+//         // } else {
+//             index = prevIndex - 1;
+//         // }
+//     }
+//
+//     prevRow = dataArr[index - 1];
+//     if (prevRow === undefined) prevRow = {ftudk: -1};
+//
+//     if (toWrite.column4 === 'Пром. такт') {
+//         toWrite.column7 = toWrite.column2;
+//
+//         if (index !== 0) {
+//             console.log('updateCell', {
+//                 index: index - 1,
+//                 field: 'column7',
+//                 prev7: prevRow.column7,
+//                 towrite2: toWrite.column2,
+//                 prevIndex: prevIndex
+//             });
+//
+//             $expandedTable.bootstrapTable('updateCell', {
+//                 index: index - 1,
+//                 field: 'column7',
+//                 value: prevRow.column7 - toWrite.column2
+//             });
+//         } else if (dataArr.length === (maxTableSize - 1)) {
+//             console.log('updateCell', {
+//                 index: index - 1,
+//                 field: 'column7',
+//                 prev7: prevRow.column7,
+//                 towrite2: toWrite.column2,
+//                 prevIndex: prevIndex
+//             });
+//
+//             $expandedTable.bootstrapTable('updateCell', {
+//                 index: index - 1,
+//                 field: 'column7',
+//                 value: prevRow.column7 - toWrite.column2
+//             });
+//         }
+//
+//         fakeTimer = setInterval(() => {
+//             toWrite.column3++;
+//             toWrite.column6++;
+//             toWrite.column7++;
+//             $expandedTable.bootstrapTable('updateRow', {index: prevIndex, row: Object.assign({}, toWrite)});
+//             // console.log('updateRow ' + index + ' ', toWrite);
+//         }, 1000);
+//     } else {
+//         // toWrite.column5 += 1;
+//         toWrite.column6 = toWrite.column3 + toWrite.column5;
+//         toWrite.column7 = toWrite.column2 + toWrite.column3 + toWrite.column5;
+//         fakeTimer = setInterval(() => {
+//             toWrite.column5++;
+//             toWrite.column6++;
+//             toWrite.column7++;
+//             $expandedTable.bootstrapTable('updateRow', {index: index, row: Object.assign({}, toWrite)});
+//             console.log('updateRow ' + index + ' ', toWrite);
+//         }, 1000);
+//     }
+//
+//
+//     if (typeof setPhase !== "undefined") {
+//         setPhase(data.fdk);
+//     }
+//
+//     $('#phase')[0].innerText = 'Фаза: ' + toWrite.column4;
+//     if ((dataArr.length === (maxTableSize - 1)) && (toWrite.column4 !== 'Пром. такт')) prevIndex++;
+// }
+
+
+const maxTableSize = 15;
+let currentIndex = 0;
+let prevIndex = 0;
+
 function buildExpandedTable(data) {
     let $expandedTable = $('#expandedTable');
     let dataArr = $expandedTable.bootstrapTable('getData').slice();
-    // if (dataArr.length > 20) {
-    //     $expandedTable.bootstrapTable('removeAll');
-    // }
-    let lastRow = dataArr[dataArr.length - 1];
-    if (lastRow === undefined) lastRow = {ftudk: -1};
+
     let toWrite = {
         column1: data.ftudk,
         column2: data.tdk,
@@ -485,7 +692,7 @@ function buildExpandedTable(data) {
         column7: 0
     };
 
-    toWrite.column2 = lastRow.column2;
+    if ($expandedTable.bootstrapTable('getData').length !== 0) toWrite.column2 = dataArr[prevIndex].column2;
     switch (toWrite.column4) {
         case 9:
             toWrite.column4 = 'Пром. такт';
@@ -506,63 +713,57 @@ function buildExpandedTable(data) {
             toWrite.column4 = 'КК';
             break;
         default:
-            toWrite.column3 = data.tdk - lastRow.column3;
+            if ($expandedTable.bootstrapTable('getData').length !== 0) toWrite.column3 = data.tdk - dataArr[prevIndex].column3;
             break;
     }
 
-    // if (toWrite.column4 === 9) {
-    //     toWrite.column2 = data.tdk;
-    //     toWrite.column4 = 'Пром. такт';
-    // } else {
-    //     toWrite.column2 = lastRow.column2;
-    //     toWrite.column3 = data.tdk - lastRow.column3;
-    // }
+    if (($expandedTable.bootstrapTable('getData').length !== 0) && (toWrite.column4 !== 'Пром. такт')) toWrite.column2 -= toWrite.column3;
 
-
+    if (toWrite.column1 === 0) toWrite.column1 = 'ЛР';
     clearInterval(fakeTimer);
 
-    switch (dataArr.length) {
-        case 0:
-            $expandedTable.bootstrapTable('append', toWrite);
-            $expandedTable.bootstrapTable('hideRow', {index: 0});
-            break;
-        case 15:
-            $expandedTable.bootstrapTable('removeAll');
-            $expandedTable.bootstrapTable('append', toWrite);
-            break;
-        default:
-            if (toWrite.column4 === 'Пром. такт') {
-                $expandedTable.bootstrapTable('append', toWrite);
-            } else {
-                toWrite.column3 = lastRow.column3;
-                $expandedTable.bootstrapTable('updateRow', {index: dataArr.length, row: Object.assign({}, toWrite)});
-            }
-            break;
-    }
+    if (currentIndex === maxTableSize) currentIndex = 0;
 
     if (toWrite.column4 === 'Пром. такт') {
-        toWrite.column7 = toWrite.column2;
-        $expandedTable.bootstrapTable('updateCell', {
-            index: dataArr.length - 1,
-            field: 'column7',
-            value: lastRow.column7 - toWrite.column2
-        });
+        if ($expandedTable.bootstrapTable('getData').length !== maxTableSize) {
+            $expandedTable.bootstrapTable('append', toWrite);
+        } else {
+            $expandedTable.bootstrapTable('updateRow', {index: currentIndex, row: Object.assign({}, toWrite)});
+        }
+        if (dataArr[prevIndex] !== undefined) {
+            $expandedTable.bootstrapTable('updateCell', {
+                index: prevIndex,
+                field: 'column7',
+                value: dataArr[prevIndex].column7 - toWrite.column2
+            });
+
+            toWrite.column7 = dataArr[prevIndex].column2;
+        }
         fakeTimer = setInterval(() => {
             toWrite.column3++;
             toWrite.column6++;
             toWrite.column7++;
-            $expandedTable.bootstrapTable('updateRow', {index: dataArr.length, row: Object.assign({}, toWrite)});
+            $expandedTable.bootstrapTable('updateRow', {index: currentIndex, row: Object.assign({}, toWrite)});
+            console.log('updateRow ' + currentIndex + ' ', toWrite);
         }, 1000);
     } else {
-        toWrite.column5 += 1;
-        toWrite.column6 = toWrite.column3 + toWrite.column5;
-        toWrite.column7 = toWrite.column2 + toWrite.column3 + toWrite.column5;
-        fakeTimer = setInterval(() => {
+        if ($expandedTable.bootstrapTable('getData').length !== 0) {
+            toWrite.column3 = data.tdk - dataArr[prevIndex].column2;
+
+            $expandedTable.bootstrapTable('updateRow', {index: currentIndex, row: Object.assign({}, toWrite)});
             toWrite.column5++;
-            toWrite.column6++;
-            toWrite.column7++;
-            $expandedTable.bootstrapTable('updateRow', {index: dataArr.length - 1, row: Object.assign({}, toWrite)});
-        }, 1000);
+            toWrite.column6 = toWrite.column3 + toWrite.column5;
+            toWrite.column7 = toWrite.column2 + toWrite.column3 + toWrite.column5;
+            fakeTimer = setInterval(() => {
+                toWrite.column5++;
+                toWrite.column6++;
+                toWrite.column7++;
+                $expandedTable.bootstrapTable('updateRow', {index: currentIndex-1, row: Object.assign({}, toWrite)});
+                console.log('updateRow ' + (currentIndex-1) + ' ', toWrite);
+            }, 1000);
+            prevIndex = currentIndex;
+            currentIndex++;
+        }
     }
 
 
@@ -571,38 +772,47 @@ function buildExpandedTable(data) {
     }
 
     $('#phase')[0].innerText = 'Фаза: ' + toWrite.column4;
+
 }
 
 function checkConnection(connectionFlag) {
     // console.log('checkConnection', connectionFlag);
     connectionFlag = (connectionFlag === undefined) ? control : connectionFlag;
-    if (!connectionFlag) {
+
+    $('#pk').hide();
+    $('#sk').hide();
+    $('#nk').hide();
+    $('#phase').hide();
+    $('#transition').hide();
+    $('#expandedTable').hide();
+    $('#verificationRow').hide();
+
+    if (connectionFlag) {
         $('a').each(function () {
-            this.className = checkButton(this.className.toString(), false);
+            this.className = checkButton(this.className.toString(), editFlag);
         });
         $('select').each(function () {
-            checkSelect($(this), false);
-        });
-        $('#pk').hide();
-        $('#sk').hide();
-        $('#nk').hide();
-        $('#phase').hide();
-        $('#transition').hide();
-        $('#expandedTable').hide();
-        $('#verificationRow').hide();
-    } else if (editFlag) {
-        $('a').each(function () {
-            this.className = checkButton(this.className.toString(), true);
-        });
-        $('select').each(function () {
-            checkSelect($(this), true);
+            checkSelect($(this), editFlag);
         });
         $('#pk').show();
         $('#sk').show();
         $('#nk').show();
         $('#phase').show();
         $('#expandedTable').show();
+        // setPhase(0);
         $('#verificationRow').show();
+
+
+        if (typeof setPhase !== "undefined") {
+            setPhase(0);
+        }
+    } else {
+        $('a').each(function () {
+            this.className = checkButton(this.className.toString(), false);
+        });
+        $('select').each(function () {
+            checkSelect($(this), false);
+        });
     }
     control = connectionFlag;
 }
