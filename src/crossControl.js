@@ -487,40 +487,17 @@ $(() => {
         pkTabFill2(data, false);
     });
 
-    //Кнопка для копирования строки
+    //Кнопка для добавления строки
     $('#switchCopy').on('click', () => {
         let index = $('#pkTable').find('tr.success').data('index');
-
-        function sortFunc(a, b) {
-            return a[0] - b[0];
-        }
-
-        let selected = $('#pkSelect').val();
-        if (index === undefined) index = 0;
         let tf = Number($('#tf').val());
-        let currSts = setDK[selected].sts;
-        let newRow = {
-            line: index, start: currSts[(index === 0) ? 11 : (index)].stop, num: 1, tf: tf,
-            stop: currSts[(index === 0) ? 11 : (index)].stop, plus: $('#razlen').prop('checked')
-        };
-        let map = new Map();
-        currSts.forEach((sts, i) => {
-            map.set(sts.line, sts);
-        });
-        map.delete(map.size - 1);
-        map.set(((index + 1) + (index + 2)) / 2, newRow);
-        let sortedMap = new Map([...map.entries()].sort(sortFunc));
-        // console.log(sortedMap);
-        currSts = [];
 
-        for (const rec of sortedMap) {
-            currSts.push(rec[1]);
+        addPkSwitch(index, tf);
+        if ((tf === 2) || (tf === 3)) {
+            addPkSwitch(index + 1, 7);
+        } else if (tf === 4) {
+            //todo TVP12
         }
-        currSts.forEach((rec, i) => {
-            rec.line = i + 1;
-        });
-        setDK[selected].sts = currSts;
-        pkTabFill('pkTable');
     });
 
     //Кнопка для перезаписи всей информации выбранного ПК
@@ -530,24 +507,36 @@ $(() => {
         let oldData = [];
         let counter = 0;
         let emptyRow = {line: 0, start: 0, num: 0, tf: 0, stop: 0, plus: false};
+        let currentRow = getSelectedRowData('pkTable', 'sts');
 
-        if (getSelectedRowData('pkTable', 'sts') === undefined) return;
+        if ((currentRow === undefined) || (currentRow.line === 1)) return;
 
         $('#pkTable tbody tr').each(function () {
             oldData.push(getSelectedRowData('pkTable', 'sts', counter++));
         });
 
-        setDK[selected].tc -= (oldData[index].stop - oldData[index].start);
+        let isReplacementPhase = oldData[index].tf === 7;
+
+        //todo 1,2 tvp
+        if (!isReplacementPhase) setDK[selected].tc -= (oldData[index].stop - oldData[index].start);
 
         oldData.splice(index, 1);
         oldData.push(emptyRow);
         oldData.forEach((rec, i) => {
-            if (i === 0) rec.num = 1;
+            if (i === 0) {
+                rec.num = 1;
+            } else if (!checkLastLine(rec)) {
+                isReplacementPhase = oldData[i].tf === 7;
+                let duration = rec.stop - rec.start;
+                rec.start = isReplacementPhase ? oldData[i - 1].start : oldData[i - 1].stop;
+                rec.stop = rec.start + duration;
+            }
             rec.line = i + 1;
         });
 
         setDK[selected].sts = oldData;
 
+        // pkTableValidate();
         pkTabFill('pkTable');
     });
 
@@ -1103,8 +1092,8 @@ function mainTabFill(data, firstLoadFlag) {
 
     $('#vpcpd').val((parseFloat(data.state.Model.vpcpdl + '.' + data.state.Model.vpcpdr) <= 12.3) ? 12.3 : 12.4);
     Number($('#vpcpd').val()) <= 12.3 ?
-        sizeVerification(8) :
-        sizeVerification(18);
+        sizeVerification(8, true) :
+        sizeVerification(18, false);
     $('#vpcpd').on('change keyup', () => {
         let ver = $('#vpcpd option:selected').val().split('.');
         data.state.Model.vpcpdl = Number(ver[0]);
@@ -1119,7 +1108,7 @@ function mainTabFill(data, firstLoadFlag) {
     anotherTableFill('table', mainTableFlag);
 }
 
-function sizeVerification(length) {
+function sizeVerification(length, oldVersion) {
     let vvTable = data.state.arrays.SetTimeUse.uses;
     let emptyRecord = {
         'dk': 0,
@@ -1141,8 +1130,18 @@ function sizeVerification(length) {
             }
         }
     }
-    for (let i = 2; i < length; i++) {
-        vvTable[i].name = (i - 1) + ' вх';
+    if (oldVersion) {
+        for (let i = 2; i < length; i++) {
+            vvTable[i - 2].name = (i - 1) + ' вх';
+        }
+        let shift4 = data.state.arrays.SetTimeUse.uses.pop();
+        let shift3 = data.state.arrays.SetTimeUse.uses.pop();
+        data.state.arrays.SetTimeUse.uses.unshift(shift4);
+        data.state.arrays.SetTimeUse.uses.unshift(shift3);
+    } else {
+        for (let i = 2; i < length; i++) {
+            vvTable[i].name = (i - 1) + ' вх';
+        }
     }
 }
 
@@ -1158,10 +1157,12 @@ function pkTabFill2(newData, firstLoadFlag) {
         $('#tpu').on('change keyup', function (evt) {
             if (evt.target.value === '1') {
                 $('#shift').val(0).change().prop('disabled', true);
+                $('#tc').prop('disabled', true);
                 // $('#shift').change();
                 // $('#shift').prop('disabled', true);
             } else {
                 $('#shift').prop('disabled', false);
+                $('#tc').prop('disabled', false);
             }
         });
         setChange('razlen', 'checkbox', 'arrays.SetDK.dk', !numberFlag, longPathFlag);
@@ -1479,6 +1480,7 @@ function pkTabFill(table) {
     }
     $('#twot').prop('checked', currPK.twot);
     $('#shift').val(currPK.shift).prop('disabled', currPK.tpu === 1);
+    $('#tc').prop('disabled', currPK.tpu === 1);
     $('#tpu').find('option').each(function () {
         $(this).removeAttr('selected');
     });
@@ -1504,9 +1506,12 @@ function pkTabFill(table) {
             if (index === 0) {
                 disabledStatusMap.duration = false;
             } else if ((index < (currPK.sts.length - 1)) && (($('[class~=num' + index + ']').val() !== '0') || ($('[class~=tf' + index + ']').val() !== '0'))) {
-                disabledStatusMap.num = false;
+                disabledStatusMap.num = (row.tf === 1) || (row.tf === 8);
                 disabledStatusMap.tf = false;
                 disabledStatusMap.duration = false;
+                if (!difLen) {
+                    if ((row.tf === 5) || (row.tf === 6) || (row.tf === 7)) disabledStatusMap.duration = true;
+                }
             }
 
             disabledStatusMap.plus = !difLen;
@@ -1523,6 +1528,7 @@ function pkTabFill(table) {
                 let currSts = setDK[currPk].sts;
                 let shift = Number($('#shift').val());
                 let cycleTime = Number($('#tc').val());
+                let inputDiff = cycleTime;
                 let prevCycleTime = unmodifiedData.state.arrays.SetDK.dk[currPk].tc;
                 let switchCount = getSwitchCount(currSts);
 
@@ -1549,14 +1555,19 @@ function pkTabFill(table) {
                     return;
                 }
 
-                //сумма времени не превышает 256
-                if ((cycleTime + shift) >= 256) {
-                    cycleTime = 255 - shift;
-                    $('#tc').val(cycleTime);
-                    setDK[selected].tc = cycleTime;
-                } else if ((cycleTime < (6 * switchCount)) && (prevCycleTime > 3)) { //каждая фаза минимум 6 секунд
-                    cycleTime = 6 * switchCount;
-                    $('#tc').val(6 * switchCount);
+                //время цикла не превышает 254
+                if (cycleTime >= 255) {
+                    cycleTime = 254;
+                    $('#tc').val(cycleTime).change();
+                    // setDK[selected].tc = cycleTime;
+                } else if ((cycleTime < (4 * switchCount)) && (prevCycleTime > 3)) { //каждая фаза минимум 4 секунд
+                    cycleTime = 4 * switchCount;
+                    $('#tc').val(4 * switchCount);
+                }
+
+                if (shift >= cycleTime) {
+                    shift -= cycleTime;
+                    $('#shift').val(shift).change();
                 }
 
                 $('#' + table).show();
@@ -1567,89 +1578,20 @@ function pkTabFill(table) {
                     return;
                 }
 
-                // let cycleTimeSave = cycleTime;
-                currSts.forEach((sw) => {
-                    // if (sw.stop === cycleTimeSave) {
-                    cycleTime -= Number($('[class~=duration' + (sw.line - 1) + ']').val());
-                    // } else {
-                    //     cycleTime -= (sw.stop - sw.start);
-                    // }
-                });
+                inputDiff = getCycleDiff(inputDiff, currSts, switchCount, difLen);
 
                 $('#' + table + ' tbody tr').each(function (index) {
                     //если переключатель не выбран, изменять первый
                     if (this.className === 'success') {
                         let value = Number($('[class~=duration' + index + ']').val());
-                        $('[class~=duration' + index + ']').val(value + cycleTime).change();
-                        cycleTime = 0;
-                        // currSts[index].start = (index === 0) ? shift : currSts[index - 1].stop;
-                        // currSts[index].stop = currSts[swId].start + newvalue;
-                        // $('[class~=start' + index + ']').val(currSts[index].start);
+                        $('[class~=duration' + index + ']').val(value + inputDiff).change();
+                        inputDiff = 0;
 
-
-                    } else if ((cycleTime !== 0) && (index === (getSwitchCount(currSts) - 1))) {
+                    } else if ((inputDiff !== 0) && (index === (getSwitchCount(currSts) - 1))) {
                         let newValue = Number($('[class~=duration' + 0 + ']').val());
-                        $('[class~=duration' + 0 + ']').val(newValue + cycleTime).change();
+                        $('[class~=duration' + 0 + ']').val(newValue + inputDiff).change();
                     }
                 })
-
-                /*
-                                $('#' + table + ' tbody tr').each(function (index) {
-                                    //если переключатель не выбран, изменять первый
-                                    if ((this.className === 'success') || (index === 11)) {
-                                        if (index === 11) index = 0;
-                                        //Если из текущей фазы невозможно забрать изменение времени цикла
-                                        if (cycleTime < 10) {
-                                            let currSts = setDK[Number($('#pkSelect').val())].sts;
-                                            while (cycleTime < 0) {
-                                                let lastLine = checkLastLine(currSts[index + 1]);
-                                                if ((['1', '8'].indexOf($('[class~=tf' + index + ']').val()) !== -1) || (cycleTime !== 0)) {
-                                                    let currValue = Number($('[class~=duration' + index + ']').val());
-                                                    if (((cycleTime !== currValue) ? (cycleTime + currValue) : cycleTime) < 10) {
-                                                        $('[class~=duration' + index + ']').val(10);
-                                                        cycleTime += (cycleTime !== currValue) ? (currValue - 10) : -10;
-                                                    } else {
-                                                        $('[class~=duration' + index + ']').val(currValue + cycleTime);
-                                                        cycleTime = 0;
-                                                    }
-
-                                                    if (index === 0) {
-                                                        currSts[index].start = 0;
-                                                        currSts[index].stop = Number($('[class~=duration' + index + ']').val());
-                                                    } else {
-                                                        currSts[index].start = currSts[index - 1].stop;
-                                                        currSts[index].stop = currSts[index].start + Number($('[class~=duration' + index + ']').val());
-                                                    }
-                                                }
-                                                index = lastLine ? 0 : index + 1;
-                                            }
-                                            savePkTable();
-                                        } else {
-                                            let $this = $('[class~=duration' + index + ']');
-                                            let currSts = setDK[Number($('#pkSelect').val())].sts;
-                                            let lastLine = checkLastLine(currSts[index + 1]);
-                                            $this.val(Number($this.val()) + cycleTime);
-                                            currSts[index].stop += (cycleTime > 10) ? cycleTime : 10;
-
-                                            if (!lastLine) {
-                                                $('[class~=duration' + (index) + ']').val(currSts[index].stop - currSts[index].start);
-                                                $('[class~=start' + (index) + ']').val(currSts[index].start);
-                                                for (let i = index; i < currSts.length; i++) {
-                                                    $('[class~=start' + i + ']').val((i === 0) ? 0 + Number($('#shift').val()) : currSts[(i - 1)].stop);
-                                                    currSts[i].stop = Number($('[class~=start' + i + ']').val()) + Number($('[class~=duration' + i + ']').val());
-                                                    currSts[i].start = Number($('[class~=start' + i + ']').val());
-                                                    if ((i !== (currSts.length - 1)) && ((currSts[i + 1].num === 0) && (currSts[i + 1].tf === 0))) {
-                                                        return;
-                                                    }
-                                                }
-                                            } else {
-                                                let stopTime = Number($('#tc').val()) + Number($('#shift').val());
-                                                currSts[index].stop = (stopTime > cycleTimeSave) ? stopTime - cycleTimeSave : stopTime;
-                                            }
-                                        }
-                                    }
-                                });
-                                */
             });
 
             $('#shift').on('change keyup', (event) => {
@@ -1657,15 +1599,16 @@ function pkTabFill(table) {
 
                 let selectedPk = Number($('#pkSelect').val());
                 let shift = Number($('#shift').val());
-                let prevShift = $('[class~=start0]').val();
+                let prevShift = Number($('[class~=start0]').val());
                 let cycleTime = Number($('#tc').val());
-                if ((cycleTime + shift) >= 256) {
-                    shift = 255 - cycleTime;
+                let currSts = setDK[selectedPk].sts;
+
+                if (shift >= cycleTime) {
+                    shift -= cycleTime;
                     $('#shift').val(shift);
-                    data.state.arrays.SetDK.dk[selected].shift = shift;
+                    currSts.shift = shift;
                 }
 
-                let currSts = setDK[selectedPk].sts;
                 let shiftDiff = shift - prevShift;
 
                 currSts.forEach((sw, index) => {
@@ -1694,9 +1637,11 @@ function pkTabFill(table) {
                 });
 
                 let transition = checkTransition(currSts);
-                if (transition !== -1) {
-                    currSts[transition].stop = cycleTime;
-                    makeTransition(currSts[transition].num, currSts[transition].tf);
+                if (transition.length !== 0) {
+                    transition.forEach(trn => {
+                        currSts[trn].stop = cycleTime;
+                        makeTransition(currSts[trn].num, currSts[trn].tf);
+                    });
                 }
             });
 
@@ -1728,6 +1673,16 @@ function pkTabFill(table) {
                         '<input class="form-control border-0 start' + index + '" name="number" type="number"' +
                         'style="max-width: 55px;" value="' + record.start + '"/>'
                     );
+                    $(this).find('input').on('change', function (evt) {
+                        let tf = Number($('[class~=tf' + index + ']').val());
+                        if ((tf === 2) || (tf === 3)) {
+                            if (Number($('[class~=tf' + (index + 1) + ']').val()) === 7) {
+                                currPK.sts[index + 1].start = evt.target.valueAsNumber;
+                            }
+                        } else if (tf === 4) {
+                            //todo tvp 1,2
+                        }
+                    });
                     break;
                 case 2 :
                     $(this).append(
@@ -1748,11 +1703,23 @@ function pkTabFill(table) {
                         $(this).removeAttr('selected');
                     });
                     $(this).find('select').on('change', function (evt) {
+                        const difLen = $('#razlen').prop('checked');
+                        $('[class~=duration' + index + ']').prop('disabled', false);
                         if ((evt.target.value === '1') || (evt.target.value === '8')) {
-                            $('[class~=num' + evt.target.className.substr(2) + ']').val(0).prop('disabled', true);
+                            $('[class~=num' + evt.target.className.substr(2) + ']')
+                                .val(0)
+                                .prop('disabled', true)
+                                .change();
                         } else {
-                            $('[class~=num' + evt.target.className.substr(2) + ']').val(1).prop('disabled', false);
+                            if ((evt.target.value === '5') || (evt.target.value === '6') || (evt.target.value === '7')) {
+                                $('[class~=duration' + index + ']').prop('disabled', !difLen)
+                            }
+                            $('[class~=num' + index + ']')
+                                .val(1)
+                                .prop('disabled', false)
+                                .change();
                         }
+
                     });
                     $(this).find('option[value="' + record.tf + '"]').attr('selected', 'selected');
                     break;
@@ -1769,78 +1736,65 @@ function pkTabFill(table) {
                         'style="max-width: 55px;" value="' + ((tableType) ? (record.stop - record.start) : record.stop) + '"/>'
                     );
                     $(this).find('input').on('keyup change', (event) => {
-                        if ((event.type === 'keyup') && (event.originalEvent.code !== 'Enter')) return;
+                        if ((event.type === 'keyup') && (!event.originalEvent.code.includes('Enter'))) return;
 
+                        const controlType = $('#tpu').val();
                         const cycleTime = Number($('#tc').val());
                         const shift = Number($('#shift').val());
                         let currSts = setDK[Number($('#pkSelect').val())].sts;
                         let swId = event.target.parentElement.parentElement.rowIndex - 1;
                         const switchCount = getSwitchCount(currSts);
                         const lastSwitch = (swId === currSts.length - 1) || (checkLastLine(currSts[swId + 1]));
-                        let value = Number(event.target.value);
+                        let value = event.target.valueAsNumber;
                         let inputDiff = cycleTime;
-                        // const lastLine = checkLastLine(currSts[swId]);
+                        const difLen = $('#razlen').prop('checked');
+                        const currTf = Number($(`[class~=tf${swId}]`).val());
 
-                        if (value < 6) {
-                            $('[class~=duration' + swId + ']').val(6);
-                            if (swId === (switchCount - 1)) swId = -1;
-                            $('[class~=duration' + (swId + 1) + ']').val(Number($('[class~=duration' + (swId + 1) + ']').val()) + value - 6).change();
+                        if (value < 4) {
+                            $('[class~=duration' + swId + ']').val(4).change();
                             return;
                         }
 
-                        for (let i = 0; i < getSwitchCount(currSts); i++) {
-                            inputDiff -= $('[class~=duration' + (i) + ']').val();
+                        if (!difLen) {
+                            if (((currTf === 2) || (currTf === 3)) && (Number($(`[class~=tf${swId + 1}`).val()) === 7)) {
+                                $(`[class~=duration${swId + 1}`).val($(`[class~=duration${swId}`).val());
+                            } else if (currTf === 4) {
+                                //todo обработка 1,2 твп
+                            }
                         }
 
+                        inputDiff = getCycleDiff(inputDiff, currSts, switchCount, difLen);
+
+                        // if ((currTf !== 5) && (currTf !== 6) && (currTf !== 7)) {
                         currSts[swId].start = (swId === 0) ? shift : currSts[swId - 1].stop;
                         currSts[swId].stop = currSts[swId].start + value;
-                        $('[class~=start' + swId + ']').val(currSts[swId].start);
+                        $('[class~=start' + swId + ']').val(currSts[swId].start).change();
 
                         if (inputDiff !== 0) {
-                            const index = lastSwitch ? 0 : swId + 1;
-                            let newValue = Number($('[class~=duration' + index + ']').val()) + inputDiff;
-                            $('[class~=duration' + index + ']').val(newValue).change();
+                            if (controlType === '0') {
+                                // Тип ПУ = ПК
+                                let index = 0;//lastSwitch ? 0 : swId + 1;
+                                let tf = Number($('[class~=tf' + (lastSwitch ? 0 : swId + 1) + ']').val());
+                                if (!lastSwitch) {
+                                    if ((tf === 5) || (tf === 6)) {
+                                        //todo 1,2 твп
+                                    } else if (tf === 7) {
+                                        index = (((swId + 2) === currSts.length - 1) || (checkLastLine(currSts[swId + 2]))) ? 0 : swId + 2;
+                                    } else {
+                                        index = swId + 1;
+                                    }
+                                }
+                                let newValue = Number($('[class~=duration' + index + ']').val()) + inputDiff;
+                                $('[class~=duration' + index + ']').val(newValue).change();
+                            } else if (controlType === '1') {
+                                // Тип ПУ = ЛПУ
+                                $('#tc').val(cycleTime - inputDiff);
+                                setDK[Number($('#pkSelect').val())].tc -= inputDiff;
+                            }
                         }
+                        // }
 
                         validatePkByDuration(currSts);
-                        // let $this = $(this).find('input');
-                        // let cycleTime = Number($('#tc').val());
-                        // let currSts = setDK[Number($('#pkSelect').val())].sts;
-                        // let lastLine = ((currSts[index + 1].num === 0) && (currSts[index + 1].tf === 0));
-                        // // let lastLine = -1;
-                        // currSts[index].stop = Number($('[class~=start' + index + ']').val()) + Number($('[class~=duration' + index + ']').val());
-                        // currSts.forEach((line) => {
-                        //     cycleTime -= (line.stop - line.start);
-                        //     // if ((lastLine === -1) && (line.num === 0)) lastLine = index - 1;
-                        // });
-                        // if (cycleTime !== 0) {
-                        //     if (!lastLine) {
-                        //         currSts[index + 1].stop += cycleTime;
-                        //         if ((currSts[index + 1].stop - currSts[index + 1].start) <= 0) {
-                        //             currSts[index + 1].stop -= cycleTime;
-                        //             currSts[index].stop += cycleTime;
-                        //             $this.val(Number($this.val()) + cycleTime);
-                        //             return;
-                        //         }
-                        //         $('[class~=duration' + (index + 1) + ']').val(currSts[index + 1].stop - currSts[index + 1].start);
-                        //         $('[class~=start' + (index + 1) + ']').val(currSts[index].stop)
-                        //     } else {
-                        //         currSts[0].stop += cycleTime;
-                        //         if ((currSts[index].stop - currSts[index].start) <= 0) {
-                        //             currSts[0].stop -= cycleTime;
-                        //             $this.val(Number($this.val()) + cycleTime);
-                        //             return;
-                        //         }
-                        //         $('[class~=duration0]').val(currSts[0].stop - currSts[0].start);
-                        //         for (let i = 1; i <= index; i++) {
-                        //             $('[class~=start' + i + ']').val(currSts[i - 1].stop);
-                        //             currSts[i].stop = Number($('[class~=start' + i + ']').val()) + Number($('[class~=duration' + i + ']').val());
-                        //         }
-                        //         currSts[index].stop = Number($('#tc').val()) + Number($('#shift').val());
-                        //         // $('[class~=start0]').val(currSts[0].stop)
-                        //     }
-                        // }
-                        // pkTableValidate();
                     });
                     break;
                 case 5 :
@@ -1881,27 +1835,79 @@ function pkTabFill(table) {
     data.state.arrays.SetDK.dk[selected] = setDK[selected];
 }
 
+function getCycleDiff(cycle, currSts, switchCount, difLen) {
+    for (let i = 0; i < switchCount; i++) {
+        const tf = Number($('[class~=tf' + (i) + ']').val());
+        switch (tf) {
+            case 2:
+            case 3:
+            case 4:
+                cycle -= findMaxTvpDuration(i, tf);
+                break;
+            case 5:
+            case 6:
+            case 7:
+                if (difLen) {
+
+                } else {
+                    currSts[i].start = Number($(`[class~=start${i - 1}]`).val());
+                    currSts[i].stop = currSts[i].start + Number($(`[class~=duration${i - 1}]`).val());
+                    $('[class~=start' + i + ']').val(currSts[i].start);
+                    $('[class~=duration' + i + ']').val(currSts[i].stop - currSts[i].start);
+                }
+
+                break;
+            default:
+                cycle -= $('[class~=duration' + (i) + ']').val();
+                break;
+        }
+    }
+    return cycle;
+}
+
+function findMaxTvpDuration(index, tf) {
+    let tvpDuration = Number($(`[class~=duration${index}`).val());
+    if (index === 11) return tvpDuration;
+    if (tf === 4) {
+        //TODO добавить обработку 1,2 ТВП
+    } else {
+        let replacementDuration = (Number($(`[class~=tf${index + 1}`).val()) === 7) ? Number($(`[class~=duration${index + 1}`).val()) : 0;
+        return Math.max(tvpDuration, replacementDuration);
+    }
+}
+
 function validatePkByDuration(currSts) {
     currSts.forEach((sw, index) => {
         let shift = Number($('#shift').val());
-        let cycleTime = Number($('#tc').val());
+        let tf = Number($(`[class~=tf${index}]`).val());
+
+        // let cycleTime = Number($('#tc').val());
         if (!checkLastLine(sw)) {
-        //     $(`[class~=start${sw}]`).val();
-        // } else {
-        $(`[class~=start${index}]`).val((index === 0) ?
-            shift :
-            (Number($(`[class~=start${index - 1}]`).val()) + Number($(`[class~=duration${index - 1}]`).val()))).change();
+            //     $(`[class~=start${sw}]`).val();
+            // } else {
+
+            //TODO зам может быть больше ТВП => на последнем заме нужно знать масимальную длительность всего ТВП
+            if ((tf !== 5) && (tf !== 6) && (tf !== 7)) {
+                $(`[class~=start${index}]`).val((index === 0) ?
+                    shift :
+                    (Number($(`[class~=start${index - 1}]`).val()) + Number($(`[class~=duration${index - 1}]`).val())));
+                currSts[index].start = Number($(`[class~=start${index}]`).val());
+            } else {
+                currSts[index].start = Number($(`[class~=start${index - 1}]`).val());
+                $(`[class~=start${index}]`).val(currSts[index].start);
+            }
+
         }
         // if (sw.start > cycleTime) sw.start -= cycleTime;
 
         // if ((index !== (currSts.length-1)) && (checkLastLine(currSts[index+1]))) {
         //     sw.stop = Number($(`[class~=duration${index}`).val()) + Number($(`[class~=start${index}`).val());
         // } else {
-            sw.stop = Number($(`[class~=duration${index}`).val()) + Number($(`[class~=start${index}`).val());
+        sw.stop = Number($(`[class~=duration${index}`).val()) + Number($(`[class~=start${index}`).val());
         // }
         // if (sw.stop > cycleTime) sw.stop -= cycleTime;
 
-        $('#shift').change();
+        if (shift !== 0) $('#shift').change();
     })
 }
 
@@ -1919,6 +1925,45 @@ function generateNewPk(currSts) {
     $('[class~=tf1]').prop('disabled', false);
     $('[class~=num1]').val(2).prop('disabled', false);
     $('[class~=duration1]').val(((cycleTime % 2) === 0) ? cycleTime / 2 : (cycleTime + 1) / 2).prop('disabled', false);
+}
+
+function addPkSwitch(index, tf) {
+    function sortFunc(a, b) {
+        return a[0] - b[0];
+    }
+
+    let selected = $('#pkSelect').val();
+    if (index === undefined) return;
+    let currSts = setDK[selected].sts;
+    let newRow = {
+        line: index,
+        start: currSts[(index === 0) ? 11 : (index)].stop,
+        num: ((tf === 1) || (tf === 8)) ? 0 : 1,
+        tf: tf,
+        stop: currSts[(index === 0) ? 11 : (index)].stop + 4,
+        plus: $('#razlen').prop('checked')
+    };
+
+    let map = new Map();
+    currSts.forEach(sts => {
+        map.set(sts.line, sts);
+    });
+    map.delete(map.size - 1);
+    map.set(((index + 1) + (index + 2)) / 2, newRow);
+    let sortedMap = new Map([...map.entries()].sort(sortFunc));
+    // console.log(sortedMap);
+    currSts = [];
+
+    for (const rec of sortedMap) {
+        currSts.push(rec[1]);
+    }
+    currSts.forEach((rec, i) => {
+        rec.line = i + 1;
+    });
+    setDK[selected].sts = currSts;
+    pkTabFill('pkTable');
+
+    $(`[class~=duration${index + 1}]`).val(4).change();
 }
 
 //Считывание количества переключений
@@ -1943,26 +1988,27 @@ function makeTransition(num, tf) {
 }
 
 function checkTransition(currSts) {
-    let retValue = -1;
+    let retValue = [];
     currSts.forEach((sw, index) => {
         if (((sw.stop - sw.start) < 0)) { // || checkLastLine(sw)) {
-            retValue = index;
+            retValue.push(index);
+
         }
     });
     return retValue;
 }
 
 //????
-function savePkTable() {
-    let currSts = setDK[Number($('#pkSelect').val())].sts;
-    currSts.forEach((sw, index) => {
-        $('[class~=start' + index + ']').val(sw.start);
-        $('[class~=num' + index + ']').val(sw.num);
-        $('[class~=tf' + index + ']').val(sw.phase);
-        $('[class~=duration' + index + ']').val(sw.stop - sw.start);
-        $('[class~=plus' + index + ']').val(sw.plus ? '+' : '');
-    });
-}
+// function savePkTable() {
+//     let currSts = setDK[Number($('#pkSelect').val())].sts;
+//     currSts.forEach((sw, index) => {
+//         $('[class~=start' + index + ']').val(sw.start);
+//         $('[class~=num' + index + ']').val(sw.num);
+//         $('[class~=tf' + index + ']').val(sw.phase);
+//         $('[class~=duration' + index + ']').val(sw.stop - sw.start);
+//         $('[class~=plus' + index + ']').val(sw.plus ? '+' : '');
+//     });
+// }
 
 function resetPkTable() {
     let currSts = setDK[Number($('#pkSelect').val())].sts;

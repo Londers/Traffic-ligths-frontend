@@ -713,11 +713,11 @@ function buildExpandedTable(data) {
             toWrite.column4 = 'КК';
             break;
         default:
-            if ($expandedTable.bootstrapTable('getData').length !== 0) toWrite.column3 = data.tdk - dataArr[prevIndex].column3;
+            // if ($expandedTable.bootstrapTable('getData').length !== 0) toWrite.column2 = data.tdk - dataArr[prevIndex].column3;
             break;
     }
 
-    if (($expandedTable.bootstrapTable('getData').length !== 0) && (toWrite.column4 !== 'Пром. такт')) toWrite.column2 -= toWrite.column3;
+    // if (($expandedTable.bootstrapTable('getData').length !== 0) && (toWrite.column4 !== 'Пром. такт')) toWrite.column2 -= toWrite.column3;
 
     if (toWrite.column1 === 0) toWrite.column1 = 'ЛР';
     clearInterval(fakeTimer);
@@ -746,24 +746,22 @@ function buildExpandedTable(data) {
             $expandedTable.bootstrapTable('updateRow', {index: currentIndex, row: Object.assign({}, toWrite)});
             console.log('updateRow ' + currentIndex + ' ', toWrite);
         }, 1000);
-    } else {
-        if ($expandedTable.bootstrapTable('getData').length !== 0) {
-            toWrite.column3 = data.tdk - dataArr[prevIndex].column2;
+    } else if ($expandedTable.bootstrapTable('getData').length !== 0) {
+        toWrite.column3 = data.tdk - dataArr[prevIndex].column2;
 
-            $expandedTable.bootstrapTable('updateRow', {index: currentIndex, row: Object.assign({}, toWrite)});
+        $expandedTable.bootstrapTable('updateRow', {index: currentIndex, row: Object.assign({}, toWrite)});
+        toWrite.column5++;
+        toWrite.column6 = toWrite.column3 + toWrite.column5;
+        toWrite.column7 = toWrite.column2 + toWrite.column3 + toWrite.column5;
+        fakeTimer = setInterval(() => {
             toWrite.column5++;
-            toWrite.column6 = toWrite.column3 + toWrite.column5;
-            toWrite.column7 = toWrite.column2 + toWrite.column3 + toWrite.column5;
-            fakeTimer = setInterval(() => {
-                toWrite.column5++;
-                toWrite.column6++;
-                toWrite.column7++;
-                $expandedTable.bootstrapTable('updateRow', {index: currentIndex-1, row: Object.assign({}, toWrite)});
-                console.log('updateRow ' + (currentIndex-1) + ' ', toWrite);
-            }, 1000);
-            prevIndex = currentIndex;
-            currentIndex++;
-        }
+            toWrite.column6++;
+            toWrite.column7++;
+            $expandedTable.bootstrapTable('updateRow', {index: currentIndex - 1, row: Object.assign({}, toWrite)});
+            console.log('updateRow ' + (currentIndex - 1) + ' ', toWrite);
+        }, 1000);
+        prevIndex = currentIndex;
+        currentIndex++;
     }
 
 
