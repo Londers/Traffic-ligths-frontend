@@ -674,7 +674,7 @@ let fakeTimer;
 // }
 
 
-const maxTableSize = 15;
+const maxTableSize = 12;
 let currentIndex = 0;
 let prevIndex = 0;
 
@@ -739,17 +739,20 @@ function buildExpandedTable(data) {
 
             toWrite.column7 = dataArr[prevIndex].column2;
         }
+        colorizeRow(currentIndex);
         fakeTimer = setInterval(() => {
             toWrite.column3++;
             toWrite.column6++;
             toWrite.column7++;
             $expandedTable.bootstrapTable('updateRow', {index: currentIndex, row: Object.assign({}, toWrite)});
+            colorizeRow(currentIndex);
             console.log('updateRow ' + currentIndex + ' ', toWrite);
         }, 1000);
     } else if ($expandedTable.bootstrapTable('getData').length !== 0) {
         toWrite.column3 = data.tdk - dataArr[prevIndex].column2;
 
         $expandedTable.bootstrapTable('updateRow', {index: currentIndex, row: Object.assign({}, toWrite)});
+        colorizeRow(currentIndex);
         toWrite.column5++;
         toWrite.column6 = toWrite.column3 + toWrite.column5;
         toWrite.column7 = toWrite.column2 + toWrite.column3 + toWrite.column5;
@@ -758,6 +761,7 @@ function buildExpandedTable(data) {
             toWrite.column6++;
             toWrite.column7++;
             $expandedTable.bootstrapTable('updateRow', {index: currentIndex - 1, row: Object.assign({}, toWrite)});
+            colorizeRow(currentIndex - 1);
             console.log('updateRow ' + (currentIndex - 1) + ' ', toWrite);
         }, 1000);
         prevIndex = currentIndex;
@@ -1075,5 +1079,15 @@ function checkEdit() {
     // }
     $('select').each(function () {
         checkSelect($(this), editFlag);
+    });
+}
+
+function colorizeRow(index) {
+    $('#expandedTable').find('tbody').find('tr').each(function (counter) {
+        if (counter === index) {
+            $(this).find('td').each(function () {
+                $(this).attr('style', 'background-color: #cccccc')
+            })
+        }
     });
 }

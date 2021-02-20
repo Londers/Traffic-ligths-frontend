@@ -30,7 +30,10 @@ const vv2TableFlag = true;
 const kvTableFlag = false;
 
 let tempIndex;
-let copyArray = [];
+let copyPk = [];
+let copySk = [];
+// let copyNk = [];
+// let copyGk = [];
 let points = {
     Y: 0,
     X: 0
@@ -41,7 +44,6 @@ let ws;
 
 //Получение информации из выбранной строки
 function getSelectedRowData(table, fullPath, force) {
-//    let forceRow = force;
     let index = (force === undefined) ? $('#' + table).find('tr.success').data('index') : force;
     if (force === undefined) tempIndex = index;
     let path = (fullPath !== undefined) ? fullPath.split('.') : undefined;
@@ -71,22 +73,10 @@ function getSelectedRowData(table, fullPath, force) {
 function colorizeSelectedRow(table) {
     let index = $('#' + table).find('tr.success').data('index');
 
-    let counter = 0;
-    $('#' + table).find('tbody').find('tr').each(function () {
-        if (counter === index) {
-            $(this).find('td').each(function () {
-//                if($(this).attr('style') ===  'background-color: #cccccc') {
-//                    $(this).attr('style', '');
-//                } else {
-                $(this).attr('style', 'background-color: #cccccc')
-//                }
-            })
-        }
-        if (counter++ !== index) {
-            $(this).find('td').each(function () {
-                $(this).attr('style', '')
-            })
-        }
+    $('#' + table).find('tbody').find('tr').each(function (counter) {
+        $(this).find('td').each(function () {
+            $(this).attr('style', (counter === index) ? 'background-color: #cccccc' : '')
+        })
     });
 }
 
@@ -336,15 +326,10 @@ $(() => {
 
     //Проверка валидности ПК
     function validatePk() {
-        data.state.arrays.SetDK.dk.forEach(pk => {
-            if (pk.shift !== 0) {
-                pk.sts.forEach(sw => {
-                    if (pk.tc === sw.stop) {
-                        pk.lastnumber = sw.num;
-                        pk.lasttype = sw.tf;
-                    }
-                })
-            }
+        setDK.forEach((pk, pkIndex) => {
+            pk.sts.forEach((sw, swIndex) => {
+                data.state.arrays.SetDK.dk[pkIndex].sts[swIndex].trs = (pk.shift === 0) ? false : (pk.tc === sw.stop);
+            })
         })
     }
 
@@ -456,13 +441,14 @@ $(() => {
     //Кнопка для копирования всей информации выбранного ПК
     $('#pkCopyButton').on('click', () => {
         let selected = $('#pkSelect').val();
-        copyArray = Object.assign({}, setDK[selected]);
+        copyPk = JSON.parse(JSON.stringify(setDK[selected]));
     });
 
     //Кнопка для перезаписи строки
     $('#pkPasteButton').on('click', () => {
         let selected = $('#pkSelect').val();
-        setDK[selected] = Object.assign({}, copyArray);
+        if (copyPk.length === 0) return;
+        setDK[selected] = JSON.parse(JSON.stringify(copyPk));
         pkTabFill('pkTable');
     });
 
@@ -488,56 +474,27 @@ $(() => {
     });
 
     //Кнопка для добавления строки
-    $('#switchCopy').on('click', () => {
+    $('#tf').on('change', () => {
         let index = $('#pkTable').find('tr.success').data('index');
         let tf = Number($('#tf').val());
+
+        if (tf === -1) return;
 
         addPkSwitch(index, tf);
         if ((tf === 2) || (tf === 3)) {
             addPkSwitch(index + 1, 7);
         } else if (tf === 4) {
-            //todo TVP12
+            addPkSwitch(index + 1, 5);
+            addPkSwitch(index + 2, 6);
+            addPkSwitch(index + 3, 7);
         }
+        $('#tf').val(-1);
     });
 
     //Кнопка для перезаписи всей информации выбранного ПК
     $('#switchDel').on('click', () => {
         let index = $('#pkTable').find('tr.success').data('index');
-        let selected = $('#pkSelect').val();
-        let oldData = [];
-        let counter = 0;
-        let emptyRow = {line: 0, start: 0, num: 0, tf: 0, stop: 0, plus: false};
-        let currentRow = getSelectedRowData('pkTable', 'sts');
-
-        if ((currentRow === undefined) || (currentRow.line === 1)) return;
-
-        $('#pkTable tbody tr').each(function () {
-            oldData.push(getSelectedRowData('pkTable', 'sts', counter++));
-        });
-
-        let isReplacementPhase = oldData[index].tf === 7;
-
-        //todo 1,2 tvp
-        if (!isReplacementPhase) setDK[selected].tc -= (oldData[index].stop - oldData[index].start);
-
-        oldData.splice(index, 1);
-        oldData.push(emptyRow);
-        oldData.forEach((rec, i) => {
-            if (i === 0) {
-                rec.num = 1;
-            } else if (!checkLastLine(rec)) {
-                isReplacementPhase = oldData[i].tf === 7;
-                let duration = rec.stop - rec.start;
-                rec.start = isReplacementPhase ? oldData[i - 1].start : oldData[i - 1].stop;
-                rec.stop = rec.start + duration;
-            }
-            rec.line = i + 1;
-        });
-
-        setDK[selected].sts = oldData;
-
-        // pkTableValidate();
-        pkTabFill('pkTable');
+        deleteSwitch(index);
     });
 
 //Функционал кнопок на вкладке "Сут. карты"
@@ -595,13 +552,14 @@ $(() => {
     //Кнопка для копирования суточной карты
     $('#skCopyButton').on('click', () => {
         let selected = $('#mapNum').val();
-        copyArray = Object.assign({}, daySets[selected]);
+        copySk = JSON.parse(JSON.stringify(daySets[selected]));
     });
 
     //Кнопка для перезаписи суточной карты
     $('#skPasteButton').on('click', () => {
         let selected = $('#mapNum').val();
-        daySets[selected] = Object.assign({}, copyArray);
+        if (copySk.length === 0) return;
+        daySets[selected] = JSON.parse(JSON.stringify(copySk));
         newTableFill('skTable', skTableFlag);
     });
 
@@ -624,15 +582,15 @@ $(() => {
 //Функционал кнопок на вкладке "Нед. карты"
     //Кнопка для копирования строки
     $('#nkCopyButton').on('click', () => {
-        copyArray = getSelectedRowData('nkTable', 'days').slice();
+        // copyPk = JSON.parse(JSON.stringify(getSelectedRowData('nkTable', 'days')));
     });
 
     //Кнопка для перезаписи строки
     $('#nkPasteButton').on('click', () => {
-        let index = $('#nkTable').find('tr.success').data('index');
-        if (getSelectedRowData('nkTable', 'days') === undefined) return;
-        weekSets[index].days = copyArray.slice();
-        tableFill(weekSets, 'nkTable', nkTableFlag);
+        // let index = $('#nkTable').find('tr.success').data('index');
+        // if (getSelectedRowData('nkTable', 'days') === undefined) return;
+        // weekSets[index].days = JSON.parse(JSON.stringify(copyPk));
+        // tableFill(weekSets, 'nkTable', nkTableFlag);
     });
 
     //Кнопка для загрузки исходных данных
@@ -643,15 +601,15 @@ $(() => {
 //Функционал кнопок на вкладке "Карта года"
     //Кнопка для копирования строки
     $('#gkCopyButton').on('click', () => {
-        copyArray = getSelectedRowData('gkTable', 'days').slice();
+        // copyPk = JSON.parse(JSON.stringify(getSelectedRowData('gkTable', 'days')));
     });
 
     //Кнопка для перезаписи строки
     $('#gkPasteButton').on('click', () => {
-        let index = $('#gkTable').find('tr.success').data('index');
-        if (getSelectedRowData('gkTable', 'days') === undefined) return;
-        monthSets[index].days = copyArray.slice();
-        tableFill(monthSets, 'gkTable', gkTableFlag);
+        // let index = $('#gkTable').find('tr.success').data('index');
+        // if (getSelectedRowData('gkTable', 'days') === undefined) return;
+        // monthSets[index].days = JSON.parse(JSON.stringify(copyPk));
+        // tableFill(monthSets, 'gkTable', gkTableFlag);
     });
 
     //Кнопка для загрузки исходных данных
@@ -663,14 +621,14 @@ $(() => {
 
     //Кнопка для копирования строки
     $('#kvCopyButton').on('click', () => {
-        copyArray = Object.assign({}, getSelectedRowData('kvTable'));
+        copyPk = JSON.parse(JSON.stringify(getSelectedRowData('kvTable')));
     });
 
     //Кнопка для перезаписи строки
     $('#kvPasteButton').on('click', () => {
         let index = $('#kvTable').find('tr.success').data('index');
         if (getSelectedRowData('kvTable') === undefined) return;
-        stageSets[index] = Object.assign({}, copyArray);
+        stageSets[index] = JSON.parse(JSON.stringify(copyPk));
         newTableFill('kvTable', kvTableFlag);
     });
 
@@ -801,9 +759,9 @@ $(() => {
 function loadData(newData, firstLoadFlag) {
 
     // console.log(newData);
-    let coords = newData.state.dgis;
-    points.Y = coords.substring(0, coords.indexOf(','));
-    points.X = coords.substring(coords.indexOf(',') + 1, coords.length);
+    let coords = newData.state.dgis.split(',');
+    points.Y = coords[0];
+    points.X = coords[1];
     data = newData;
     unmodifiedData = JSON.parse(JSON.stringify(data));
 
@@ -1229,7 +1187,7 @@ function tableFill(set, table, staticFlag) {
     });
 
     let counter = -1;
-    $('#' + table + ' tbody tr').each(function () {
+    $(`#${table} tbody tr`).each(function () {
         let dayCounter = 0;
         counter++;
         $(this).find('td').each(function () {
@@ -1245,7 +1203,7 @@ function tableFill(set, table, staticFlag) {
         })
     });
 
-    $('#' + table + ' thead tr th').each(function () {
+    $(`#${table} thead th`).each(function () {
         $(this).attr('style', 'text-align: center; min-width: 45px;')
     });
 
@@ -1256,7 +1214,7 @@ function tableFill(set, table, staticFlag) {
 function tableChange(set, table, daysFlag) {
     $('#' + table).on('change', () => {
         let counter = 0;
-        $('#' + table + ' tbody tr').each(function () {
+        $(`#${table} tbody tr`).each(function () {
             let setArr = [];
             $(this).find('td').each(function () {
                 let value = Number($(this).find('input').val());
@@ -1272,7 +1230,7 @@ function tableChange(set, table, daysFlag) {
 function anotherTableFill(table, tableFlag) {
     $('#' + table).bootstrapTable('removeAll')
         .bootstrapTable('append', (tableFlag ? data.state.arrays.SetupDK : data.state.arrays.SetTimeUse.uses));
-    $('#' + table + ' tbody tr').each(function () {
+    $(`#${table} tbody tr`).each(function () {
         let counter = 0;
         $(this).find('td').each(function () {
             let value = $(this).text();
@@ -1293,11 +1251,11 @@ function anotherTableFill(table, tableFlag) {
 function anotherTableChange(table, tableFlag) {
     $('#' + table).on('change', () => {
         let names = [];
-        $('#' + table + ' thead th').each(function () {
+        $(`#${table} thead th`).each(function () {
             names.push($(this).attr('data-field'));
         });
         let recCounter = 0;
-        $('#' + table + ' tbody tr').each(function () {
+        $(`#${table} tbody tr`).each(function () {
             let counter = -1;
             $(this).find('td').each(function () {
                 let value = $(this).find('input').val();
@@ -1327,7 +1285,7 @@ function newTableFill(table, tableFlag) {
     });
 
     let counter = -1;
-    $('#' + table + ' tbody tr').each(function () {
+    $(`#${table} tbody tr`).each(function () {
         let dayCounter = 0;
         let endFlag = false;
         counter++;
@@ -1384,7 +1342,7 @@ function skTableChange(table) {
     $('#' + table).on('change', () => {
         let selected = $('#mapNum').val();
         let tableData = [];
-        $('#' + table + ' tbody tr').each(function () {
+        $(`#${table} tbody tr`).each(function () {
             let rec = [];
             $(this).find('td').each(function () {
                 $(this).find('input').each(function () {
@@ -1402,7 +1360,7 @@ function skTableChange(table) {
         });
         data.state.arrays.DaySets.daysets = daySets;
         newTableFill(table, true);
-        console.log(data.state);
+        // console.log(data.state);
     });
     skFlag = false;
 }
@@ -1411,7 +1369,7 @@ function skTableChange(table) {
 function kvTableChange(table) {
     $('#' + table).on('change', () => {
         let tableData = [];
-        $('#' + table + ' tbody tr').each(function () {
+        $(`#${table} tbody tr`).each(function () {
             let rec = [];
             $(this).find('td').each(function () {
                 let text = $(this)[0].innerText;
@@ -1484,7 +1442,7 @@ function pkTabFill(table) {
     $('#tpu').find('option').each(function () {
         $(this).removeAttr('selected');
     });
-    $('#tpu option[value="' + currPK.tpu + '"]').attr('selected', 'selected');
+    $('#tpu').val(currPK.tpu);
     $('#razlen').prop('checked', currPK.razlen);
     $('#desc').val(currPK.desc);
 
@@ -1580,7 +1538,7 @@ function pkTabFill(table) {
 
                 inputDiff = getCycleDiff(inputDiff, currSts, switchCount, difLen);
 
-                $('#' + table + ' tbody tr').each(function (index) {
+                $(`#${table} tbody tr`).each(function (index) {
                     //если переключатель не выбран, изменять первый
                     if (this.className === 'success') {
                         let value = Number($('[class~=duration' + index + ']').val());
@@ -1602,6 +1560,7 @@ function pkTabFill(table) {
                 let prevShift = Number($('[class~=start0]').val());
                 let cycleTime = Number($('#tc').val());
                 let currSts = setDK[selectedPk].sts;
+                clearTransition(currSts);
 
                 if (shift >= cycleTime) {
                     shift -= cycleTime;
@@ -1638,9 +1597,9 @@ function pkTabFill(table) {
 
                 let transition = checkTransition(currSts);
                 if (transition.length !== 0) {
-                    transition.forEach(trn => {
-                        currSts[trn].stop = cycleTime;
-                        makeTransition(currSts[trn].num, currSts[trn].tf);
+                    transition.forEach(trs => {
+                        currSts[trs].stop = cycleTime;
+                        makeTransition(currSts, trs);
                     });
                 }
             });
@@ -1661,7 +1620,7 @@ function pkTabFill(table) {
         $('#' + table).bootstrapTable('showColumn', 'stop');
     }
 
-    $('#' + table + ' tbody tr').each(function (index) {
+    $(`#${table} tbody tr`).each(function (index) {
         $(this).find('td').each(function (switchIndex) {
             let record = currPK.sts[index];
             switch (switchIndex) {
@@ -1670,17 +1629,20 @@ function pkTabFill(table) {
                     break;
                 case 1 :
                     $(this).append(
-                        '<input class="form-control border-0 start' + index + '" name="number" type="number"' +
+                        `<input class="form-control border-0 start${index}" name="number" type="number"` +
                         'style="max-width: 55px;" value="' + record.start + '"/>'
                     );
                     $(this).find('input').on('change', function (evt) {
-                        let tf = Number($('[class~=tf' + index + ']').val());
+                        let tf = Number($(`[class~=tf${index}]`).val());
                         if ((tf === 2) || (tf === 3)) {
                             if (Number($('[class~=tf' + (index + 1) + ']').val()) === 7) {
                                 currPK.sts[index + 1].start = evt.target.valueAsNumber;
                             }
                         } else if (tf === 4) {
-                            //todo tvp 1,2
+                            let replacementCount = findReplacementCount(currPK.sts, index);
+                            for (let i = index; i < (index + replacementCount); i++) {
+                                currPK.sts[i + 1].start = evt.target.valueAsNumber;
+                            }
                         }
                     });
                     break;
@@ -1704,22 +1666,32 @@ function pkTabFill(table) {
                     });
                     $(this).find('select').on('change', function (evt) {
                         const difLen = $('#razlen').prop('checked');
+
                         $('[class~=duration' + index + ']').prop('disabled', false);
                         if ((evt.target.value === '1') || (evt.target.value === '8')) {
-                            $('[class~=num' + evt.target.className.substr(2) + ']')
+                            $('[class~=num' + index + ']')
                                 .val(0)
                                 .prop('disabled', true)
                                 .change();
+                        } else if ((evt.target.value === '2') || (evt.target.value === '3')) {
+                            deleteSwitch(index);
+                            addPkSwitch(index - 1, Number(evt.target.value));
+                            addPkSwitch(index,7);
+                        } else if (evt.target.value === '4') {
+                            deleteSwitch(index);
+                            addPkSwitch(index - 1, 4);
+                            addPkSwitch(index, 5);
+                            addPkSwitch(index + 1, 6);
+                            addPkSwitch(index + 2, 7);
                         } else {
                             if ((evt.target.value === '5') || (evt.target.value === '6') || (evt.target.value === '7')) {
                                 $('[class~=duration' + index + ']').prop('disabled', !difLen)
                             }
                             $('[class~=num' + index + ']')
-                                .val(1)
+                                .val((Number($('[class~=num' + index + ']').val()) === 0) ? 1 : $('[class~=num' + index + ']').val())
                                 .prop('disabled', false)
                                 .change();
                         }
-
                     });
                     $(this).find('option[value="' + record.tf + '"]').attr('selected', 'selected');
                     break;
@@ -1759,7 +1731,10 @@ function pkTabFill(table) {
                             if (((currTf === 2) || (currTf === 3)) && (Number($(`[class~=tf${swId + 1}`).val()) === 7)) {
                                 $(`[class~=duration${swId + 1}`).val($(`[class~=duration${swId}`).val());
                             } else if (currTf === 4) {
-                                //todo обработка 1,2 твп
+                                let replCount = findReplacementCount(currSts, swId);
+                                for (let i = 0; i < replCount; i++) {
+                                    $(`[class~=duration${swId + 1 + i}`).val($(`[class~=duration${swId}`).val());
+                                }
                             }
                         }
 
@@ -1777,7 +1752,8 @@ function pkTabFill(table) {
                                 let tf = Number($('[class~=tf' + (lastSwitch ? 0 : swId + 1) + ']').val());
                                 if (!lastSwitch) {
                                     if ((tf === 5) || (tf === 6)) {
-                                        //todo 1,2 твп
+                                        let replCount = findReplacementCount(currSts, swId);
+                                        index = (((swId + replCount) === currSts.length - 1) || (checkLastLine(currSts[swId + replCount]))) ? 0 : swId + replCount;
                                     } else if (tf === 7) {
                                         index = (((swId + 2) === currSts.length - 1) || (checkLastLine(currSts[swId + 2]))) ? 0 : swId + 2;
                                     } else {
@@ -1788,8 +1764,9 @@ function pkTabFill(table) {
                                 $('[class~=duration' + index + ']').val(newValue).change();
                             } else if (controlType === '1') {
                                 // Тип ПУ = ЛПУ
-                                $('#tc').val(cycleTime - inputDiff);
+                                if ((cycleTime - inputDiff) > 254) inputDiff = cycleTime - 254;
                                 setDK[Number($('#pkSelect').val())].tc -= inputDiff;
+                                $('#tc').val(cycleTime - inputDiff).change();
                             }
                         }
                         // }
@@ -1842,7 +1819,7 @@ function getCycleDiff(cycle, currSts, switchCount, difLen) {
             case 2:
             case 3:
             case 4:
-                cycle -= findMaxTvpDuration(i, tf);
+                cycle -= findMaxTvpDuration(currSts, i, tf);
                 break;
             case 5:
             case 6:
@@ -1865,11 +1842,26 @@ function getCycleDiff(cycle, currSts, switchCount, difLen) {
     return cycle;
 }
 
-function findMaxTvpDuration(index, tf) {
+function findReplacementCount(currSts, swId) {
+    let replCounter = 0;
+    const replNums = [5, 6, 7];
+    for (let i = swId + 1; i < currSts.length; i++) {
+        (replNums.indexOf(currSts[i].tf) !== -1) ? replCounter++ : i = currSts.length;
+
+    }
+    return replCounter;
+}
+
+function findMaxTvpDuration(currSts, index, tf) {
     let tvpDuration = Number($(`[class~=duration${index}`).val());
-    if (index === 11) return tvpDuration;
+    if ((index === 11) || (!$('#razlen').prop('checked'))) return tvpDuration;
     if (tf === 4) {
-        //TODO добавить обработку 1,2 ТВП
+        let replacementDurationArray = [];
+        let replacementCount = findReplacementCount(currSts, index);
+        for (let i = index; i < (index + replacementCount); i++) {
+            replacementDurationArray.push((Number($(`[class~=tf${i + 1}`).val()) === 7) ? Number($(`[class~=duration${i + 1}`).val()) : 0)
+        }
+        return Math.max(...replacementDurationArray, tvpDuration);
     } else {
         let replacementDuration = (Number($(`[class~=tf${index + 1}`).val()) === 7) ? Number($(`[class~=duration${index + 1}`).val()) : 0;
         return Math.max(tvpDuration, replacementDuration);
@@ -1888,6 +1880,7 @@ function validatePkByDuration(currSts) {
 
             //TODO зам может быть больше ТВП => на последнем заме нужно знать масимальную длительность всего ТВП
             if ((tf !== 5) && (tf !== 6) && (tf !== 7)) {
+
                 $(`[class~=start${index}]`).val((index === 0) ?
                     shift :
                     (Number($(`[class~=start${index - 1}]`).val()) + Number($(`[class~=duration${index - 1}]`).val())));
@@ -1917,14 +1910,14 @@ function generateNewPk(currSts) {
     currSts[0].stop = ((cycleTime % 2) === 0) ? cycleTime / 2 : (cycleTime - 1) / 2;
     currSts[1].num = 1;
     $('[class~=num0]').val(1);
-    $('[class~=duration0]').val(((cycleTime % 2) === 0) ? cycleTime / 2 : (cycleTime - 1) / 2);
+    $('[class~=duration0]').val(currSts[0].stop);
 
     currSts[1].start = ((cycleTime % 2) === 0) ? cycleTime / 2 : (cycleTime + 1) / 2;
     currSts[1].stop = cycleTime;
     currSts[1].num = 2;
     $('[class~=tf1]').prop('disabled', false);
     $('[class~=num1]').val(2).prop('disabled', false);
-    $('[class~=duration1]').val(((cycleTime % 2) === 0) ? cycleTime / 2 : (cycleTime + 1) / 2).prop('disabled', false);
+    $('[class~=duration1]').val(currSts[1].start).prop('disabled', false);
 }
 
 function addPkSwitch(index, tf) {
@@ -1966,6 +1959,76 @@ function addPkSwitch(index, tf) {
     $(`[class~=duration${index + 1}]`).val(4).change();
 }
 
+function deleteSwitch(index) {
+    let selected = $('#pkSelect').val();
+    let oldData = [];
+    let emptyRow = {line: 0, start: 0, num: 0, tf: 0, stop: 0, plus: false};
+    let currentRow = setDK[selected].sts[index];//getSelectedRowData('pkTable', 'sts');
+    const controlType = $('#tpu').val();
+    const replArr = [5, 6, 7];
+
+    if ((currentRow === undefined) || (currentRow.line === 1)) return;
+
+    $('#pkTable tbody tr').each(function (counter) {
+        oldData.push(getSelectedRowData('pkTable', 'sts', counter));
+    });
+
+    const deletedTf = oldData[index].tf;
+    let isReplacementPhase = (replArr.indexOf(deletedTf) !== -1);
+
+    if ((!isReplacementPhase) && (controlType === '1')) {
+        setDK[selected].tc -= (oldData[index].stop - oldData[index].start);
+    }
+    if ((deletedTf === 2) || (deletedTf === 3) || (deletedTf === 4)) {
+        let replCount = findReplacementCount(setDK[selected].sts, index);
+        for (let i = index; i < (index + replCount); i++) {
+            deleteSwitch(index + 1);
+        }
+        oldData = [];
+        $('#pkTable tbody tr').each(function (counter) {
+            oldData.push(getSelectedRowData('pkTable', 'sts', counter));
+        });
+    }
+
+    oldData.splice(index, 1);
+    oldData.push(emptyRow);
+    oldData.forEach((rec, i) => {
+        if (i === 0) {
+            rec.num = 1;
+        } else if (!checkLastLine(rec)) {
+            isReplacementPhase = oldData[i].tf === 7;
+            let duration = rec.stop - rec.start;
+            rec.start = isReplacementPhase ? oldData[i - 1].start : oldData[i - 1].stop;
+            rec.stop = rec.start + duration;
+        }
+        rec.line = i + 1;
+    });
+
+    setDK[selected].sts = oldData;
+
+    pkTabFill('pkTable');
+
+    if ((!isReplacementPhase) && (controlType === '0')) {
+        let i = (checkLastLine(setDK[selected].sts[index])) ? 0 : index;
+        let replCount = findReplacementCount(setDK[selected].sts, index);
+        if (replArr.indexOf(deletedTf) !== -1) {
+            if ($('#razlen').prop('checked')) {
+
+            } else {
+                return;
+            }
+        } else if ((deletedTf === 2) || (deletedTf === 3) || (deletedTf === 4)) {
+            for (i = index; i < (index + replCount); i++) {
+                deleteSwitch(index);
+            }
+            i = (checkLastLine(setDK[selected].sts[index])) ? 0 : index;
+        }
+        setDK[selected].sts[i].stop += (currentRow.stop - currentRow.start);
+        $(`[class~=duration${i - replCount}]`)
+            .val(Number($(`[class~=duration${i - replCount}]`).val()) + (currentRow.stop - currentRow.start)).change();
+    }
+}
+
 //Считывание количества переключений
 function getSwitchCount(currSts) {
     let switchCount = 0;
@@ -1982,9 +2045,12 @@ function checkLastLine(sw) {
     return (sw.num === 0) && ((sw.tf === 0) || (allowZero.indexOf(sw.tf) !== -1));
 }
 
-function makeTransition(num, tf) {
-    setDK[Number($('#pkSelect').val())].lastnumber = num;
-    setDK[Number($('#pkSelect').val())].lasttype = tf;
+function clearTransition(currSts) {
+    currSts.forEach(sw => sw.trs = false)
+}
+
+function makeTransition(currSts, trs) {
+    currSts[trs].trs = true;
 }
 
 function checkTransition(currSts) {
@@ -2055,6 +2121,7 @@ function pkTableChange(table) {
         let currSts = setDK[selected].sts;
         let value = Number(evt.target.value);
         let rowIndex = evt.target.parentElement.parentElement.rowIndex;
+        if (rowIndex === -1) return;
 
         if (evt.target.className.includes('start')) {
             currSts[rowIndex - 1].start = value;
@@ -2068,7 +2135,7 @@ function pkTableChange(table) {
             currSts[rowIndex - 1].plus = value;
         }
 
-        // $('#' + table + ' tbody tr').each(function (index) {
+        // $(`#${table} tbody tr`).each(function (index) {
         //     $(this).find('td').each(function (switchIndex) {
         //         switch (switchIndex) {
         //             case 1 :
