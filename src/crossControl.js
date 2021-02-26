@@ -103,6 +103,7 @@ $(() => {
                 if (localStorage.getItem('login') !== data.user) {
                     loadData(data, false);
                 } else {
+                    unmodifiedData = JSON.parse(JSON.stringify(data));
                     disableControl('forceSendButton', true);
                     disableControl('sendButton', false);
                 }
@@ -480,13 +481,16 @@ $(() => {
 
         if (tf === -1) return;
 
-        addPkSwitch(index, tf);
         if ((tf === 2) || (tf === 3)) {
-            addPkSwitch(index + 1, 7);
+            addPkSwitch(index, tf, (tf === 2) ? 2 : 3);
+            addPkSwitch(index + 1, 7, 1);
         } else if (tf === 4) {
-            addPkSwitch(index + 1, 5);
-            addPkSwitch(index + 2, 6);
-            addPkSwitch(index + 3, 7);
+            addPkSwitch(index, tf, 4);
+            addPkSwitch(index + 1, 5, 2);
+            addPkSwitch(index + 2, 6, 3);
+            addPkSwitch(index + 3, 7, 1);
+        } else {
+            addPkSwitch(index, tf);
         }
         $('#tf').val(-1);
     });
@@ -1122,6 +1126,7 @@ function pkTabFill2(newData, firstLoadFlag) {
                 $('#shift').prop('disabled', false);
                 $('#tc').prop('disabled', false);
             }
+            $('#razlen').change();
         });
         setChange('razlen', 'checkbox', 'arrays.SetDK.dk', !numberFlag, longPathFlag);
         setChange('desc', 'input', 'arrays.SetDK.dk', !numberFlag, longPathFlag);
@@ -1299,10 +1304,10 @@ function newTableFill(table, tableFlag) {
                 if ((prevArr.end.hour === 24) && (prevArr.end.min === 0)) endFlag = true;
             }
             switch (dayCounter++) {
-                case 0 :
+                case 0:
                     $(this).append(counter + 1);
                     break;
-                case 1 :
+                case 1:
                     if (endFlag) {
                         $(this.append('00:00'));
                     } else {
@@ -1310,7 +1315,7 @@ function newTableFill(table, tableFlag) {
                             ((counter === 0) ? '00' : handsomeNumbers((tableFlag ? prevArr.min : prevArr.end.min))));
                     }
                     break;
-                case 2 :
+                case 2:
                     $(this).append(
                         '<div class="container"><div class="row"><input class="form-control border-0 col-md-5" ' +
                         'style="max-width: 45px;" name="number" type="number" value="' +
@@ -1320,13 +1325,13 @@ function newTableFill(table, tableFlag) {
                         '" required/></div></div>'
                     );
                     break;
-                case 3 :
+                case 3:
                     $(this).append(
                         '<input class="form-control border-0" name="number" type="number" ' +
                         'style="max-width: 50px;" value="' + (tableFlag ? currArr.npk : currArr.lenTVP) + '"/>'
                     );
                     break;
-                case 4 :
+                case 4:
                     $(this).append(
                         '<input class="form-control border-0" name="number" type="number" ' +
                         'style="max-width: 50px;" value="' + currArr.lenMGR + '"/>'
@@ -1454,9 +1459,9 @@ function pkTabFill(table) {
         // let $table = $('#pkTable');
         // let cycleTime = Number($('#tc').val()) - Number($('#shift').val());
         // let shift = $('#shift').val();
-        let difLen = $('#razlen').prop('checked');
         // let helpArray = ['start', 'tf', 'num', 'duration', 'plus'];
         // let helpMap = {start: true, tf: true, num: true, duration: true, plus: true};
+        let difLen = $('#razlen').prop('checked');
 
         currPK.sts.forEach(function (row, index) {
             let disabledStatusMap = {start: true, tf: true, num: true, duration: true, plus: true};
@@ -1472,16 +1477,17 @@ function pkTabFill(table) {
                 }
             }
 
-            disabledStatusMap.plus = !difLen;
-
             for (const [key, value] of Object.entries(disabledStatusMap)) {
                 $('[class~=' + key + index + ']')[0].disabled = value;
             }
 
         });
 
+        $('#razlen').change();
+
         if (firstLoad) {
             $('#tc').on('change', () => {
+                difLen = $('#razlen').prop('checked');
                 let currPk = Number($('#pkSelect').val());
                 let currSts = setDK[currPk].sts;
                 let shift = Number($('#shift').val());
@@ -1593,6 +1599,7 @@ function pkTabFill(table) {
                         $('[class~=start' + index + ']').val(sw.start);
                         $('[class~=stop' + index + ']').val(sw.stop);
                     }
+                    sw.dt = 0;
                 });
 
                 let transition = checkTransition(currSts);
@@ -1605,8 +1612,13 @@ function pkTabFill(table) {
             });
 
             $('#razlen').on('change', () => {
-                currPK.sts.forEach(function (row, index) {
-                    if (index !== 11) $('[class~=plus' + index + ']')[0].disabled = !$('#razlen').prop('checked');
+                setDK[$('#pkSelect').val()].sts.forEach(function (row, index) {
+                    if (row.plus === '') row.plus = false;
+                    if ((row.tf > 4) && (row.tf < 8)) {
+                        $('[class~=duration' + index + ']')[0].disabled = !$('#razlen').prop('checked');
+                    } else if ((row.tf > 1) && (row.tf < 5)) {
+                        $('[class~=plus' + index + ']')[0].disabled = ($('#tpu').val() === '0') ? !$('#razlen').prop('checked') : true;
+                    }
                 })
             });
         }
@@ -1624,10 +1636,10 @@ function pkTabFill(table) {
         $(this).find('td').each(function (switchIndex) {
             let record = currPK.sts[index];
             switch (switchIndex) {
-                case 0 :
+                case 0:
                     $(this).append(record.line);
                     break;
-                case 1 :
+                case 1:
                     $(this).append(
                         `<input class="form-control border-0 start${index}" name="number" type="number"` +
                         'style="max-width: 55px;" value="' + record.start + '"/>'
@@ -1646,7 +1658,7 @@ function pkTabFill(table) {
                         }
                     });
                     break;
-                case 2 :
+                case 2:
                     $(this).append(
                         '<select class="tf' + index + '">' +
                         '<option value="0"> </option>' +
@@ -1674,15 +1686,19 @@ function pkTabFill(table) {
                                 .prop('disabled', true)
                                 .change();
                         } else if ((evt.target.value === '2') || (evt.target.value === '3')) {
+                            let saveStart = Number($('[class~=start' + index + ']').val());
+                            let saveStop = saveStart + Number($('[class~=duration' + index + ']').val());
                             deleteSwitch(index);
-                            addPkSwitch(index - 1, Number(evt.target.value));
-                            addPkSwitch(index,7);
+                            addPkSwitch(index - 1, Number(evt.target.value), (evt.target.value === '2') ? 2 : 3, saveStart, saveStop);
+                            addPkSwitch(index, 7, 1, saveStart, saveStop);
                         } else if (evt.target.value === '4') {
+                            let saveStart = Number($('[class~=start' + index + ']').val());
+                            let saveStop = saveStart + Number($('[class~=duration' + index + ']').val());
                             deleteSwitch(index);
-                            addPkSwitch(index - 1, 4);
-                            addPkSwitch(index, 5);
-                            addPkSwitch(index + 1, 6);
-                            addPkSwitch(index + 2, 7);
+                            addPkSwitch(index - 1, 4, 4, saveStart, saveStop);
+                            addPkSwitch(index, 5, 2, saveStart, saveStop);
+                            addPkSwitch(index + 1, 6, 3, saveStart, saveStop);
+                            addPkSwitch(index + 2, 7, 1, saveStart, saveStop);
                         } else {
                             if ((evt.target.value === '5') || (evt.target.value === '6') || (evt.target.value === '7')) {
                                 $('[class~=duration' + index + ']').prop('disabled', !difLen)
@@ -1695,13 +1711,13 @@ function pkTabFill(table) {
                     });
                     $(this).find('option[value="' + record.tf + '"]').attr('selected', 'selected');
                     break;
-                case 3 :
+                case 3:
                     $(this).append(
                         '<input class="form-control border-0 num' + index + '" name="number" type="number"' +
                         'style="max-width: 55px;" value="' + record.num + '"/>'
                     );
                     break;
-                case 4 :
+                case 4:
                     $(this).attr('class', 'justify-content-center');
                     $(this).append(
                         '<input class="form-control border-0 duration' + index + '" name="number" type="number"' +
@@ -1727,7 +1743,9 @@ function pkTabFill(table) {
                             return;
                         }
 
-                        if (!difLen) {
+                        if (difLen) {
+
+                        } else {
                             if (((currTf === 2) || (currTf === 3)) && (Number($(`[class~=tf${swId + 1}`).val()) === 7)) {
                                 $(`[class~=duration${swId + 1}`).val($(`[class~=duration${swId}`).val());
                             } else if (currTf === 4) {
@@ -1774,7 +1792,7 @@ function pkTabFill(table) {
                         validatePkByDuration(currSts);
                     });
                     break;
-                case 5 :
+                case 5:
                     $(this).append(
                         '<input class="form-control border-0 plus' + index + '" name="text" type="text"' +
                         'style="max-width: 55px;" value="' + (record.plus ? '+' : '') + '"/>'
@@ -1809,6 +1827,7 @@ function pkTabFill(table) {
 
     if (tableType) pkTableDurationFunctional();
     pkTableValidate();
+    $('#razlen').change();
     data.state.arrays.SetDK.dk[selected] = setDK[selected];
 }
 
@@ -1832,7 +1851,6 @@ function getCycleDiff(cycle, currSts, switchCount, difLen) {
                     $('[class~=start' + i + ']').val(currSts[i].start);
                     $('[class~=duration' + i + ']').val(currSts[i].stop - currSts[i].start);
                 }
-
                 break;
             default:
                 cycle -= $('[class~=duration' + (i) + ']').val();
@@ -1853,13 +1871,13 @@ function findReplacementCount(currSts, swId) {
 }
 
 function findMaxTvpDuration(currSts, index, tf) {
-    let tvpDuration = Number($(`[class~=duration${index}`).val());
-    if ((index === 11) || (!$('#razlen').prop('checked'))) return tvpDuration;
+    let tvpDuration = Number($(`[class~=duration${index}]`).val());
+    // if ((index === 11) || (!$('#razlen').prop('checked'))) return tvpDuration;
     if (tf === 4) {
         let replacementDurationArray = [];
         let replacementCount = findReplacementCount(currSts, index);
         for (let i = index; i < (index + replacementCount); i++) {
-            replacementDurationArray.push((Number($(`[class~=tf${i + 1}`).val()) === 7) ? Number($(`[class~=duration${i + 1}`).val()) : 0)
+            replacementDurationArray.push(Number($(`[class~=duration${i + 1}`).val()));
         }
         return Math.max(...replacementDurationArray, tvpDuration);
     } else {
@@ -1920,7 +1938,7 @@ function generateNewPk(currSts) {
     $('[class~=duration1]').val(currSts[1].start).prop('disabled', false);
 }
 
-function addPkSwitch(index, tf) {
+function addPkSwitch(index, tf, num, start, stop) {
     function sortFunc(a, b) {
         return a[0] - b[0];
     }
@@ -1930,11 +1948,12 @@ function addPkSwitch(index, tf) {
     let currSts = setDK[selected].sts;
     let newRow = {
         line: index,
-        start: currSts[(index === 0) ? 11 : (index)].stop,
-        num: ((tf === 1) || (tf === 8)) ? 0 : 1,
+        start: (start === undefined) ? (currSts[(index === 0) ? 11 : (index)].stop) : start,
+        num: ((tf === 1) || (tf === 8)) ? 0 : (((tf > 1) && (tf < 8)) ? num : 1),
         tf: tf,
-        stop: currSts[(index === 0) ? 11 : (index)].stop + 4,
-        plus: $('#razlen').prop('checked')
+        stop: (stop === undefined) ? (currSts[(index === 0) ? 11 : (index)].stop + 4) : stop,
+        plus: currSts[(index === 0) ? 11 : (index)].plus,
+        dt: 0
     };
 
     let map = new Map();
@@ -1956,7 +1975,7 @@ function addPkSwitch(index, tf) {
     setDK[selected].sts = currSts;
     pkTabFill('pkTable');
 
-    $(`[class~=duration${index + 1}]`).val(4).change();
+    $(`[class~=duration${index + 1}]`).val((start === undefined) ? 4 : (stop - start)).change();
 }
 
 function deleteSwitch(index) {
@@ -2008,15 +2027,16 @@ function deleteSwitch(index) {
 
     pkTabFill('pkTable');
 
+    isReplacementPhase = (replArr.indexOf(deletedTf) !== -1);
     if ((!isReplacementPhase) && (controlType === '0')) {
         let i = (checkLastLine(setDK[selected].sts[index])) ? 0 : index;
         let replCount = findReplacementCount(setDK[selected].sts, index);
         if (replArr.indexOf(deletedTf) !== -1) {
-            if ($('#razlen').prop('checked')) {
-
-            } else {
-                return;
-            }
+            // if ($('#razlen').prop('checked')) {
+            //
+            // } else {
+            //     return;
+            // }
         } else if ((deletedTf === 2) || (deletedTf === 3) || (deletedTf === 4)) {
             for (i = index; i < (index + replCount); i++) {
                 deleteSwitch(index);
@@ -2049,8 +2069,11 @@ function clearTransition(currSts) {
     currSts.forEach(sw => sw.trs = false)
 }
 
-function makeTransition(currSts, trs) {
-    currSts[trs].trs = true;
+function makeTransition(currSts, index) {
+    currSts[index].trs = true;
+    if (((currSts[index].tf > 1) && (currSts[index].tf < 8)) && ($('#razlen').prop('checked'))) {
+        currSts[index].dt = Number($(`[class~=start${index}]`).val()) + Number($(`[class~=duration${index}]`).val()) - Number($('#tc').val())
+    }
 }
 
 function checkTransition(currSts) {
@@ -2105,10 +2128,11 @@ function pkTableValidate() {
         if (shift === 0) {
             $('[class~=duration' + index + ']').val(sw.stop - sw.start);
         } else if (sw.stop === cycleTime) {
-            if ((index !== currSts.length) && (!checkLastLine(currSts[index + 1]))) {
-                $('[class~=duration' + index + ']').val(cycleTime - Math.abs(currSts[index + 1].start - sw.start));
+            let lastLine = !((index !== currSts.length) && (!checkLastLine(currSts[index + 1])));
+            if ((sw.tf > 1) && (sw.tf < 8)) {
+                $('[class~=duration' + index + ']').val((sw.stop - sw.start) + sw.dt);
             } else {
-                $('[class~=duration' + index + ']').val(cycleTime - Math.abs(currSts[0].start - sw.start));
+                $('[class~=duration' + index + ']').val(cycleTime - Math.abs(currSts[lastLine ? 0 : index + 1].start - sw.start));
             }
         }
     });
@@ -2132,7 +2156,7 @@ function pkTableChange(table) {
             // } else if (evt.target.className.includes('duration')) {
             //     $('[class~=start' + (rowIndex - 1) + ']').change();
         } else if (evt.target.className.includes('plus')) {
-            currSts[rowIndex - 1].plus = value;
+            currSts[rowIndex - 1].plus = evt.target.value === '+';
         }
 
         // $(`#${table} tbody tr`).each(function (index) {

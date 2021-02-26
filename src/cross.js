@@ -677,6 +677,7 @@ let fakeTimer;
 const maxTableSize = 12;
 let currentIndex = 0;
 let prevIndex = 0;
+let prevPhase = -1;
 
 function buildExpandedTable(data) {
     let $expandedTable = $('#expandedTable');
@@ -692,8 +693,15 @@ function buildExpandedTable(data) {
         column7: 0
     };
 
+    if (prevPhase === toWrite.column4) return;
+    prevPhase = toWrite.column4;
+
     if ($expandedTable.bootstrapTable('getData').length !== 0) toWrite.column2 = dataArr[prevIndex].column2;
     switch (toWrite.column4) {
+        case 0:
+            toWrite.column1 = 'ЛР';
+            toWrite.column4 = 'ЛР';
+            break;
         case 9:
             toWrite.column4 = 'Пром. такт';
             toWrite.column2 = data.tdk;
@@ -719,13 +727,14 @@ function buildExpandedTable(data) {
 
     // if (($expandedTable.bootstrapTable('getData').length !== 0) && (toWrite.column4 !== 'Пром. такт')) toWrite.column2 -= toWrite.column3;
 
-    if (toWrite.column1 === 0) toWrite.column1 = 'ЛР';
+    // if (toWrite.column1 === 0) toWrite.column1 = 'ЛР';
     clearInterval(fakeTimer);
 
     if (currentIndex === maxTableSize) currentIndex = 0;
 
     if (toWrite.column4 === 'Пром. такт') {
-        if ($expandedTable.bootstrapTable('getData').length !== maxTableSize) {
+    // if (isNaN(toWrite.column4)) {
+        if ($expandedTable.bootstrapTable('getData').length < maxTableSize) {
             $expandedTable.bootstrapTable('append', toWrite);
         } else {
             $expandedTable.bootstrapTable('updateRow', {index: currentIndex, row: Object.assign({}, toWrite)});
@@ -751,7 +760,24 @@ function buildExpandedTable(data) {
     } else if ($expandedTable.bootstrapTable('getData').length !== 0) {
         toWrite.column3 = data.tdk - dataArr[prevIndex].column2;
 
-        $expandedTable.bootstrapTable('updateRow', {index: currentIndex, row: Object.assign({}, toWrite)});
+        if (isNaN(toWrite.column4)) {
+            if ($expandedTable.bootstrapTable('getData').length < maxTableSize) {
+                $expandedTable.bootstrapTable('append', toWrite);
+            } else {
+                $expandedTable.bootstrapTable('updateRow', {index: currentIndex, row: Object.assign({}, toWrite)});
+            }
+        } else {
+            if (dataArr[currentIndex].column4 === 'Пром. такт') {
+                $expandedTable.bootstrapTable('updateRow', {index: currentIndex, row: Object.assign({}, toWrite)});
+            } else {
+                if ($expandedTable.bootstrapTable('getData').length < maxTableSize) {
+                    $expandedTable.bootstrapTable('append', toWrite);
+                } else {
+                    $expandedTable.bootstrapTable('updateRow', {index: currentIndex, row: Object.assign({}, toWrite)});
+                }
+            }
+        }
+
         colorizeRow(currentIndex);
         toWrite.column5++;
         toWrite.column6 = toWrite.column3 + toWrite.column5;
@@ -764,7 +790,7 @@ function buildExpandedTable(data) {
             colorizeRow(currentIndex - 1);
             console.log('updateRow ' + (currentIndex - 1) + ' ', toWrite);
         }, 1000);
-        prevIndex = currentIndex;
+        if (currentIndex < $expandedTable.bootstrapTable('getData').length) prevIndex = currentIndex;
         currentIndex++;
     }
 
