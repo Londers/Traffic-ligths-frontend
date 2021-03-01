@@ -42,7 +42,7 @@ let points = {
 let editFlag = false;
 let ws;
 
-//Получение информации из выбранной строки
+// Получение информации из выбранной строки
 function getSelectedRowData(table, fullPath, force) {
     let index = (force === undefined) ? $('#' + table).find('tr.success').data('index') : force;
     if (force === undefined) tempIndex = index;
@@ -69,7 +69,7 @@ function getSelectedRowData(table, fullPath, force) {
     return rowData;
 }
 
-//Выделение выбранной строки
+// Выделение выбранной строки
 function colorizeSelectedRow(table) {
     let index = $('#' + table).find('tr.success').data('index');
 
@@ -81,7 +81,7 @@ function colorizeSelectedRow(table) {
 }
 
 $(() => {
-    ws = new WebSocket('wss://' + location.host + location.pathname + 'W' + location.search);
+    ws = new WebSocket('wss:// ' + location.host + location.pathname + 'W' + location.search);
     ws.onopen = () => {
         console.log('connected');
     };
@@ -213,8 +213,8 @@ $(() => {
         }
     };
 
-//Функционал кнопок управления
-    //Кнопка для отпрвления данных на сервер
+// Функционал кнопок управления
+    // Кнопка для отпрвления данных на сервер
     $('#sendButton').on('click', () => {
         data.state.dgis = points.Y + ',' + points.X;
         prepareVVTab();
@@ -234,10 +234,10 @@ $(() => {
         }
     });
 
-    //Заполнение 3х массивов для статистики (defstatis, pointset, useinput)
+    // Заполнение 3х массивов для статистики (defstatis, pointset, useinput)
     function prepareVVTab() {
         let tableData = $('#vvTable').bootstrapTable('getData');
-        //true если версия пспд 12.3 и меньше
+        // true если версия пспд 12.3 и меньше
         let oldVersion = $('#vpcpd').val() === '12.3';
         if (oldVersion) {
             let shift1 = tableData.shift();
@@ -251,7 +251,7 @@ $(() => {
             data.state.arrays.SetTimeUse.uses.push(shift2);
         }
 
-        //defststis
+        // defststis
         data.state.arrays.defstatis.lvs[0].count = oldVersion ? 0 : tableData.length;
         data.state.arrays.defstatis.lvs[0].ninput = 0;
         data.state.arrays.defstatis.lvs[0].typst = 0;
@@ -262,7 +262,7 @@ $(() => {
             }
         });
 
-        //pointset, useinput
+        // pointset, useinput
         data.state.arrays.pointset.pts = [];
         data.state.arrays.useinput.used = [];
         tableData.forEach((enter, index) => {
@@ -294,17 +294,17 @@ $(() => {
         // let shift2 = tableData.shift();
         // tableData.push(shift1);
         // tableData.push(shift2);
-        //
+        // 
         // data.state.arrays.useinput.used = [];
         // data.state.arrays.pointset.pts = [];
-        //
+        // 
         // for (let rec in tableData) {
         //     data.state.arrays.useinput.used.push(false);
         // }
         // for (let i = 0; i < tableData.length; i++) {
         //     if (tableData[i].type !== 0) data.state.arrays.pointset.pts.push({num: i + 1, typst: tableData[i].type});
         // }
-        //
+        // 
         // tableData.forEach((rec, index) => {
         //     data.state.arrays.useinput.used[index] = (rec.type !== 0);
         //     if ((rec.type !== 0) && (rec.type < 8)) {
@@ -325,7 +325,7 @@ $(() => {
         }
     }
 
-    //Проверка валидности ПК
+    // Проверка валидности ПК
     function validatePk() {
         setDK.forEach((pk, pkIndex) => {
             pk.sts.forEach((sw, swIndex) => {
@@ -334,7 +334,7 @@ $(() => {
         })
     }
 
-    //Заполнение переменной count в суточных картах
+    // Заполнение переменной count в суточных картах
     function prepareDaySets() {
         daySets.forEach(daySet => {
             let index = 0;
@@ -345,18 +345,18 @@ $(() => {
         });
     }
 
-    //Кнопка для создания нового перекрёстка
+    // Кнопка для создания нового перекрёстка
     $('#addButton').on('click', () => {
         data.state.dgis = points.Y + ',' + points.X;
         ws.send(JSON.stringify({type: 'createB', state: data.state, z: zoom}));
     });
 
-    //Кнопка для обновления данных на АРМе
+    // Кнопка для обновления данных на АРМе
     $('#reloadButton').on('click', () => {
         ws.send(JSON.stringify({type: 'updateB'}));
     });
 
-    //Кнопка для удаления перекрёстка
+    // Кнопка для удаления перекрёстка
     $('#deleteButton').on('click', () => {
         if (confirm('Вы уверены? Перекрёсток будет безвозвратно удалён.')) {
             ws.send(JSON.stringify({
@@ -366,12 +366,12 @@ $(() => {
         }
     });
 
-    //Кнопка для проверки возможности редактирования перекрестка
+    // Кнопка для проверки возможности редактирования перекрестка
     $('#checkEdit').on('click', () => {
         ws.send(JSON.stringify({type: 'editInfoB'}));
     });
 
-    //Кнопка для проверки валидности заполненных данных
+    // Кнопка для проверки валидности заполненных данных
     $('#checkButton').on('click', () => {
         let sub = $('#subarea').val();
         if ((['+', '-', '.', 'e', 'E'].some(el => sub.includes(el))) || (sub === '')) {
@@ -425,27 +425,27 @@ $(() => {
             }
         });
     });
-    //Функционирование кнопки с выводом информации о проверке
+    // Функционирование кнопки с выводом информации о проверке
     $(".trigger").on('click', () => {
         $(".panel").toggle("fast");
         $(this).toggleClass("active");
         return false;
     });
 
-//Функционал кнопок на вкладке "Основные"
-    //Кнопка для возвращения исходных данных
+// Функционал кнопок на вкладке "Основные"
+    // Кнопка для возвращения исходных данных
     $('#mainReloadButton').on('click', () => {
         mainTabFill(unmodifiedData, false);
     });
 
-//Функционал кнопок на вкладке "ПК"
-    //Кнопка для копирования всей информации выбранного ПК
+// Функционал кнопок на вкладке "ПК"
+    // Кнопка для копирования всей информации выбранного ПК
     $('#pkCopyButton').on('click', () => {
         let selected = $('#pkSelect').val();
         copyPk = JSON.parse(JSON.stringify(setDK[selected]));
     });
 
-    //Кнопка для перезаписи строки
+    // Кнопка для перезаписи строки
     $('#pkPasteButton').on('click', () => {
         let selected = $('#pkSelect').val();
         if (copyPk.length === 0) return;
@@ -453,12 +453,12 @@ $(() => {
         pkTabFill('pkTable');
     });
 
-    //Кнопка для возвращения исходных данных
+    // Кнопка для возвращения исходных данных
     $('#pkReloadButton').on('click', () => {
         pkTabFill2(unmodifiedData, false);
     });
 
-    //Кнопка для обнуления текущего ПК
+    // Кнопка для обнуления текущего ПК
     $('#pkNewButton').on('click', () => {
         let selected = $('#pkSelect').val();
         setDK[selected].sts.forEach((row, index) => {
@@ -474,7 +474,7 @@ $(() => {
         pkTabFill2(data, false);
     });
 
-    //Кнопка для добавления строки
+    // Кнопка для добавления строки
     $('#tf').on('change', () => {
         let index = $('#pkTable').find('tr.success').data('index');
         let tf = Number($('#tf').val());
@@ -495,14 +495,14 @@ $(() => {
         $('#tf').val(-1);
     });
 
-    //Кнопка для перезаписи всей информации выбранного ПК
+    // Кнопка для перезаписи всей информации выбранного ПК
     $('#switchDel').on('click', () => {
         let index = $('#pkTable').find('tr.success').data('index');
         deleteSwitch(index);
     });
 
-//Функционал кнопок на вкладке "Сут. карты"
-    //Кнопка для добавления новой строки
+// Функционал кнопок на вкладке "Сут. карты"
+    // Кнопка для добавления новой строки
     $('#skAddButton').on('click', () => {
         let index = $('#skTable').find('tr.success').data('index');
         let selected = $('#mapNum').val();
@@ -527,7 +527,7 @@ $(() => {
         newTableFill('skTable', skTableFlag);
     });
 
-    //Кнопка для удаления строки
+    // Кнопка для удаления строки
     $('#skSubButton').on('click', () => {
         let index = $('#skTable').find('tr.success').data('index');
         let selected = $('#mapNum').val();
@@ -553,13 +553,13 @@ $(() => {
         newTableFill('skTable', skTableFlag);
     });
 
-    //Кнопка для копирования суточной карты
+    // Кнопка для копирования суточной карты
     $('#skCopyButton').on('click', () => {
         let selected = $('#mapNum').val();
         copySk = JSON.parse(JSON.stringify(daySets[selected]));
     });
 
-    //Кнопка для перезаписи суточной карты
+    // Кнопка для перезаписи суточной карты
     $('#skPasteButton').on('click', () => {
         let selected = $('#mapNum').val();
         if (copySk.length === 0) return;
@@ -567,12 +567,12 @@ $(() => {
         newTableFill('skTable', skTableFlag);
     });
 
-    //Кнопка для загрузки исходных данных
+    // Кнопка для загрузки исходных данных
     $('#skReloadButton').on('click', () => {
         skTabFill(unmodifiedData, false);
     });
 
-    //Кнопка для обнуления текущей карты
+    // Кнопка для обнуления текущей карты
     $('#skNewButton').on('click', () => {
         let selected = $('#mapNum').val();
         data.state.arrays.DaySets.daysets[selected].lines.forEach(row => {
@@ -583,13 +583,13 @@ $(() => {
         skTabFill(data, false);
     });
 
-//Функционал кнопок на вкладке "Нед. карты"
-    //Кнопка для копирования строки
+// Функционал кнопок на вкладке "Нед. карты"
+    // Кнопка для копирования строки
     $('#nkCopyButton').on('click', () => {
         // copyPk = JSON.parse(JSON.stringify(getSelectedRowData('nkTable', 'days')));
     });
 
-    //Кнопка для перезаписи строки
+    // Кнопка для перезаписи строки
     $('#nkPasteButton').on('click', () => {
         // let index = $('#nkTable').find('tr.success').data('index');
         // if (getSelectedRowData('nkTable', 'days') === undefined) return;
@@ -597,18 +597,18 @@ $(() => {
         // tableFill(weekSets, 'nkTable', nkTableFlag);
     });
 
-    //Кнопка для загрузки исходных данных
+    // Кнопка для загрузки исходных данных
     $('#nkReloadButton').on('click', () => {
         nkTabFill(unmodifiedData);
     });
 
-//Функционал кнопок на вкладке "Карта года"
-    //Кнопка для копирования строки
+// Функционал кнопок на вкладке "Карта года"
+    // Кнопка для копирования строки
     $('#gkCopyButton').on('click', () => {
         // copyPk = JSON.parse(JSON.stringify(getSelectedRowData('gkTable', 'days')));
     });
 
-    //Кнопка для перезаписи строки
+    // Кнопка для перезаписи строки
     $('#gkPasteButton').on('click', () => {
         // let index = $('#gkTable').find('tr.success').data('index');
         // if (getSelectedRowData('gkTable', 'days') === undefined) return;
@@ -616,19 +616,19 @@ $(() => {
         // tableFill(monthSets, 'gkTable', gkTableFlag);
     });
 
-    //Кнопка для загрузки исходных данных
+    // Кнопка для загрузки исходных данных
     $('#gkReloadButton').on('click', () => {
         gkTabFill(unmodifiedData);
     });
 
-//Функционал кнопок на вкладке "Контроль входов"
+// Функционал кнопок на вкладке "Контроль входов"
 
-    //Кнопка для копирования строки
+    // Кнопка для копирования строки
     $('#kvCopyButton').on('click', () => {
         copyPk = JSON.parse(JSON.stringify(getSelectedRowData('kvTable')));
     });
 
-    //Кнопка для перезаписи строки
+    // Кнопка для перезаписи строки
     $('#kvPasteButton').on('click', () => {
         let index = $('#kvTable').find('tr.success').data('index');
         if (getSelectedRowData('kvTable') === undefined) return;
@@ -636,12 +636,12 @@ $(() => {
         newTableFill('kvTable', kvTableFlag);
     });
 
-    //Кнопка для загрузки исходных данных
+    // Кнопка для загрузки исходных данных
     $('#kvReloadButton').on('click', () => {
         kvTabFill(unmodifiedData);
     });
 
-    //Выбор строк в таблицах по клику
+    // Выбор строк в таблицах по клику
     $('#pkTable').on('click-row.bs.table', function (e, row, $element) {
         $('.success').removeClass('success');
         $($element).addClass('success');
@@ -668,7 +668,7 @@ $(() => {
         colorizeSelectedRow('kvTable');
     });
 
-    //Функционирование выбора СК и ПК
+    // Функционирование выбора СК и ПК
     $('#mapNum').on('change keyup', () => {
         newTableFill('skTable', skTableFlag);
     });
@@ -679,9 +679,9 @@ $(() => {
 
     // let x = undefined, y = undefined;
 
-    //Функционирование карты для выбора координат
+    // Функционирование карты для выбора координат
     ymaps.ready(() => {
-        //Создание и первичная настройка карты
+        // Создание и первичная настройка карты
         map = new ymaps.Map('map', {
             center: [points.Y, points.X],
             zoom: 15
@@ -757,9 +757,9 @@ $(() => {
     });
 });
 
-//Набор функций корректной работы АРМ
+// Набор функций корректной работы АРМ
 
-//Функция для загрузки данных с сервера
+// Функция для загрузки данных с сервера
 function loadData(newData, firstLoadFlag) {
 
     // console.log(newData);
@@ -787,30 +787,30 @@ function loadData(newData, firstLoadFlag) {
         });
     }
 
-    //Основная вкладка
+    // Основная вкладка
     mainTabFill(data, firstLoadFlag);
 
-    //Вкладка ПК
+    // Вкладка ПК
     pkTabFill2(data, firstLoadFlag);
 
-    //Вкладка сут. карт
+    // Вкладка сут. карт
     skTabFill(data, firstLoadFlag);
 
-    //Вкладка нед. карт
+    // Вкладка нед. карт
     nkTabFill(data);
 
-    //Вкладка карт года
+    // Вкладка карт года
     gkTabFill(data);
 
-    //Вкладка внеш. входов
+    // Вкладка внеш. входов
     vvTabFill(firstLoadFlag);
 
-    //Зануление второго элемента массива (так надо)
+    // Зануление второго элемента массива (так надо)
     for (const [key] of Object.entries(data.state.arrays.defstatis.lvs[1])) {
         data.state.arrays.defstatis.lvs[1][key] = 0;
     }
 
-    //Вкладка контроля входов
+    // Вкладка контроля входов
     kvTabFill();
 
     setIDs();
@@ -837,7 +837,7 @@ function loadData(newData, firstLoadFlag) {
     });
 }
 
-//Отключает функционал некоторых кнопок, если данные не проверены
+// Отключает функционал некоторых кнопок, если данные не проверены
 function disableUnchecked() {
     disableControl('sendButton', false);
     disableControl('forceSendButton', false);
@@ -990,7 +990,7 @@ function boundsCalc(tab, clicked, key) {
                 }
             }
             if (key === 'down') {
-                if ((clicked < max)) {//626
+                if ((clicked < max)) {// 626
                     retValue.ret = false;
                     retValue.shift = 5;
                 }
@@ -1006,13 +1006,13 @@ function boundsCalc(tab, clicked, key) {
             if (key === 'left') (clicked === 644) ? retValue.ret = true : retValue.ret = false;
             if (key === 'right') (clicked === 675) ? retValue.ret = true : retValue.ret = false;
             if (key === 'up') {
-                if ((clicked > min)) {//637
+                if ((clicked > min)) {// 637
                     retValue.ret = false;
                     retValue.shift = 4;
                 }
             }
             if (key === 'down') {
-                if ((clicked < max)) {//662
+                if ((clicked < max)) {// 662
                     retValue.ret = false;
                     retValue.shift = 4;
                 }
@@ -1022,7 +1022,7 @@ function boundsCalc(tab, clicked, key) {
     return retValue;
 }
 
-//Заполнение вкладки "Основные"
+// Заполнение вкладки "Основные"
 function mainTabFill(data, firstLoadFlag) {
     for (let area in data.areaMap) {
         if (firstLoadFlag) $('#area').append(new Option(data.areaMap[area], area));
@@ -1107,7 +1107,7 @@ function sizeVerification(length, oldVersion) {
     }
 }
 
-//Заполнение вкладки "ПК"
+// Заполнение вкладки "ПК"
 function pkTabFill2(newData, firstLoadFlag) {
     setDK = JSON.parse(JSON.stringify(newData)).state.arrays.SetDK.dk;
 
@@ -1134,7 +1134,7 @@ function pkTabFill2(newData, firstLoadFlag) {
     pkTabFill('pkTable');
 }
 
-//Заполнение вкладки "Сут. карты"
+// Заполнение вкладки "Сут. карты"
 function skTabFill(newData, firstLoadFlag) {
     daySets = newData.state.arrays.DaySets.daysets;
     daySets.forEach(daySet => {
@@ -1143,19 +1143,19 @@ function skTabFill(newData, firstLoadFlag) {
     newTableFill('skTable', skTableFlag);
 }
 
-//Заполнение вкладки "Нед. карты"
+// Заполнение вкладки "Нед. карты"
 function nkTabFill(newData) {
     weekSets = newData.state.arrays.WeekSets.wsets;
     tableFill(weekSets, 'nkTable', nkTableFlag);
 }
 
-//Заполнение вкладки "Карты года"
+// Заполнение вкладки "Карты года"
 function gkTabFill(newData) {
     monthSets = newData.state.arrays.MonthSets.monthset;
     tableFill(monthSets, 'gkTable', gkTableFlag);
 }
 
-//Заполнение вкладки "Внеш. входы"
+// Заполнение вкладки "Внеш. входы"
 function vvTabFill(firstLoadFlag) {
     anotherTableFill('vvTable', vvTableFlag);
 
@@ -1177,14 +1177,14 @@ function vvTabFill(firstLoadFlag) {
     tableFill([0], 'vv2Table', vv2TableFlag);
 }
 
-//Заполнение вкладки "Контроль входов"
+// Заполнение вкладки "Контроль входов"
 function kvTabFill() {
     stageSets = data.state.arrays.SetCtrl.Stage;
     newTableFill('kvTable', kvTableFlag);
 }
 
 
-//Функция для заполнения таблиц недельных карт, годовых карт и длительности МГР при неисправности ДТ
+// Функция для заполнения таблиц недельных карт, годовых карт и длительности МГР при неисправности ДТ
 function tableFill(set, table, staticFlag) {
     $('#' + table).bootstrapTable('removeAll');
     set.forEach(function () {
@@ -1215,7 +1215,7 @@ function tableFill(set, table, staticFlag) {
     if (firstLoad) tableChange(set, table, !staticFlag);
 }
 
-//Функция для сохранения изменений в вышеперечисленных таблицах
+// Функция для сохранения изменений в вышеперечисленных таблицах
 function tableChange(set, table, daysFlag) {
     $('#' + table).on('change', () => {
         let counter = 0;
@@ -1231,7 +1231,7 @@ function tableChange(set, table, daysFlag) {
     })
 }
 
-//Функция для заполнения таблиц параметров ДК и использования внешних входов
+// Функция для заполнения таблиц параметров ДК и использования внешних входов
 function anotherTableFill(table, tableFlag) {
     $('#' + table).bootstrapTable('removeAll')
         .bootstrapTable('append', (tableFlag ? data.state.arrays.SetupDK : data.state.arrays.SetTimeUse.uses));
@@ -1252,7 +1252,7 @@ function anotherTableFill(table, tableFlag) {
     if (firstLoad) anotherTableChange(table, tableFlag);
 }
 
-//Функция для сохранения изменений в вышеперечисленных таблицах
+// Функция для сохранения изменений в вышеперечисленных таблицах
 function anotherTableChange(table, tableFlag) {
     $('#' + table).on('change', () => {
         let names = [];
@@ -1276,7 +1276,7 @@ function anotherTableChange(table, tableFlag) {
     });
 }
 
-//Функция для заполнения таблиц суточных карт и контроля входов
+// Функция для заполнения таблиц суточных карт и контроля входов
 function newTableFill(table, tableFlag) {
     let selected = $('#mapNum').val();
     if (skFlag || kvFlag) {
@@ -1342,7 +1342,7 @@ function newTableFill(table, tableFlag) {
     });
 }
 
-//Функция для сохранения изменений в таблице суточных карт, а также заполнение столбца "T начала"
+// Функция для сохранения изменений в таблице суточных карт, а также заполнение столбца "T начала"
 function skTableChange(table) {
     $('#' + table).on('change', () => {
         let selected = $('#mapNum').val();
@@ -1370,7 +1370,7 @@ function skTableChange(table) {
     skFlag = false;
 }
 
-//Функция для сохранения изменений в таблице контроля входов, а также заполнение столбца "T начала"
+// Функция для сохранения изменений в таблице контроля входов, а также заполнение столбца "T начала"
 function kvTableChange(table) {
     $('#' + table).on('change', () => {
         let tableData = [];
@@ -1411,7 +1411,7 @@ function kvTableChange(table) {
     kvFlag = false;
 }
 
-//Функция для заполнения вкладки ПК
+// Функция для заполнения вкладки ПК
 function pkTabFill(table) {
     let selected = $('#pkSelect').val();
     let currPK = setDK[selected];
@@ -1496,7 +1496,7 @@ function pkTabFill(table) {
                 let prevCycleTime = unmodifiedData.state.arrays.SetDK.dk[currPk].tc;
                 let switchCount = getSwitchCount(currSts);
 
-                //Проверка особых режимов
+                // Проверка особых режимов
                 if (isNaN(cycleTime)) {
                     switch ($('#tc').val()) {
                         case 'ЛР':
@@ -1512,19 +1512,19 @@ function pkTabFill(table) {
                     setDK[$('#pkSelect').val()].tc = cycleTime;
                 }
 
-                //Для особых режимов таблица не нужна
+                // Для особых режимов таблица не нужна
                 if (cycleTime < 3) {
                     resetPkTable();
                     $('#' + table).hide();
                     return;
                 }
 
-                //время цикла не превышает 254
+                // время цикла не превышает 254
                 if (cycleTime >= 255) {
                     cycleTime = 254;
                     $('#tc').val(cycleTime).change();
                     // setDK[selected].tc = cycleTime;
-                } else if ((cycleTime < (4 * switchCount)) && (prevCycleTime > 3)) { //каждая фаза минимум 4 секунд
+                } else if ((cycleTime < (4 * switchCount)) && (prevCycleTime > 3)) { // каждая фаза минимум 4 секунд
                     cycleTime = 4 * switchCount;
                     $('#tc').val(4 * switchCount);
                 }
@@ -1536,7 +1536,7 @@ function pkTabFill(table) {
 
                 $('#' + table).show();
 
-                //Автоматизированное создание нового ПК
+                // Автоматизированное создание нового ПК
                 if ((prevCycleTime < 3) && (cycleTime > 3)) {
                     generateNewPk(currSts);
                     return;
@@ -1545,7 +1545,7 @@ function pkTabFill(table) {
                 inputDiff = getCycleDiff(inputDiff, currSts, switchCount, difLen);
 
                 $(`#${table} tbody tr`).each(function (index) {
-                    //если переключатель не выбран, изменять первый
+                    // если переключатель не выбран, изменять первый
                     if (this.className === 'success') {
                         let value = Number($('[class~=duration' + index + ']').val());
                         $('[class~=duration' + index + ']').val(value + inputDiff).change();
@@ -1617,6 +1617,11 @@ function pkTabFill(table) {
                     if ((row.tf > 4) && (row.tf < 8)) {
                         $('[class~=duration' + index + ']')[0].disabled = !$('#razlen').prop('checked');
                     } else if ((row.tf > 1) && (row.tf < 5)) {
+                        $('[class~=duration' + index + ']').val(findMaxTvpDuration(setDK[$('#pkSelect').val()].sts, index, row.tf)).change();
+                        if (!$('#razlen').prop('checked')) {
+                            row.plus = false;
+                            $('[class~=plus' + index + ']').val('');
+                        }
                         $('[class~=plus' + index + ']')[0].disabled = ($('#tpu').val() === '0') ? !$('#razlen').prop('checked') : true;
                     }
                 })
@@ -1681,17 +1686,20 @@ function pkTabFill(table) {
 
                         $('[class~=duration' + index + ']').prop('disabled', false);
                         if ((evt.target.value === '1') || (evt.target.value === '8')) {
+                            // Фазы МГР и МДК всегда имеют № фазы = 0
                             $('[class~=num' + index + ']')
                                 .val(0)
                                 .prop('disabled', true)
                                 .change();
                         } else if ((evt.target.value === '2') || (evt.target.value === '3')) {
+                            // При смене типа на ТВП1 или ТВП2 вствляю фазы вместе с Зам`ом
                             let saveStart = Number($('[class~=start' + index + ']').val());
                             let saveStop = saveStart + Number($('[class~=duration' + index + ']').val());
                             deleteSwitch(index);
                             addPkSwitch(index - 1, Number(evt.target.value), (evt.target.value === '2') ? 2 : 3, saveStart, saveStop);
                             addPkSwitch(index, 7, 1, saveStart, saveStop);
                         } else if (evt.target.value === '4') {
+                            // При смене типа на 1,2 ТВП вствляю связку со всеми Зам`ами
                             let saveStart = Number($('[class~=start' + index + ']').val());
                             let saveStop = saveStart + Number($('[class~=duration' + index + ']').val());
                             deleteSwitch(index);
@@ -1701,6 +1709,7 @@ function pkTabFill(table) {
                             addPkSwitch(index + 2, 7, 1, saveStart, saveStop);
                         } else {
                             if ((evt.target.value === '5') || (evt.target.value === '6') || (evt.target.value === '7')) {
+                                // При смене типа на один из Зам`ов проверка возможности редакции длительности
                                 $('[class~=duration' + index + ']').prop('disabled', !difLen)
                             }
                             $('[class~=num' + index + ']')
@@ -1738,14 +1747,14 @@ function pkTabFill(table) {
                         const difLen = $('#razlen').prop('checked');
                         const currTf = Number($(`[class~=tf${swId}]`).val());
 
+                        // Минимальная длительность фазы
                         if (value < 4) {
                             $('[class~=duration' + swId + ']').val(4).change();
                             return;
                         }
 
-                        if (difLen) {
-
-                        } else {
+                        if (!difLen) {
+                            // Если не стоит признак "разн. длит.", длительности Зам`ов равны длительности фазы ТВП
                             if (((currTf === 2) || (currTf === 3)) && (Number($(`[class~=tf${swId + 1}`).val()) === 7)) {
                                 $(`[class~=duration${swId + 1}`).val($(`[class~=duration${swId}`).val());
                             } else if (currTf === 4) {
@@ -1758,21 +1767,23 @@ function pkTabFill(table) {
 
                         inputDiff = getCycleDiff(inputDiff, currSts, switchCount, difLen);
 
-                        // if ((currTf !== 5) && (currTf !== 6) && (currTf !== 7)) {
                         currSts[swId].start = (swId === 0) ? shift : currSts[swId - 1].stop;
                         currSts[swId].stop = currSts[swId].start + value;
                         $('[class~=start' + swId + ']').val(currSts[swId].start).change();
 
                         if (inputDiff !== 0) {
+                            // Если сумма длительностей или цикл поменялись
                             if (controlType === '0') {
-                                // Тип ПУ = ПК
-                                let index = 0;//lastSwitch ? 0 : swId + 1;
+                                // Тип ПУ = ПК. При изменении меняется длительность следующей фазы
+                                let index = 0;
                                 let tf = Number($('[class~=tf' + (lastSwitch ? 0 : swId + 1) + ']').val());
                                 if (!lastSwitch) {
                                     if ((tf === 5) || (tf === 6)) {
+                                        // Зам. ТВП 1, Зам. ТВП 2
                                         let replCount = findReplacementCount(currSts, swId);
                                         index = (((swId + replCount) === currSts.length - 1) || (checkLastLine(currSts[swId + replCount]))) ? 0 : swId + replCount;
                                     } else if (tf === 7) {
+                                        // Зам.
                                         index = (((swId + 2) === currSts.length - 1) || (checkLastLine(currSts[swId + 2]))) ? 0 : swId + 2;
                                     } else {
                                         index = swId + 1;
@@ -1781,13 +1792,12 @@ function pkTabFill(table) {
                                 let newValue = Number($('[class~=duration' + index + ']').val()) + inputDiff;
                                 $('[class~=duration' + index + ']').val(newValue).change();
                             } else if (controlType === '1') {
-                                // Тип ПУ = ЛПУ
+                                // Тип ПУ = ЛПУ. При изменении меняется длительность цикла
                                 if ((cycleTime - inputDiff) > 254) inputDiff = cycleTime - 254;
                                 setDK[Number($('#pkSelect').val())].tc -= inputDiff;
                                 $('#tc').val(cycleTime - inputDiff).change();
                             }
                         }
-                        // }
 
                         validatePkByDuration(currSts);
                     });
@@ -1802,35 +1812,13 @@ function pkTabFill(table) {
         });
     });
 
-    // for (let i = 0; i < 12; i++) {
-    //     const allowZero = ['1', '8'];
-    //     $('[class~=duration' + i + ']').on('change', () => {
-    //         let value = Number($('[class~=duration' + i + ']').val());
-    //         let index = i;
-    //         if (value < 10) {
-    //             while (value < 0) {
-    //                 if ((allowZero.indexOf($('[class~=tf' + index + ']').val()) !== -1) || (value !== 0)) {
-    //                     let currValue = Number($('[class~=duration' + index + ']').val());
-    //                     if (((value !== currValue) ? (value + currValue) : value) < 10) {
-    //                         $('[class~=duration' + index + ']').val(10);
-    //                         value += (value !== currValue) ? (currValue - 10) : -10;
-    //                     } else {
-    //                         $('[class~=duration' + index + ']').val(currValue + value);
-    //                         value = 0;
-    //                     }
-    //                 }
-    //                 index++;
-    //             }
-    //         }
-    //     });
-    // }
-
     if (tableType) pkTableDurationFunctional();
     pkTableValidate();
     $('#razlen').change();
     data.state.arrays.SetDK.dk[selected] = setDK[selected];
 }
 
+// Считается значение, на которое изменилось поле для ввода
 function getCycleDiff(cycle, currSts, switchCount, difLen) {
     for (let i = 0; i < switchCount; i++) {
         const tf = Number($('[class~=tf' + (i) + ']').val());
@@ -1838,14 +1826,15 @@ function getCycleDiff(cycle, currSts, switchCount, difLen) {
             case 2:
             case 3:
             case 4:
+                // При ТВП отнимаем максимальную длительность
                 cycle -= findMaxTvpDuration(currSts, i, tf);
                 break;
             case 5:
             case 6:
             case 7:
-                if (difLen) {
-
-                } else {
+                // При Зам`ах ничего не отнимаем
+                // Если стоит признак "разн длит" - подгоняем времена Зам`ов
+                if (!difLen) {
                     currSts[i].start = Number($(`[class~=start${i - 1}]`).val());
                     currSts[i].stop = currSts[i].start + Number($(`[class~=duration${i - 1}]`).val());
                     $('[class~=start' + i + ']').val(currSts[i].start);
@@ -1853,6 +1842,7 @@ function getCycleDiff(cycle, currSts, switchCount, difLen) {
                 }
                 break;
             default:
+                //При всех не-ТВПшных фазах просто отнимаем длительность
                 cycle -= $('[class~=duration' + (i) + ']').val();
                 break;
         }
@@ -1860,20 +1850,20 @@ function getCycleDiff(cycle, currSts, switchCount, difLen) {
     return cycle;
 }
 
+// Считается количество Зам`ов у фазы ТВП
 function findReplacementCount(currSts, swId) {
     let replCounter = 0;
-    const replNums = [5, 6, 7];
     for (let i = swId + 1; i < currSts.length; i++) {
-        (replNums.indexOf(currSts[i].tf) !== -1) ? replCounter++ : i = currSts.length;
-
+        ((currSts[i].tf > 4) && (currSts[i].tf < 8)) ? replCounter++ : i = currSts.length;
     }
     return replCounter;
 }
 
+// Возвращается максимальная длительность фазы ТВП и её Зам`ов
 function findMaxTvpDuration(currSts, index, tf) {
     let tvpDuration = Number($(`[class~=duration${index}]`).val());
-    // if ((index === 11) || (!$('#razlen').prop('checked'))) return tvpDuration;
     if (tf === 4) {
+        //1,2 ТВП
         let replacementDurationArray = [];
         let replacementCount = findReplacementCount(currSts, index);
         for (let i = index; i < (index + replacementCount); i++) {
@@ -1881,47 +1871,40 @@ function findMaxTvpDuration(currSts, index, tf) {
         }
         return Math.max(...replacementDurationArray, tvpDuration);
     } else {
+        //Одиночная ТВП
         let replacementDuration = (Number($(`[class~=tf${index + 1}`).val()) === 7) ? Number($(`[class~=duration${index + 1}`).val()) : 0;
         return Math.max(tvpDuration, replacementDuration);
     }
 }
 
+// Приведение данных массивов ПК в соотвествие с таблицей на экране
 function validatePkByDuration(currSts) {
     currSts.forEach((sw, index) => {
         let shift = Number($('#shift').val());
         let tf = Number($(`[class~=tf${index}]`).val());
 
-        // let cycleTime = Number($('#tc').val());
         if (!checkLastLine(sw)) {
-            //     $(`[class~=start${sw}]`).val();
-            // } else {
-
-            //TODO зам может быть больше ТВП => на последнем заме нужно знать масимальную длительность всего ТВП
-            if ((tf !== 5) && (tf !== 6) && (tf !== 7)) {
-
-                $(`[class~=start${index}]`).val((index === 0) ?
-                    shift :
+            // TODO зам может быть больше ТВП => на последнем заме нужно знать масимальную длительность всего ТВП
+            if ((tf < 5) || (tf > 7)) {
+                // Не Зам фаза
+                $(`[class~=start${index}]`).val((index === 0) ? shift :
                     (Number($(`[class~=start${index - 1}]`).val()) + Number($(`[class~=duration${index - 1}]`).val())));
                 currSts[index].start = Number($(`[class~=start${index}]`).val());
             } else {
+                // Зам фаза
                 currSts[index].start = Number($(`[class~=start${index - 1}]`).val());
                 $(`[class~=start${index}]`).val(currSts[index].start);
             }
 
         }
-        // if (sw.start > cycleTime) sw.start -= cycleTime;
 
-        // if ((index !== (currSts.length-1)) && (checkLastLine(currSts[index+1]))) {
-        //     sw.stop = Number($(`[class~=duration${index}`).val()) + Number($(`[class~=start${index}`).val());
-        // } else {
         sw.stop = Number($(`[class~=duration${index}`).val()) + Number($(`[class~=start${index}`).val());
-        // }
-        // if (sw.stop > cycleTime) sw.stop -= cycleTime;
 
         if (shift !== 0) $('#shift').change();
     })
 }
 
+// Автоматическое создание простого ПК
 function generateNewPk(currSts) {
     let cycleTime = Number($('#tc').val());
     currSts[0].start = 0;
@@ -1938,6 +1921,7 @@ function generateNewPk(currSts) {
     $('[class~=duration1]').val(currSts[1].start).prop('disabled', false);
 }
 
+// Добавление переключателя в ПК
 function addPkSwitch(index, tf, num, start, stop) {
     function sortFunc(a, b) {
         return a[0] - b[0];
@@ -1978,13 +1962,13 @@ function addPkSwitch(index, tf, num, start, stop) {
     $(`[class~=duration${index + 1}]`).val((start === undefined) ? 4 : (stop - start)).change();
 }
 
+// Удаление переключателя из ПК
 function deleteSwitch(index) {
     let selected = $('#pkSelect').val();
     let oldData = [];
     let emptyRow = {line: 0, start: 0, num: 0, tf: 0, stop: 0, plus: false};
-    let currentRow = setDK[selected].sts[index];//getSelectedRowData('pkTable', 'sts');
+    let currentRow = setDK[selected].sts[index];// getSelectedRowData('pkTable', 'sts');
     const controlType = $('#tpu').val();
-    const replArr = [5, 6, 7];
 
     if ((currentRow === undefined) || (currentRow.line === 1)) return;
 
@@ -1993,12 +1977,14 @@ function deleteSwitch(index) {
     });
 
     const deletedTf = oldData[index].tf;
-    let isReplacementPhase = (replArr.indexOf(deletedTf) !== -1);
+    let isReplacementPhase = (deletedTf > 4) && (deletedTf < 8);
 
     if ((!isReplacementPhase) && (controlType === '1')) {
+        // Для режима ЛПУ
         setDK[selected].tc -= (oldData[index].stop - oldData[index].start);
     }
     if ((deletedTf === 2) || (deletedTf === 3) || (deletedTf === 4)) {
+        // Если удаляется фаза ТВП - удаляем все её Зам`ы
         let replCount = findReplacementCount(setDK[selected].sts, index);
         for (let i = index; i < (index + replCount); i++) {
             deleteSwitch(index + 1);
@@ -2027,16 +2013,12 @@ function deleteSwitch(index) {
 
     pkTabFill('pkTable');
 
-    isReplacementPhase = (replArr.indexOf(deletedTf) !== -1);
+    isReplacementPhase = (deletedTf > 4) && (deletedTf < 8);
     if ((!isReplacementPhase) && (controlType === '0')) {
+        // Для режима ПК
         let i = (checkLastLine(setDK[selected].sts[index])) ? 0 : index;
         let replCount = findReplacementCount(setDK[selected].sts, index);
-        if (replArr.indexOf(deletedTf) !== -1) {
-            // if ($('#razlen').prop('checked')) {
-            //
-            // } else {
-            //     return;
-            // }
+        if ((deletedTf > 4) && (deletedTf < 8)) {
         } else if ((deletedTf === 2) || (deletedTf === 3) || (deletedTf === 4)) {
             for (i = index; i < (index + replCount); i++) {
                 deleteSwitch(index);
@@ -2049,7 +2031,7 @@ function deleteSwitch(index) {
     }
 }
 
-//Считывание количества переключений
+// Возвращение количества переключений
 function getSwitchCount(currSts) {
     let switchCount = 0;
     currSts.forEach(sw => {
@@ -2060,26 +2042,17 @@ function getSwitchCount(currSts) {
     return switchCount;
 }
 
+// Проверка последней линии
 function checkLastLine(sw) {
     const allowZero = ['1', '8'];
     return (sw.num === 0) && ((sw.tf === 0) || (allowZero.indexOf(sw.tf) !== -1));
 }
 
-function clearTransition(currSts) {
-    currSts.forEach(sw => sw.trs = false)
-}
-
-function makeTransition(currSts, index) {
-    currSts[index].trs = true;
-    if (((currSts[index].tf > 1) && (currSts[index].tf < 8)) && ($('#razlen').prop('checked'))) {
-        currSts[index].dt = Number($(`[class~=start${index}]`).val()) + Number($(`[class~=duration${index}]`).val()) - Number($('#tc').val())
-    }
-}
-
+// Проверка перехода фазы
 function checkTransition(currSts) {
     let retValue = [];
     currSts.forEach((sw, index) => {
-        if (((sw.stop - sw.start) < 0)) { // || checkLastLine(sw)) {
+        if (((sw.stop - sw.start) < 0)) {
             retValue.push(index);
 
         }
@@ -2087,22 +2060,23 @@ function checkTransition(currSts) {
     return retValue;
 }
 
-//????
-// function savePkTable() {
-//     let currSts = setDK[Number($('#pkSelect').val())].sts;
-//     currSts.forEach((sw, index) => {
-//         $('[class~=start' + index + ']').val(sw.start);
-//         $('[class~=num' + index + ']').val(sw.num);
-//         $('[class~=tf' + index + ']').val(sw.phase);
-//         $('[class~=duration' + index + ']').val(sw.stop - sw.start);
-//         $('[class~=plus' + index + ']').val(sw.plus ? '+' : '');
-//     });
-// }
+// Очистка признаков перехода фазы
+function clearTransition(currSts) {
+    currSts.forEach(sw => sw.trs = false)
+}
 
+// Добавление признаков перехода фазы
+function makeTransition(currSts, index) {
+    currSts[index].trs = true;
+    if (((currSts[index].tf > 1) && (currSts[index].tf < 8)) && ($('#razlen').prop('checked'))) {
+        currSts[index].dt = Number($(`[class~=start${index}]`).val()) + Number($(`[class~=duration${index}]`).val()) - Number($('#tc').val())
+    }
+}
+
+// Очистка таблицы ПК
 function resetPkTable() {
     let currSts = setDK[Number($('#pkSelect').val())].sts;
     currSts.forEach((sw, index) => {
-        // sw.line = 0;
         sw.start = 0;
         sw.num = 0;
         sw.phase = 0;
@@ -2117,7 +2091,7 @@ function resetPkTable() {
     });
 }
 
-//Заполнение таблицы из массивов
+// Заполнение таблицы из массивов
 function pkTableValidate() {
     let currSts = setDK[Number($('#pkSelect').val())].sts;
     let cycleTime = Number($('#tc').val());
@@ -2138,7 +2112,7 @@ function pkTableValidate() {
     });
 }
 
-//Функция для сохранения изменений в таблице ПК
+// Функция для сохранения изменений в таблице ПК
 function pkTableChange(table) {
     $('#' + table).on('change', (evt) => {
         let selected = Number($('#pkSelect').val());
@@ -2153,54 +2127,20 @@ function pkTableChange(table) {
             currSts[rowIndex - 1].tf = value;
         } else if (evt.target.className.includes('num')) {
             currSts[rowIndex - 1].num = value;
-            // } else if (evt.target.className.includes('duration')) {
-            //     $('[class~=start' + (rowIndex - 1) + ']').change();
         } else if (evt.target.className.includes('plus')) {
             currSts[rowIndex - 1].plus = evt.target.value === '+';
         }
-
-        // $(`#${table} tbody tr`).each(function (index) {
-        //     $(this).find('td').each(function (switchIndex) {
-        //         switch (switchIndex) {
-        //             case 1 :
-        //                 currPK.sts[index].start = Number($(this).find('input').val());
-        //                 break;
-        //             case 2 :
-        //                 currPK.sts[index].tf = Number($(this).find('select').val());
-        //                 break;
-        //             case 3 :
-        //                 currPK.sts[index].num = Number($(this).find('input').val());
-        //                 break;
-        //             case 4 :
-        //                 console.log(evt.target.className);
-        //                 currPK.sts[index].stop = currPK.sts[index].start + Number($(this).find('input').val());
-        //                 if ((index === (currPK.sts.length-1)) || (checkLastLine(currPK.sts[index + 1]))) {
-        //                     $('[class~=start' + 0 + ']').val(currPK.sts[index].stop);
-        //                 } else {
-        //                     $('[class~=start' + index + 1 + ']').val(currPK.sts[index].stop);
-        //                 }
-        //                 break;
-        //             case 5 :
-        //                 currPK.sts[index].plus = ($(this).find('input').val() === '+');
-        //                 break;
-        //         }
-        //     });
-        // });
-
-        // setDK[selected] = currPK;
-//        console.log(setDK[selected].sts);
-//         data.state.arrays.SetDK.dk[selected] = setDK[selected];
     });
     pkFlag = false;
 }
 
-//Функция для преобразования вида цифр
+// Функция для преобразования вида цифр
 function handsomeNumbers(num) {
     if (num.toString().length >= 2) return num;
     return (num < 10) ? '0' + num : num;
 }
 
-//Функция для сохранения изменений всех не табличных элементов
+// Функция для сохранения изменений всех не табличных элементов
 function setChange(element, type, fullPath, numFlag, hardFlag, shitcodeFlag) {
     if (!firstLoad) return;
     let path = fullPath.split('.');
@@ -2261,7 +2201,7 @@ function setChange(element, type, fullPath, numFlag, hardFlag, shitcodeFlag) {
     }
 }
 
-//Отображение кнопки для выбора координат и разблокирование кнопки создания нового перекрёстка
+// Отображение кнопки для выбора координат и разблокирование кнопки создания нового перекрёстка
 function checkNew(check) {
     let buttonClass = $('#addButton')[0].className.toString();
 
@@ -2282,7 +2222,7 @@ function checkNew(check) {
     $('#addButton')[0].className = buttonClass;
 }
 
-//Отображение кнопки для выбора координат и разблокирование кнопки создания нового перекрёстка
+// Отображение кнопки для выбора координат и разблокирование кнопки создания нового перекрёстка
 function disableControl(button, status) {
     let buttonClass = $('#' + button)[0].className.toString();
     if (status) {
@@ -2293,7 +2233,7 @@ function disableControl(button, status) {
     $('#' + button)[0].className = buttonClass;
 }
 
-//Открытие карты с выбором координат
+// Открытие карты с выбором координат
 function chooseCoordinates() {
     $('#chooseCoordinates').on('click', () => {
         $('#mapModal').attr('style', 'display : block;');
@@ -2310,7 +2250,7 @@ function chooseCoordinates() {
     }
 }
 
-//Отправка выбранной команды на сервер
+// Отправка выбранной команды на сервер
 function controlSend(id) {
     ws.send(JSON.stringify({type: 'dispatch', id: id, cmd: 1, param: 0}));
 }

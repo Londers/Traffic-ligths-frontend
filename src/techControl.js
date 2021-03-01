@@ -317,6 +317,15 @@ function buildBottom() {
 
         $('#pbs')[0].innerText = device.Model.vpbsl + '.' + device.Model.vpbsr;
 
+        let inputs = [];
+        Object.values(device.Input).forEach((input, index) => {
+            if (input) {
+                inputs.push(index + 1);
+            }
+        });
+        (inputs.length === 0) ? $('#inputErrors').hide() : $('#inputErrors').show();
+        $('#inputs')[0].innerText = inputs.join(', ');
+
         } else {
             $('#connect')[0].innerText = '';
 
@@ -357,6 +366,8 @@ function buildBottom() {
 
             $('#pspd')[0].innerText = '-';
             $('#pbs')[0].innerText = '-';
+
+            $('#inputErrors').hide();
         }
     }
 
