@@ -17,11 +17,11 @@ function sortByID(a, b) {
 
 function sendGPRS() {
     // let toSend = {ip: '', port: ''};
-    let gprsFlag = $('#changeGPRS').val();
-    let exchangeFlag = $('#exchangeTime').val();
-    let modeFlag = $('#commMode').val();
+    let gprsFlag = $('#changeGPRS').prop('checked');
+    let exchangeFlag = $('#exchangeTime').prop('checked');
+    let modeFlag = $('#commMode').prop('checked');
     if (gprsFlag || exchangeFlag || modeFlag) {
-        let gprs = {};
+        let gprs = {id: Number($('#idevice')[0].innerText), f0x32: gprsFlag, f0x33: exchangeFlag, f0x34: modeFlag};
         if (gprsFlag) {
             gprs.ip = [$('#gprs1').val(), $('#gprs2').val(), $('#gprs3').val(), $('#gprs4').val()].join('.');
             gprs.port = Number($('#port').val());
@@ -318,186 +318,194 @@ function buildBottom() {
         $('#pbs')[0].innerText = device.Model.vpbsl + '.' + device.Model.vpbsr;
 
         let inputs = [];
-        Object.values(device.Input).forEach((input, index) => {
-            if (input) {
-                inputs.push(index + 1);
+        let statistics = [];
+
+        Object.entries(device.Input).forEach((entry, index) => {
+            const [key, value] = entry;
+            if (key === 'S') {
+                value.forEach((st, stIndex) => {
+                    if (st) statistics.push(stIndex + 1);
+                })
+            } else {
+                if (value) inputs.push(index + 1);
             }
         });
-        (inputs.length === 0) ? $('#inputErrors').hide() : $('#inputErrors').show();
+
+        ((inputs.length === 0) && (statistics.length === 0)) ? $('#inputErrors').hide() : $('#inputErrors').show();
         $('#inputs')[0].innerText = inputs.join(', ');
+        $('#statistics')[0].innerText = statistics.join(', ');
+    } else {
+        $('#connect')[0].innerText = '';
 
-        } else {
-            $('#connect')[0].innerText = '';
+        checkCommand('dudk', false);
+        checkCommand('sfdk', false);
+        checkCommand('cmdPk', false);
+        checkCommand('cmdSk', false);
+        checkCommand('cmdNk', false);
 
-            checkCommand('dudk', false);
-            checkCommand('sfdk', false);
-            checkCommand('cmdPk', false);
-            checkCommand('cmdSk', false);
-            checkCommand('cmdNk', false);
+        $('#exTime')[0].innerText = '';
+        $('#lnow')[0].innerText = '';
+        $('#gps')[0].innerText = '';
+        $('#addData')[0].innerText = '';
 
-            $('#exTime')[0].innerText = '';
-            $('#lnow')[0].innerText = '';
-            $('#gps')[0].innerText = '';
-            $('#addData')[0].innerText = '';
+        $('#technology').innerText = '';
 
-            $('#technology').innerText = '';
+        $('#pk')[0].innerText = '';
+        $('#sk')[0].innerText = '';
+        $('#nk')[0].innerText = '';
 
-            $('#pk')[0].innerText = '';
-            $('#sk')[0].innerText = '';
-            $('#nk')[0].innerText = '';
+        $('#idevice')[0].innerText = cross.idevice;
 
-            $('#idevice')[0].innerText = cross.idevice;
+        $('#sfSwitchButton').unbind();
+        $('#sfSwitchButton')[0].innerText = 'Вкл. СФ';
+        $('#gprsDialog').unbind();
 
-            $('#sfSwitchButton').unbind();
-            $('#sfSwitchButton')[0].innerText = 'Вкл. СФ';
-            $('#gprsDialog').unbind();
+        $('#lastOpDev')[0].innerText = '';
+        $('#lastOp')[0].innerText = '';
 
-            $('#lastOpDev')[0].innerText = '';
-            $('#lastOp')[0].innerText = '';
+        $('#ip')[0].innerText = '';
 
-            $('#ip')[0].innerText = '';
+        $('#status')[0].innerText = '-';
+        $('#type2')[0].innerText = '-';
+        $('#phase')[0].innerText = '-';
+        $('#state')[0].innerText = '-';
+        $('#lamps')[0].innerText = '-';
+        $('#doors')[0].innerText = '-';
 
-            $('#status')[0].innerText = '-';
-            $('#type2')[0].innerText = '-';
-            $('#phase')[0].innerText = '-';
-            $('#state')[0].innerText = '-';
-            $('#lamps')[0].innerText = '-';
-            $('#doors')[0].innerText = '-';
+        $('#pspd')[0].innerText = '-';
+        $('#pbs')[0].innerText = '-';
 
-            $('#pspd')[0].innerText = '-';
-            $('#pbs')[0].innerText = '-';
+        $('#inputErrors').hide();
+    }
+}
 
-            $('#inputErrors').hide();
-        }
+function updateDevices(device) {
+    let i = 0;
+    devicesSave.forEach(dev => {
+        if (device.idevice === dev.idevice) devicesSave[i] = device;
+        i++;
+    })
+}
+
+function checkDevice(idevice) {
+    let device = {};
+    let i = 0;
+    devicesSave.forEach(dev => {
+        if (dev.idevice === idevice) device = devicesSave[i];
+        i++;
+    });
+    return device;
+}
+
+function checkCross(idevice) {
+    let cross = {};
+    let i = 0;
+    crossesSave.forEach(crossS => {
+        if (crossS.idevice === idevice) cross = crossesSave[i];
+        i++;
+    });
+    return cross;
+}
+
+function checkDeviceID(idevice) {
+    let retValue = -1;
+    let i = 0;
+    devicesSave.forEach(dev => {
+        if (dev.idevice === idevice) retValue = i;
+        i++;
+    });
+    return retValue;
+}
+
+function timeFormat(time) {
+    let date = new Date(time);
+    // date = new Date(date.getTime() - (date.getTimezoneOffset() * 60 * 1000));
+    const dateTimeFormat = new Intl.DateTimeFormat('ru', {
+        day: "2-digit",
+        month: "2-digit",
+        year: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit"
+    });
+    // console.log(date);
+    return dateTimeFormat.format(date);
+}
+
+let ErrorsText = {
+    V220DK1: 'Срабатывание входа контроля 220В ДК1',
+    V220DK2: 'Срабатывание входа контроля 220В ДК2',
+    RTC: 'Неисправность часов RTC',
+    TVP1: 'Неисправность ТВП1',
+    TVP2: 'Неисправность ТВП2',
+    FRAM: 'Неисправность FRAM'
+};
+
+function checkMalfunction(Error) {
+    let retValue = '';
+    for (const [key, value] of Object.entries(Error)) {
+        if (value) retValue += ErrorsText[key] + ', ';
+    }
+    return (retValue.length !== 0) ? retValue.substring(0, retValue.length - 2) : '';
+}
+
+let GPSText = {
+    Ok: 'Исправно',
+    E01: 'Нет связи с приемником',
+    E02: 'Ошибка CRC',
+    E03: 'Нет валидного времени',
+    E04: 'Мало спутников',
+    Seek: 'Поиск спутников после включения'
+};
+
+function checkGPS(GPS) {
+    let retValue = '';
+    for (const [key, value] of Object.entries(GPS)) {
+        if (value) retValue += GPSText[key] + ', ';
+    }
+    return (retValue.length !== 0) ? retValue.substring(0, retValue.length - 2) : '';
+}
+
+function switchArrayType(type) {
+    let retValue = 'Нет данных';
+
+    switch (type) {
+        case 1:
+            retValue = 'С12УСДК';
+            break;
+        case 2:
+            retValue = 'УСДК';
+            break;
+        case 4:
+            retValue = 'ДК-А';
+            break;
+        case 8:
+            retValue = 'ДТ СК';
+            break;
     }
 
-    function updateDevices(device) {
-        let i = 0;
-        devicesSave.forEach(dev => {
-            if (device.idevice === dev.idevice) devicesSave[i] = device;
-            i++;
-        })
-    }
+    return retValue;
+}
 
-    function checkDevice(idevice) {
-        let device = {};
-        let i = 0;
-        devicesSave.forEach(dev => {
-            if (dev.idevice === idevice) device = devicesSave[i];
-            i++;
-        });
-        return device;
-    }
+/*
+   TODO:
+    odk false - дверь закрыта
+    lampi - ldk
+    base true => все карты базовая привязка
+    local true => устройство загружается
 
-    function checkCross(idevice) {
-        let cross = {};
-        let i = 0;
-        crossesSave.forEach(crossS => {
-            if (crossS.idevice === idevice) cross = crossesSave[i];
-            i++;
-        });
-        return cross;
-    }
-
-    function checkDeviceID(idevice) {
-        let retValue = -1;
-        let i = 0;
-        devicesSave.forEach(dev => {
-            if (dev.idevice === idevice) retValue = i;
-            i++;
-        });
-        return retValue;
-    }
-
-    function timeFormat(time) {
-        let date = new Date(time);
-        // date = new Date(date.getTime() - (date.getTimezoneOffset() * 60 * 1000));
-        const dateTimeFormat = new Intl.DateTimeFormat('ru', {
-            day: "2-digit",
-            month: "2-digit",
-            year: "2-digit",
-            hour: "2-digit",
-            minute: "2-digit",
-            second: "2-digit"
-        });
-        // console.log(date);
-        return dateTimeFormat.format(date);
-    }
-
-    let ErrorsText = {
-        V220DK1: 'Срабатывание входа контроля 220В ДК1',
-        V220DK2: 'Срабатывание входа контроля 220В ДК2',
-        RTC: 'Неисправность часов RTC',
-        TVP1: 'Неисправность ТВП1',
-        TVP2: 'Неисправность ТВП2',
-        FRAM: 'Неисправность FRAM'
-    };
-
-    function checkMalfunction(Error) {
-        let retValue = '';
-        for (const [key, value] of Object.entries(Error)) {
-            if (value) retValue += ErrorsText[key] + ', ';
-        }
-        return (retValue.length !== 0) ? retValue.substring(0, retValue.length - 2) : '';
-    }
-
-    let GPSText = {
-        Ok: 'Исправно',
-        E01: 'Нет связи с приемником',
-        E02: 'Ошибка CRC',
-        E03: 'Нет валидного времени',
-        E04: 'Мало спутников',
-        Seek: 'Поиск спутников после включения'
-    };
-
-    function checkGPS(GPS) {
-        let retValue = '';
-        for (const [key, value] of Object.entries(GPS)) {
-            if (value) retValue += GPSText[key] + ', ';
-        }
-        return (retValue.length !== 0) ? retValue.substring(0, retValue.length - 2) : '';
-    }
-
-    function switchArrayType(type) {
-        let retValue = 'Нет данных';
-
-        switch (type) {
-            case 1:
-                retValue = 'С12УСДК';
-                break;
-            case 2:
-                retValue = 'УСДК';
-                break;
-            case 4:
-                retValue = 'ДК-А';
-                break;
-            case 8:
-                retValue = 'ДТ СК';
-                break;
-        }
-
-        return retValue;
-    }
-
-    /*
-       TODO:
-        odk false - дверь закрыта
-        lampi - ldk
-        base true => все карты базовая привязка
-        local true => устройство загружается
-
-       TODO:   в таблице время ПК!!!!
-        время1 слева - момент запуска (становится красным если разница больше минуты (пк и устройство))    ЮВ сказал нет
-        время2 снизу - максимальное ожидание ответа сбоку 3, красный >8 секунд (от отправки изменений с АРМ, до ответа устройства) Ожидание ответа (дефолт 8сек), если больше - красить красным
-        кнопки
-                GRPS-обмен - меню ?
-                Сброс отв. - сброс и новый счетчик
-        в таблице - все горит красным, кроме нет связи
-        + gps, l - lan, * есть не переданная информация
-        при выборе зеленый, отправка фазы малиновый, синий
-     */
+   TODO:   в таблице время ПК!!!!
+    время1 слева - момент запуска (становится красным если разница больше минуты (пк и устройство))    ЮВ сказал нет
+    время2 снизу - максимальное ожидание ответа сбоку 3, красный >8 секунд (от отправки изменений с АРМ, до ответа устройства) Ожидание ответа (дефолт 8сек), если больше - красить красным
+    кнопки
+            GRPS-обмен - меню ?
+            Сброс отв. - сброс и новый счетчик
+    в таблице - все горит красным, кроме нет связи
+    + gps, l - lan, * есть не переданная информация
+    при выборе зеленый, отправка фазы малиновый, синий
+ */
 
 //Отправка выбранной команды на сервер
-    function controlSend(toSend) {
-        ws.send(JSON.stringify({type: 'dispatch', id: toSend.id, cmd: toSend.cmd, param: toSend.param}));
-    }
+function controlSend(toSend) {
+    ws.send(JSON.stringify({type: 'dispatch', id: toSend.id, cmd: toSend.cmd, param: toSend.param}));
+}

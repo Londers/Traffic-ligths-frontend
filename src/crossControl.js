@@ -32,8 +32,8 @@ const kvTableFlag = false;
 let tempIndex;
 let copyPk = [];
 let copySk = [];
-// let copyNk = [];
-// let copyGk = [];
+let copyNk = [];
+let copyGk = [];
 let points = {
     Y: 0,
     X: 0
@@ -81,7 +81,7 @@ function colorizeSelectedRow(table) {
 }
 
 $(() => {
-    ws = new WebSocket('wss:// ' + location.host + location.pathname + 'W' + location.search);
+    ws = new WebSocket('wss://' + location.host + location.pathname + 'W' + location.search);
     ws.onopen = () => {
         console.log('connected');
     };
@@ -553,26 +553,27 @@ $(() => {
         newTableFill('skTable', skTableFlag);
     });
 
-    // Кнопка для копирования суточной карты
+    // Кнопка для копирования строки суточной карты
     $('#skCopyButton').on('click', () => {
-        let selected = $('#mapNum').val();
-        copySk = JSON.parse(JSON.stringify(daySets[selected]));
+        copySk = [];
+        $('#skTable').find('tr.success').find('input')
+            .each(({}, input) => copySk.push(input.value));
     });
 
-    // Кнопка для перезаписи суточной карты
+    // Кнопка для перезаписи строки суточной карты
     $('#skPasteButton').on('click', () => {
-        let selected = $('#mapNum').val();
-        if (copySk.length === 0) return;
-        daySets[selected] = JSON.parse(JSON.stringify(copySk));
-        newTableFill('skTable', skTableFlag);
+        $('#skTable').find('tr.success').find('input')
+            .each((index, input) => $(input).val(copySk[index]))
+            .change();
     });
 
     // Кнопка для загрузки исходных данных
     $('#skReloadButton').on('click', () => {
-        skTabFill(unmodifiedData, false);
+        data.state.arrays.DaySets = JSON.parse(JSON.stringify(unmodifiedData.state.arrays.DaySets));
+        skTabFill(false);
     });
 
-    // Кнопка для обнуления текущей карты
+    // Кнопка для обнуления текущей суточной карты
     $('#skNewButton').on('click', () => {
         let selected = $('#mapNum').val();
         data.state.arrays.DaySets.daysets[selected].lines.forEach(row => {
@@ -580,45 +581,67 @@ $(() => {
             row.hour = 0;
             row.min = 0;
         });
-        skTabFill(data, false);
+        skTabFill(false);
     });
 
 // Функционал кнопок на вкладке "Нед. карты"
     // Кнопка для копирования строки
     $('#nkCopyButton').on('click', () => {
-        // copyPk = JSON.parse(JSON.stringify(getSelectedRowData('nkTable', 'days')));
+        copyNk = [];
+        $('#nkTable').find('tr.success').find('input')
+            .each(({}, input) => copyNk.push(input.value));
     });
 
     // Кнопка для перезаписи строки
     $('#nkPasteButton').on('click', () => {
-        // let index = $('#nkTable').find('tr.success').data('index');
-        // if (getSelectedRowData('nkTable', 'days') === undefined) return;
-        // weekSets[index].days = JSON.parse(JSON.stringify(copyPk));
-        // tableFill(weekSets, 'nkTable', nkTableFlag);
+        $('#nkTable').find('tr.success').find('input')
+            .each((index, input) => $(input).val(copyNk[index]))
+            .change();
     });
 
     // Кнопка для загрузки исходных данных
     $('#nkReloadButton').on('click', () => {
-        nkTabFill(unmodifiedData);
+        data.state.arrays.WeekSets = JSON.parse(JSON.stringify(unmodifiedData.state.arrays.WeekSets));
+        nkTabFill();
+    });
+
+    // Кнопка для обнуления текущей недельной карты
+    $('#nkNewButton').on('click', () => {
+        const blankArr = Array.from({length: 7}, () => 0); // пустой массив из 7 нулевых элементов
+        data.state.arrays.WeekSets.wsets.forEach(row => {
+            row.days = blankArr.slice();
+        });
+        nkTabFill();
     });
 
 // Функционал кнопок на вкладке "Карта года"
     // Кнопка для копирования строки
     $('#gkCopyButton').on('click', () => {
-        // copyPk = JSON.parse(JSON.stringify(getSelectedRowData('gkTable', 'days')));
+        copyGk = [];
+        $('#gkTable').find('tr.success').find('input')
+            .each(({}, input) => copyGk.push(input.value));
     });
 
     // Кнопка для перезаписи строки
     $('#gkPasteButton').on('click', () => {
-        // let index = $('#gkTable').find('tr.success').data('index');
-        // if (getSelectedRowData('gkTable', 'days') === undefined) return;
-        // monthSets[index].days = JSON.parse(JSON.stringify(copyPk));
-        // tableFill(monthSets, 'gkTable', gkTableFlag);
+        $('#gkTable').find('tr.success').find('input')
+            .each((index, input) => $(input).val(copyGk[index]))
+            .change();
     });
 
     // Кнопка для загрузки исходных данных
     $('#gkReloadButton').on('click', () => {
-        gkTabFill(unmodifiedData);
+        data.state.arrays.MonthSets = JSON.parse(JSON.stringify(unmodifiedData.state.arrays.MonthSets));
+        gkTabFill();
+    });
+
+    // Кнопка для обнуления текущей годовой карты
+    $('#gkNewButton').on('click', () => {
+        const blankArr = Array.from({length: 31}, () => 0); // массив из 31 нулевого элемента
+        data.state.arrays.MonthSets.monthset.forEach(row => {
+            row.days = blankArr.slice();
+        });
+        gkTabFill();
     });
 
 // Функционал кнопок на вкладке "Контроль входов"
@@ -638,7 +661,8 @@ $(() => {
 
     // Кнопка для загрузки исходных данных
     $('#kvReloadButton').on('click', () => {
-        kvTabFill(unmodifiedData);
+        data.state.arrays.SetCtrl = JSON.parse(JSON.stringify(unmodifiedData.state.arrays.SetCtrl));
+        kvTabFill();
     });
 
     // Выбор строк в таблицах по клику
@@ -690,19 +714,6 @@ $(() => {
         map.events.add(['wheel', 'mousemove'], function (e) {
             zoom = map._zoom;
         });
-        // $('#map').on('click', function (event) {
-        //     // x = event.clientX;
-        //     // y = event.clientY;
-        //     zoom = map._zoom;
-        //     let coords = event.get('coords');
-        //     points.Y = coords[0].toPrecision(9);
-        //     points.X = coords[1].toPrecision(9);
-        //     map.setCenter([points.Y, points.X], zoom);
-        //     console('center', [points.Y, points.X]);
-        //     console('minus', map.converter.clientPixelsToCoordinates(new YMaps.Point(-225, -225)));
-        //     console('plus', map.converter.clientPixelsToCoordinates(new YMaps.Point(225, 225)));
-        // });
-
 
         map.events.add('click', function (event) {
             zoom = map._zoom;
@@ -794,13 +805,13 @@ function loadData(newData, firstLoadFlag) {
     pkTabFill2(data, firstLoadFlag);
 
     // Вкладка сут. карт
-    skTabFill(data, firstLoadFlag);
+    skTabFill(firstLoadFlag);
 
     // Вкладка нед. карт
-    nkTabFill(data);
+    nkTabFill();
 
     // Вкладка карт года
-    gkTabFill(data);
+    gkTabFill();
 
     // Вкладка внеш. входов
     vvTabFill(firstLoadFlag);
@@ -1135,8 +1146,8 @@ function pkTabFill2(newData, firstLoadFlag) {
 }
 
 // Заполнение вкладки "Сут. карты"
-function skTabFill(newData, firstLoadFlag) {
-    daySets = newData.state.arrays.DaySets.daysets;
+function skTabFill(firstLoadFlag) {
+    daySets = data.state.arrays.DaySets.daysets;
     daySets.forEach(daySet => {
         if (firstLoadFlag) $('#mapNum').append(new Option(daySet.num, daySet.num - 1));
     });
@@ -1144,14 +1155,14 @@ function skTabFill(newData, firstLoadFlag) {
 }
 
 // Заполнение вкладки "Нед. карты"
-function nkTabFill(newData) {
-    weekSets = newData.state.arrays.WeekSets.wsets;
+function nkTabFill() {
+    weekSets = data.state.arrays.WeekSets.wsets;
     tableFill(weekSets, 'nkTable', nkTableFlag);
 }
 
 // Заполнение вкладки "Карты года"
-function gkTabFill(newData) {
-    monthSets = newData.state.arrays.MonthSets.monthset;
+function gkTabFill() {
+    monthSets = data.state.arrays.MonthSets.monthset;
     tableFill(monthSets, 'gkTable', gkTableFlag);
 }
 
@@ -1215,7 +1226,7 @@ function tableFill(set, table, staticFlag) {
     if (firstLoad) tableChange(set, table, !staticFlag);
 }
 
-// Функция для сохранения изменений в вышеперечисленных таблицах
+// Функция для сохранения изменений в таблицах недельных карт, годовых карт и длительности МГР при неисправности ДТ
 function tableChange(set, table, daysFlag) {
     $('#' + table).on('change', () => {
         let counter = 0;
@@ -1227,7 +1238,7 @@ function tableChange(set, table, daysFlag) {
             });
             (daysFlag) ? set[counter++].days = setArr : data.state.arrays.SetTimeUse.notwork = setArr;
         });
-        console.log(data.state);
+        // console.log(data.state);
     })
 }
 
@@ -1347,12 +1358,15 @@ function skTableChange(table) {
     $('#' + table).on('change', () => {
         let selected = $('#mapNum').val();
         let tableData = [];
-        $(`#${table} tbody tr`).each(function () {
+        let endOfTheDay = -1;
+
+        $(`#${table} tbody tr`).each(function (index) {
             let rec = [];
             $(this).find('td').each(function () {
                 $(this).find('input').each(function () {
-                    let value = $(this).val();
-                    rec.push(Number((value.startsWith('0')) ? value.substring(1, 2) : value));
+                    let value = Number(($(this).val().startsWith('0')) ? $(this).val().substring(1, 2) : $(this).val());
+                    if ((value === 24) && (endOfTheDay === -1)) endOfTheDay = index;
+                    rec.push(((endOfTheDay !== -1) && (index > endOfTheDay)) ? 0 : value);
                 })
             });
             tableData.push(rec);
@@ -1374,35 +1388,38 @@ function skTableChange(table) {
 function kvTableChange(table) {
     $('#' + table).on('change', () => {
         let tableData = [];
-        $(`#${table} tbody tr`).each(function () {
+        let endOfTheDay = -1;
+
+        $(`#${table} tbody tr`).each(function (index) {
             let rec = [];
             $(this).find('td').each(function () {
                 let text = $(this)[0].innerText;
                 if ((text !== ':') && (text !== '')) {
                     if (text.includes(':')) {
                         let time = text.split(':');
-                        rec.push(Number(time[0]));
-                        rec.push(Number(time[1]));
+                        rec.push(((endOfTheDay !== -1) && (index > endOfTheDay)) ? 0 : Number(time[0]));
+                        rec.push(((endOfTheDay !== -1) && (index > endOfTheDay)) ? 0 : Number(time[1]));
                     } else {
-                        rec.push(Number(text));
+                        rec.push(((endOfTheDay !== -1) && (index > endOfTheDay)) ? 0 : Number(text));
                     }
                 }
-                $(this).find('input').each(function () {
-                    let value = $(this).val();
-                    rec.push(Number(((value.startsWith('0')) && (value.length > 1)) ? value.substring(1, 2) : value));
-                })
+            });
+            $(this).find('input').each(function () {
+                let value = Number(($(this).val().startsWith('0') && ($(this).val().length > 1)) ? $(this).val().substring(1, 2) : $(this).val());
+                if ((value === 24) && (endOfTheDay === -1)) endOfTheDay = index;
+                rec.push(((endOfTheDay !== -1) && (index > endOfTheDay)) ? 0 : value);
             });
             tableData.push(rec);
         });
-        let counter = 0;
-        stageSets.forEach(variable => {
-            variable.line = tableData[counter][0];
-            variable.start.hour = tableData[counter][1];
-            variable.start.min = tableData[counter][2];
-            variable.end.hour = tableData[counter][3];
-            variable.end.min = tableData[counter][4];
-            variable.lenTVP = tableData[counter][5];
-            variable.lenMGR = tableData[counter++][6];
+
+        stageSets.forEach((variable, index) => {
+            variable.line = index + 1;
+            variable.start.hour = tableData[index][1];
+            variable.start.min = tableData[index][2];
+            variable.end.hour = tableData[index][3];
+            variable.end.min = tableData[index][4];
+            variable.lenTVP = tableData[index][5];
+            variable.lenMGR = tableData[index][6];
         });
         data.state.arrays.SetCtrl.Stage = stageSets;
         newTableFill(table, false);
@@ -1468,7 +1485,7 @@ function pkTabFill(table) {
 
             if (index === 0) {
                 disabledStatusMap.duration = false;
-            } else if ((index < (currPK.sts.length - 1)) && (($('[class~=num' + index + ']').val() !== '0') || ($('[class~=tf' + index + ']').val() !== '0'))) {
+            } else if ((index <= (currPK.sts.length - 1)) && (($('[class~=num' + index + ']').val() !== '0') || ($('[class~=tf' + index + ']').val() !== '0'))) {
                 disabledStatusMap.num = (row.tf === 1) || (row.tf === 8);
                 disabledStatusMap.tf = false;
                 disabledStatusMap.duration = false;
@@ -1611,14 +1628,14 @@ function pkTabFill(table) {
                 }
             });
 
-            $('#razlen').on('change', () => {
+            $('#razlen').on('change', (evt) => {
                 setDK[$('#pkSelect').val()].sts.forEach(function (row, index) {
                     if (row.plus === '') row.plus = false;
                     if ((row.tf > 4) && (row.tf < 8)) {
                         $('[class~=duration' + index + ']')[0].disabled = !$('#razlen').prop('checked');
                     } else if ((row.tf > 1) && (row.tf < 5)) {
-                        $('[class~=duration' + index + ']').val(findMaxTvpDuration(setDK[$('#pkSelect').val()].sts, index, row.tf)).change();
-                        if (!$('#razlen').prop('checked')) {
+                        if (!evt.target.checked) {
+                            $('[class~=duration' + index + ']').val(findMaxTvpDuration(setDK[$('#pkSelect').val()].sts, index, row.tf)).change();
                             row.plus = false;
                             $('[class~=plus' + index + ']').val('');
                         }
@@ -1781,7 +1798,7 @@ function pkTabFill(table) {
                                     if ((tf === 5) || (tf === 6)) {
                                         // Зам. ТВП 1, Зам. ТВП 2
                                         let replCount = findReplacementCount(currSts, swId);
-                                        index = (((swId + replCount) === currSts.length - 1) || (checkLastLine(currSts[swId + replCount]))) ? 0 : swId + replCount;
+                                        index = (((swId + replCount) === currSts.length - 1) || (checkLastLine(currSts[swId + replCount + 1]))) ? 0 : swId + replCount + 1;
                                     } else if (tf === 7) {
                                         // Зам.
                                         index = (((swId + 2) === currSts.length - 1) || (checkLastLine(currSts[swId + 2]))) ? 0 : swId + 2;
@@ -1798,8 +1815,7 @@ function pkTabFill(table) {
                                 $('#tc').val(cycleTime - inputDiff).change();
                             }
                         }
-
-                        validatePkByDuration(currSts);
+                        validatePkByDuration(currSts, difLen);
                     });
                     break;
                 case 5:
@@ -1812,8 +1828,8 @@ function pkTabFill(table) {
         });
     });
 
-    if (tableType) pkTableDurationFunctional();
     pkTableValidate();
+    if (tableType) pkTableDurationFunctional();
     $('#razlen').change();
     data.state.arrays.SetDK.dk[selected] = setDK[selected];
 }
@@ -1878,7 +1894,7 @@ function findMaxTvpDuration(currSts, index, tf) {
 }
 
 // Приведение данных массивов ПК в соотвествие с таблицей на экране
-function validatePkByDuration(currSts) {
+function validatePkByDuration(currSts, difLen) {
     currSts.forEach((sw, index) => {
         let shift = Number($('#shift').val());
         let tf = Number($(`[class~=tf${index}]`).val());
@@ -1887,15 +1903,23 @@ function validatePkByDuration(currSts) {
             // TODO зам может быть больше ТВП => на последнем заме нужно знать масимальную длительность всего ТВП
             if ((tf < 5) || (tf > 7)) {
                 // Не Зам фаза
-                $(`[class~=start${index}]`).val((index === 0) ? shift :
-                    (Number($(`[class~=start${index - 1}]`).val()) + Number($(`[class~=duration${index - 1}]`).val())));
+                if (index === 0) {
+                    $(`[class~=start${index}]`).val(shift);
+                } else {
+                    if (difLen && ((currSts[index - 1].tf > 4) && (currSts[index - 1].tf < 8))) {
+                        let tvpIndex = index;
+                        while (!((currSts[tvpIndex].tf > 1) && (currSts[tvpIndex].tf < 5))) tvpIndex--;
+                        $(`[class~=start${index}]`).val(Number($(`[class~=start${index - 1}]`).val()) + findMaxTvpDuration(currSts, tvpIndex, currSts[tvpIndex].tf));
+                    } else {
+                        $(`[class~=start${index}]`).val(Number($(`[class~=start${index - 1}]`).val()) + Number($(`[class~=duration${index - 1}]`).val()));
+                    }
+                }
                 currSts[index].start = Number($(`[class~=start${index}]`).val());
             } else {
                 // Зам фаза
                 currSts[index].start = Number($(`[class~=start${index - 1}]`).val());
                 $(`[class~=start${index}]`).val(currSts[index].start);
             }
-
         }
 
         sw.stop = Number($(`[class~=duration${index}`).val()) + Number($(`[class~=start${index}`).val());
@@ -1944,7 +1968,7 @@ function addPkSwitch(index, tf, num, start, stop) {
     currSts.forEach(sts => {
         map.set(sts.line, sts);
     });
-    map.delete(map.size - 1);
+    map.delete(map.size);
     map.set(((index + 1) + (index + 2)) / 2, newRow);
     let sortedMap = new Map([...map.entries()].sort(sortFunc));
     // console.log(sortedMap);
