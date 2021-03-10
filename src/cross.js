@@ -536,7 +536,7 @@ function checkConnection(connectionFlag) {
     $('#sk').hide();
     $('#nk').hide();
     $('#phase').hide();
-    $('#transition').hide();
+    // $('#transition').hide();
     $('#expandedTable').hide();
     $('#verificationRow').hide();
 

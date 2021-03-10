@@ -2,6 +2,7 @@ let crossesSave = [];
 let devicesSave = [];
 let errorRows = [];
 let ws;
+let scrollSave = 0;
 
 //Функция для открытия вкладки
 function openPage(url) {
@@ -43,19 +44,17 @@ function checkDifference() {
         let cross = checkCross(device.idevice);
         if (switchArrayType(cross.arrayType) !== switchArrayTypeFromDevice(device.device.Model)) {
             let list = $('#table').bootstrapTable('getData');
-            let i = 0;
             let index = -1;
-            list.forEach(item => {
+            list.forEach((item, i) => {
                 if (item.idevice === device.idevice) {
                     index = i;
                 }
-                i++;
             });
             if (!errorRows.includes(device.idevice)) errorRows.push(device.idevice);
             $('#table tbody tr').each((i, tr) => {
-                if (i++ === index) {
+                if (i === index) {
                     $(tr).find('td').each((j, td) => {
-                        if (j++ === devNumInTable) {
+                        if (j === devNumInTable) {
                             $(td).attr('style', 'background-color: red;');
                         }
                     })
@@ -164,6 +163,7 @@ function buildTable(firstLoadFlag) {
     let $table = $('#table');
     let toWrite = [];
     let selected = $table.bootstrapTable('getSelections');
+    scrollSave = $table.bootstrapTable('getScrollPosition');
 
     crossesSave.forEach(cross => {
         let device = checkDevice(cross.idevice).device;
@@ -184,19 +184,10 @@ function buildTable(firstLoadFlag) {
         if ((cross.idevice === crossesSave[0].idevice) && (firstLoadFlag)) copy.state = true;
         toWrite.push(copy);
     });
-    // let all = $table.bootstrapTable('getData');
-    // let one = $table.bootstrapTable('getSelections')[0];
-    // let selectedRow = 0;
-    // if (one) {
-    //     all.forEach((row, index) => {
-    //         if ((row.area === one.area) && (row.usdk === one.usdk)) {
-    //             selectedRow = index;
-    //         }
-    //     });
-    // }
+
     $table.bootstrapTable('load', toWrite);
     $table.bootstrapTable('hideColumn', 'idevice');
-    // $table.bootstrapTable('scrollTo', {unit: 'rows', value: selectedRow});
+    $table.bootstrapTable('scrollTo', {unit: 'px', value: scrollSave});
 
     $table.unbind().on('click', function () {
         buildBottom();
@@ -380,39 +371,31 @@ function buildBottom() {
 }
 
 function updateDevices(device) {
-    let i = 0;
-    devicesSave.forEach(dev => {
+    devicesSave.forEach((dev, i) => {
         if (device.idevice === dev.idevice) devicesSave[i] = device;
-        i++;
     })
 }
 
 function checkDevice(idevice) {
     let device = {};
-    let i = 0;
-    devicesSave.forEach(dev => {
+    devicesSave.forEach((dev, i) => {
         if (dev.idevice === idevice) device = devicesSave[i];
-        i++;
     });
     return device;
 }
 
 function checkCross(idevice) {
     let cross = {};
-    let i = 0;
-    crossesSave.forEach(crossS => {
+    crossesSave.forEach((crossS, i) => {
         if (crossS.idevice === idevice) cross = crossesSave[i];
-        i++;
     });
     return cross;
 }
 
 function checkDeviceID(idevice) {
     let retValue = -1;
-    let i = 0;
-    devicesSave.forEach(dev => {
+    devicesSave.forEach((dev, i) => {
         if (dev.idevice === idevice) retValue = i;
-        i++;
     });
     return retValue;
 }

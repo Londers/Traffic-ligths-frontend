@@ -26,16 +26,45 @@ function openPage(url) {
 }
 
 function getRandomColor() {
-    var letters = '0123456789A';
-    var color = '#';
-    for (var i = 0; i < 6; i++) {
+    let letters = '0123456789A';
+    let color = '#';
+    for (let i = 0; i < 6; i++) {
         color += letters[Math.floor(Math.random() * 11)];
     }
     return color;
 }
 
+function openAbout(closeOnExpiration) {
+    // Instantiate new modal
+    let modal = new Custombox.modal({
+        content: {
+            effect: 'corner',
+            target: '#modal',
+            speedIn: 600,
+            speedOut: 600,
+            onOpen: () => {
+                $('#modal').parent().show();
+            },
+        },
+        overlay: {
+            opacity: 0,
+            // speedIn: 600,
+            // speedOut: 600,
+            onClose: () => {
+                $('#modal').parent().hide();
+            }
+        }
+    });
+    // Open
+    modal.open();
+    if (closeOnExpiration) {
+        setTimeout(() => $('#modal').parent().trigger('click'), 3000);
+    }
+}
+
 ymaps.ready(function () {
     // $('#workPlace').hide();
+    $('#modal').hide();
     $('#switchLayout').parent().hide();
     createEye();
     $('#dropdownControlButton').trigger('click');
@@ -133,6 +162,10 @@ ymaps.ready(function () {
         openPage('/techSupp');
     });
 
+    $('#aboutButton').on('click', function () {
+        openAbout(false);
+    });
+
     //Выбор места для открытия на карте
     $('#loginButton').on('click', function () {
         $('#login').val('');
@@ -145,16 +178,6 @@ ymaps.ready(function () {
         if (confirm('Вы уверены?')) {
             ws.send(JSON.stringify({type: 'logOut'}));
         }
-        // $.ajax({
-        //     type: 'POST',
-        //     url: location.href + '/logOut',
-        //     success: function (data) {
-        //         location.href = location.origin;
-        //     },
-        //     error: function (request) {
-        //         console.log(request.status + ' ' + request.responseText);
-        //     }
-        // });
     });
 
     $('#changeUserButton').on('click', function () {
@@ -363,7 +386,7 @@ ymaps.ready(function () {
                     IDs.push(trafficLight.region.num + '-' + trafficLight.area.num + '-' + trafficLight.ID);
                     //Создание меток контроллеров на карте
                     let placemark = new ymaps.Placemark([trafficLight.points.Y, trafficLight.points.X], {
-                        hintContent: trafficLight.description  + '<br>' + trafficLight.idevice
+                        hintContent: trafficLight.description + '<br>' + trafficLight.idevice
                     }, {
                         iconLayout: createChipsLayout(function (zoom) {
                             // Размер метки будет определяться функией с оператором switch.
@@ -385,6 +408,7 @@ ymaps.ready(function () {
                         + ((data.region === '*') ? 'Все регионы' : ((reg === undefined) ? '' : reg))
                         + '\n' + ((desc === undefined) ? 'АРМ' : ((data.role === 'Viewer') ? 'АРМ наблюдателя' : 'АРМ дежурного - ') + data.description)
                         + '\n' + localStorage.getItem('login');
+                    openAbout(true);
                 }
                 break;
             case 'tflight':
@@ -403,7 +427,7 @@ ymaps.ready(function () {
                         let id = trafficLight.ID;
                         let index = IDs.indexOf(trafficLight.region.num + '-' + trafficLight.area.num + '-' + id);
                         let placemark = new ymaps.Placemark([trafficLight.points.Y, trafficLight.points.X], {
-                            hintContent: trafficLight.description  + '<br>' +trafficLight.idevice
+                            hintContent: trafficLight.description + '<br>' + trafficLight.idevice
                         }, {
                             iconLayout: createChipsLayout(function (zoom) {
                                 // Размер метки будет определяться функией с оператором switch.
@@ -427,7 +451,7 @@ ymaps.ready(function () {
                     IDs.push(trafficLight.region.num + '-' + trafficLight.area.num + '-' + trafficLight.ID);
                     //Создание меток контроллеров на карте
                     let placemark = new ymaps.Placemark([trafficLight.points.Y, trafficLight.points.X], {
-                        hintContent: trafficLight.description  + '<br>' +trafficLight.idevice
+                        hintContent: trafficLight.description + '<br>' + trafficLight.idevice
                     }, {
                         iconLayout: createChipsLayout(function (zoom) {
                             // Размер метки будет определяться функией с оператором switch.
@@ -452,6 +476,9 @@ ymaps.ready(function () {
                 break;
             case 'login':
                 if (data.status) {
+
+                    openAbout(true);
+
                     $('#login').val('');
                     $('#password').val('');
                     document.cookie = ('Authorization=Bearer ' + data.token);
@@ -804,17 +831,13 @@ function deleteSubareasLayout(map) {
     subareasLayout = [];
 }
 
-function convexHullTry(map, coords, description) {
+function convexHullTry(map, coordinates, description) {
     let color = getRandomColor();
-    let coordinates = [];
-    coords.forEach(point => {
-        coordinates.push([point.Y, point.X]);
-    });
     // Создаем многоугольник, используя вспомогательный класс Polygon.
-    var myPolygon = new ymaps.Polygon([
+    let myPolygon = new ymaps.Polygon([
         // Указываем координаты вершин многоугольника.
         // Координаты вершин внешнего контура.
-        coordinates,
+        coordinates.map(point => [point.Y, point.X]),
         // Координаты вершин внутреннего контура.
         [
             [0, 0]

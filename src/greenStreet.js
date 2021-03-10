@@ -13,7 +13,6 @@ let description = '';
 let tflights = [];
 let currentRouteTflights = new Map();
 let routeList = [];
-let routeListLength = 0;
 let allRoutesList = [];
 let lastRoute = {};
 let circlesMap = new Map();
@@ -26,9 +25,9 @@ let sendedPhaseSave = new Map();
 let ws;
 
 function getRandomColor() {
-    var letters = '0123456789A';
-    var color = '#';
-    for (var i = 0; i < 6; i++) {
+    let letters = '0123456789A';
+    let color = '#';
+    for (let i = 0; i < 6; i++) {
         color += letters[Math.floor(Math.random() * 11)];
     }
     return color;
@@ -40,7 +39,6 @@ function deleteCircle(map, circle, pos, description) {
     routeList.forEach((route, index) => {
         if ((route.pos.region === pos.region) && (route.pos.area === pos.area) && (route.pos.id === pos.id)) routeList.splice(index, 1);
     });
-    routeListLength -= 1;
     $('#table').bootstrapTable('remove', {field: 'desc', values: [description]});
     $('#navTable').bootstrapTable('remove', {field: 'tflight', values: [description]});
 
@@ -59,7 +57,7 @@ function createIdeviceArray() {
     });
 
     tflist.forEach(tf => {
-        tflights.some(element => {
+        tflights.forEach(element => {
             if ((element.region.num === tf.pos.region) && (element.area.num === tf.pos.area) && (element.ID === tf.pos.id)) idevices.push(element.idevice);
         });
     });
@@ -67,8 +65,8 @@ function createIdeviceArray() {
     return idevices;
 }
 
-function handleClick(map, trafficLight) {
-    let coordinates = [trafficLight.points.Y, trafficLight.points.X];
+function handleClick(map, trafficLight, diffCoords) {
+    let coordinates = (diffCoords === undefined) ? [trafficLight.points.Y, trafficLight.points.X] : diffCoords;
     let region = trafficLight.region.num;
     let area = trafficLight.area.num;
     let id = trafficLight.ID;
@@ -107,12 +105,12 @@ function handleClick(map, trafficLight) {
 
     if (returnFlag) return;
 
-    if (routeListLength > 0) {
-        if (routeList[routeListLength - 1].pos.region !== region) return;
+    if (routeList.length > 0) {
+        if (routeList[routeList.length - 1].pos.region !== region) return;
     }
 
     routeList.push({
-        num: routeListLength++,
+        num: routeList.length,
         phase: -1,
         point: {Y: coordinates[0], X: coordinates[1]},
         pos: {region: region, area: area, id: id}
@@ -123,7 +121,7 @@ function handleClick(map, trafficLight) {
         // Координаты центра круга.
         coordinates,
         // Радиус круга в метрах.
-        radiusCalculate(map._zoom)
+        radiusCalculate(map.getZoom())
     ], {
         // Описываем свойства круга.
         // Содержимое балуна.
@@ -202,13 +200,11 @@ function makeSelects() {
 }
 
 function fillPhases() {
-    if (routeListLength === 0) return;
+    if (routeList.length === 0) return;
     let selects = $('#table').find('select');
-    let counter = 0;
-    routeList.slice().forEach(route => {
-        route.phase = Number(selects[counter].selectedOptions[0].innerText);
-        routeList[counter++] = route;
-    });
+
+    routeList.map((route, index) => route.phase = Number(selects[index].selectedOptions[0].innerText));
+
     ws.send(JSON.stringify({
         type: 'createRoute',
         region: routeList[0].pos.region,
@@ -259,15 +255,15 @@ function radiusCalculate(zoom) {
 }
 
 function circlesControl(map) {
-    if (zoom !== map._zoom) {
+    if (zoom !== map.getZoom()) {
         circlesMap.forEach(circle => {
             map.geoObjects.remove(circle);
         });
         circlesMap.forEach(circle => {
-            circle.geometry.setRadius(radiusCalculate(map._zoom));
+            circle.geometry.setRadius(radiusCalculate(map.getZoom()));
             map.geoObjects.add(circle);
         });
-        zoom = map._zoom;
+        zoom = map.getZoom();
     }
 }
 
@@ -312,7 +308,7 @@ function findIndex(hintContent) {
     $('#navTable tbody tr').each((i, tr) => {
         $(tr).find('td').each((j, td) => {
             if (td.cellIndex === 2) {
-                if ($(td)[0].innerText.trim() === hintContent.trim()) id = i;
+                if ($(td)[0].innerText.replace(/\s/g, "") === hintContent.replace(/\s/g, "")) id = i;
             }
         })
     });
@@ -321,12 +317,34 @@ function findIndex(hintContent) {
 
 function getStatus(position) {
     let currPhase = -1;
-    tflights.some(element => {
+    tflights.forEach(element => {
         if ((element.region.num === position.region) && (element.area.num === position.area) && (element.ID === position.id)) {
             currPhase = element.tlsost.num;
         }
     });
     return currPhase;
+}
+
+function distanceBetweenPoints(x1, y1, x2, y2) {
+    return Math.sqrt((Math.pow((x2 - x1), 2) + (Math.pow((y2 - y1), 2))));
+}
+
+function findClosestTFLight(coords) {
+    let closestTFLight = undefined;
+    let x1 = coords[1];
+    let y1 = coords[0];
+    let minDistance = 0;
+    tflights.forEach(tflight => {
+        let x2 = tflight.points.X;
+        let y2 = tflight.points.Y;
+        let distance = distanceBetweenPoints(x1, y1, x2, y2);
+        if ((minDistance === 0) || minDistance > distance) {
+            minDistance = distance;
+            closestTFLight = tflight;
+        }
+    });
+    console.log(minDistance);
+    return closestTFLight;
 }
 
 ymaps.ready(function () {
@@ -341,6 +359,11 @@ ymaps.ready(function () {
     let map = new ymaps.Map('map', {
         center: [54.9912, 73.3685],
         zoom: 19
+    });
+
+    map.events.add(['click'], function (evt) {
+        let coords = evt.getSourceEvent().get('coords');
+        handleClick(map, findClosestTFLight(coords), coords);
     });
 
     map.events.add(['wheel', 'mousemove', 'click'], function () {
@@ -360,17 +383,19 @@ ymaps.ready(function () {
     });
 
     $('#deleteButton').on('click', function () {
-        let selected = $('#table').bootstrapTable('getSelections')[0];
-        let place = $('#routes').val().split('---');
-        allRoutesList.forEach((route, index) => {
-            if ((route.region === place[0]) && (route.description === place[1])) {
-                route.listTL.forEach((tf, index) => {
-                    if ((tf.pos.region === selected.region) && (tf.pos.area === selected.area) && (tf.pos.id === selected.id)) route.listTL.splice(index, 1);
-                })
-            }
-            setRouteArea(map, route.box, route.description, index);
-        });
-        $('#table').bootstrapTable('remove', {field: 'state', values: [true]});
+        if (confirm('Вы уверены? Маршрутs будет безвозвратно удалён.')) {
+            let selected = $('#table').bootstrapTable('getSelections')[0];
+            let place = $('#routes').val().split('---');
+            allRoutesList.forEach((route, index) => {
+                if ((route.region === place[0]) && (route.description === place[1])) {
+                    route.listTL.forEach((tf, index) => {
+                        if ((tf.pos.region === selected.region) && (tf.pos.area === selected.area) && (tf.pos.id === selected.id)) route.listTL.splice(index, 1);
+                    })
+                }
+                setRouteArea(map, route.box, route.description, index);
+            });
+            $('#table').bootstrapTable('remove', {field: 'state', values: [true]});
+        }
     });
 
     $('#fixationButton').on('click', function () {
@@ -417,9 +442,9 @@ ymaps.ready(function () {
                 currRoute = route;
             }
         });
-        currRoute.listTL.forEach((tl, index) => {
-            tl.phase = Number($('#phase' + index).val());
-        });
+
+        currRoute.listTL.map((tl, index) => tl.phase = Number($('#phase' + index).val()));
+
         ws.send(JSON.stringify({
             type: 'updateRoute',
             description: currRoute.description,
@@ -482,9 +507,7 @@ ymaps.ready(function () {
                 setRouteArea(map, route.box, route.description, index);
                 map.geoObjects.each(object => {
                     if (object.geometry) {
-                        if (route.listTL.some(tl => {
-                            return (JSON.stringify([tl.point.Y, tl.point.X]) === JSON.stringify(object.geometry.getCoordinates()));
-                        })) {
+                        if (route.listTL.some(tl => (JSON.stringify(tl.pos) === JSON.stringify(object.pos)))) {
                             currentRouteTflights.set(findIndex(object.properties._data.hintContent), object);
                         }
                     }
@@ -570,6 +593,7 @@ ymaps.ready(function () {
                             return calculate(zoom);
                         }),
                     });
+                    placemark.pos = {region: trafficLight.region.num, area: trafficLight.area.num, id: trafficLight.ID};
                     //Функция для вызова АРМ нажатием на контроллер
                     placemark.events.add('click', function () {
                         handleClick(map, trafficLight);
@@ -642,6 +666,7 @@ ymaps.ready(function () {
                             return calculate(zoom);
                         }),
                     });
+                    placemark.pos = {region: trafficLight.region.num, area: trafficLight.area.num, id: trafficLight.ID};
                     //Функция для вызова АРМ нажатием на контроллер
                     placemark.events.add('click', function () {
                         handleClick(map, trafficLight);
@@ -668,19 +693,20 @@ ymaps.ready(function () {
 
                 if (data.login === localStorage.getItem('login')) {
                     $('#routes option[value=' + data.route.region + '---' + data.route.description + ']').attr('selected', 'selected');
+                    $('#routes').change();
 
                     circlesMap.forEach((value, key) => {
                         map.geoObjects.remove(value);
                         circlesMap.delete(key);
                     });
 
-                    setRouteArea(map, data.route.box, data.route.description, allRoutesList.length - 1);
-
-                    $('#sendRouteButton').hide();
-                    $('#tableCol').show();
-                    $('#updateRouteButton').show();
-                    $('#deleteRouteButton').show();
-                    $('#startRouteButton').show();
+                    // setRouteArea(map, data.route.box, data.route.description, allRoutesList.length - 1);
+                    //
+                    // $('#sendRouteButton').hide();
+                    // $('#tableCol').show();
+                    // $('#updateRouteButton').show();
+                    // $('#deleteRouteButton').show();
+                    // $('#startRouteButton').show();
                     creatingFlag = false;
                 }
                 break;
@@ -692,6 +718,10 @@ ymaps.ready(function () {
                     [boxPoint.point1.Y, boxPoint.point1.X]
                 ]);
                 $('#table').bootstrapTable('removeAll');
+                $('#navTable').bootstrapTable('removeAll');
+                $('#tableCol').hide();
+                $('#routes').change();
+                routeList = [];
                 break;
             case 'close':
                 // if (editFlag) controlSend({id: idevice, cmd: 4, param: 0});
@@ -869,9 +899,7 @@ function createAreasLayout(map) {
 }
 
 function deleteAreasLayout(map) {
-    areaLayout.forEach(layout => {
-        map.geoObjects.remove(layout);
-    });
+    areaLayout.forEach(layout => map.geoObjects.remove(layout));
     areaLayout = [];
 }
 
@@ -892,17 +920,14 @@ function deleteSubareasLayout(map) {
     subareasLayout = [];
 }
 
-function convexHullTry(map, coords, description) {
+function convexHullTry(map, coordinates, description) {
     let color = getRandomColor();
-    let coordinates = [];
-    coords.forEach(point => {
-        coordinates.push([point.Y, point.X]);
-    });
+
     // Создаем многоугольник, используя вспомогательный класс Polygon.
     var myPolygon = new ymaps.Polygon([
         // Указываем координаты вершин многоугольника.
         // Координаты вершин внешнего контура.
-        coordinates,
+        coordinates.map(point => [point.Y, point.X]),
         // Координаты вершин внутреннего контура.
         [
             [0, 0]
