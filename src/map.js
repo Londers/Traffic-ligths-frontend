@@ -125,7 +125,7 @@ ymaps.ready(function () {
             url: location.origin + '/user/' + localStorage.getItem('login') + '/license/newToken',
             data: JSON.stringify({keyStr: $('#newLicenseKey').val()}),
             dataType: 'json',
-            success: function (data) {
+            success: function () {
                 $('#licenseDialog').dialog('close');
             },
             error: function (request) {

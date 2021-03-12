@@ -7,18 +7,14 @@ let daySets;
 let weekSets;
 let monthSets;
 let stageSets;
-let recentlyClicked;
 let zoom;
 let pkFlag = true;
 let skFlag = true;
 let kvFlag = true;
 let firstLoad = true;
-// let repaintFlag = false;
 
 let map;
 
-const numberFlag = true;
-const longPathFlag = true;
 let coordinatesChangeFlag = false;
 
 const mainTableFlag = true;
@@ -666,29 +662,29 @@ $(() => {
     });
 
     // Выбор строк в таблицах по клику
-    $('#pkTable').on('click-row.bs.table', function (e, row, $element) {
+    $('#pkTable').on('click-row.bs.table', function (e, row, element) {
         $('.success').removeClass('success');
-        $($element).addClass('success');
+        $(element).addClass('success');
         colorizeSelectedRow('pkTable');
     });
-    $('#skTable').on('click-row.bs.table', function (e, row, $element) {
+    $('#skTable').on('click-row.bs.table', function (e, row, element) {
         $('.success').removeClass('success');
-        $($element).addClass('success');
+        $(element).addClass('success');
         colorizeSelectedRow('skTable');
     });
-    $('#nkTable').on('click-row.bs.table', function (e, row, $element) {
+    $('#nkTable').on('click-row.bs.table', function (e, row, element) {
         $('.success').removeClass('success');
-        $($element).addClass('success');
+        $(element).addClass('success');
         colorizeSelectedRow('nkTable');
     });
-    $('#gkTable').on('click-row.bs.table', function (e, row, $element) {
+    $('#gkTable').on('click-row.bs.table', function (e, row, element) {
         $('.success').removeClass('success');
-        $($element).addClass('success');
+        $(element).addClass('success');
         colorizeSelectedRow('gkTable');
     });
-    $('#kvTable').on('click-row.bs.table', function (e, row, $element) {
+    $('#kvTable').on('click-row.bs.table', function (e, row, element) {
         $('.success').removeClass('success');
-        $($element).addClass('success');
+        $(element).addClass('success');
         colorizeSelectedRow('kvTable');
     });
 
@@ -824,27 +820,15 @@ function loadData(newData, firstLoadFlag) {
     // Вкладка контроля входов
     kvTabFill();
 
-    setIDs();
-
-    $('td > input').on('click', function (element) {
-        recentlyClicked = Number(element.target.id);
-    });
+    setKeyboardNavigate();
 
     $('input').each(function () {
-        $(this).on('click', () => {
-            disableUnchecked();
-        });
-        $(this).on('keypress', () => {
-            disableUnchecked();
-        })
+        $(this).on('click keypress', () => disableUnchecked());
+
     });
+
     $('select').each(function () {
-        $(this).on('click', () => {
-            disableUnchecked();
-        });
-        $(this).on('keypress', () => {
-            disableUnchecked();
-        })
+        $(this).on('click keypress', () => disableUnchecked());
     });
 }
 
@@ -855,182 +839,43 @@ function disableUnchecked() {
     disableControl('addButton', false);
 }
 
-function setIDs(table) {
-    if (table === undefined) {
-        table = document;
-    } else {
-        table = $('#nav-tab').find('a[aria-selected=true]')[0].id;
-    }
-    let counter = 0;
+// Навигация по таблицам с помощью стрелочек, Enter и Tab
+function setKeyboardNavigate(table) {
+    table = (table === undefined) ? document : $('#nav-tab').find('a[aria-selected=true]')[0].id;
+
     $(table).find('table').each(function () {
-        $(this).find('tbody').find('tr').each(function () {
-            $(this).find('td').each(function () {
-                $(this).find('input').each(function () {
-                    $($(this)[0]).attr('id', counter++);
-                    $(this).on('keydown', function (event) {
-                        handleKeyboard(event);
-                    });
-                });
-            });
+        $(this).find('input').on('keydown', function (event) {
+            handleKeyboard($(this), event);
         });
     });
 }
 
-function handleKeyboard(key) {
-    let tab = $('#nav-tab').find('a[aria-selected=true]')[0].id;
-    let retValue;
-    switch (key["which"]) {
-        case 37: // left
-            if (boundsCalc(tab, Number(recentlyClicked), 'left').ret) return;
-            $('#' + (Number(recentlyClicked) - 1).toString()).focus();
-            recentlyClicked -= 1;
+function handleKeyboard($this, event) {
+    let cellIndex = $this.parents('td').index();
+    switch (event.which) {
+        case 37: // left arrow
+            $this.closest('td').prevAll('td').find("input").focus().select();
             break;
 
-        case 38: // up
-            retValue = boundsCalc(tab, Number(recentlyClicked), 'up');
-            if (retValue.ret) return;
-            $('#' + (Number(recentlyClicked) - retValue.shift).toString()).focus();
-            recentlyClicked -= retValue.shift;
+        case 38: // up arrow
+            $(event.target).closest('tr').prevAll('tr').first().find('td').eq(cellIndex).find('input').trigger('click').focus().select();
             break;
 
-        case 9:
-        case 13:
-        case 39: // right
-            if (boundsCalc(tab, Number(recentlyClicked), 'right').ret) return;
-            $('#' + (Number(recentlyClicked) + 1).toString()).focus();
-            recentlyClicked = Number(recentlyClicked) + 1;
+        case 9: // Tab
+        case 13: // Enter
+        case 39: // right arrow
+            $this.closest('td').nextAll('td').find("input").not(":hidden").first().focus().select();
             break;
 
-        case 40: // down
-            retValue = boundsCalc(tab, Number(recentlyClicked), 'down');
-            if (retValue.ret) return;
-            $('#' + (Number(recentlyClicked) + retValue.shift).toString()).focus();
-            recentlyClicked = Number(recentlyClicked) + retValue.shift;
+        case 40: // down arrow
+            $(event.target).closest('tr').nextAll('tr').find('td').eq(cellIndex).find('input').trigger('click').focus().select();
             break;
 
         default:
             return; // exit this handler for other keys
     }
-    key.preventDefault();
-}
 
-function boundsCalc(tab, clicked, key) {
-    let retValue = {ret: true, shift: 0};
-    let min;
-    let max;
-    switch (tab) {
-        case 'nav-main-tab':
-            if (key === 'left') (clicked === 0) ? retValue.ret = true : retValue.ret = false;
-            if (key === 'right') (clicked === 5) ? retValue.ret = true : retValue.ret = false;
-            break;
-        case 'nav-pk-tab':
-            if (key === 'left') (clicked === 6) ? retValue.ret = true : retValue.ret = false;
-            if (key === 'right') (clicked === 53) ? retValue.ret = true : retValue.ret = false;
-            if (key === 'up') {
-                if ((clicked > 9)) {
-                    retValue.ret = false;
-                    retValue.shift = 4;
-                }
-            }
-            if (key === 'down') {
-                if ((clicked < 50)) {
-                    retValue.ret = false;
-                    retValue.shift = 4;
-                }
-            }
-            break;
-        case 'nav-sk-tab':
-            if (key === 'left') (clicked === 54) ? retValue.ret = true : retValue.ret = false;
-            if (key === 'right') (clicked === 89) ? retValue.ret = true : retValue.ret = false;
-            if (key === 'up') {
-                if ((clicked > 56)) {
-                    retValue.ret = false;
-                    retValue.shift = 3;
-                }
-            }
-            if (key === 'down') {
-                if ((clicked < 87)) {
-                    retValue.ret = false;
-                    retValue.shift = 3;
-                }
-            }
-            break;
-        case 'nav-nk-tab':
-            if (key === 'left') (clicked === 90) ? retValue.ret = true : retValue.ret = false;
-            if (key === 'right') (clicked === 173) ? retValue.ret = true : retValue.ret = false;
-            if (key === 'up') {
-                if ((clicked > 96)) {
-                    retValue.ret = false;
-                    retValue.shift = 7;
-                }
-            }
-            if (key === 'down') {
-                if ((clicked < 167)) {
-                    retValue.ret = false;
-                    retValue.shift = 7;
-                }
-            }
-            break;
-        case 'nav-gk-tab':
-            if (key === 'left') (clicked === 174) ? retValue.ret = true : retValue.ret = false;
-            if (key === 'right') (clicked === 545) ? retValue.ret = true : retValue.ret = false;
-            if (key === 'up') {
-                if ((clicked > 204)) {
-                    retValue.ret = false;
-                    retValue.shift = 31;
-                }
-            }
-            if (key === 'down') {
-                if ((clicked < 515)) {
-                    retValue.ret = false;
-                    retValue.shift = 31;
-                }
-            }
-            break;
-        case 'nav-vv-tab':
-            max = 586;
-            if (data.state.arrays.SetTimeUse.uses.length === 8) {
-                max += 40;
-            }
-            if (key === 'left') (clicked === 546) ? retValue.ret = true : retValue.ret = false;
-            if (key === 'right') (clicked === 643) ? retValue.ret = true : retValue.ret = false;
-            if (key === 'up') {
-                if ((clicked > 550)) {
-                    retValue.ret = false;
-                    retValue.shift = 5;
-                }
-            }
-            if (key === 'down') {
-                if ((clicked < max)) {// 626
-                    retValue.ret = false;
-                    retValue.shift = 5;
-                }
-            }
-            break;
-        case 'nav-kv-tab':
-            min = 597;
-            max = 622;
-            if (data.state.arrays.SetTimeUse.uses.length === 8) {
-                min += 40;
-                max += 40;
-            }
-            if (key === 'left') (clicked === 644) ? retValue.ret = true : retValue.ret = false;
-            if (key === 'right') (clicked === 675) ? retValue.ret = true : retValue.ret = false;
-            if (key === 'up') {
-                if ((clicked > min)) {// 637
-                    retValue.ret = false;
-                    retValue.shift = 4;
-                }
-            }
-            if (key === 'down') {
-                if ((clicked < max)) {// 662
-                    retValue.ret = false;
-                    retValue.shift = 4;
-                }
-            }
-            break;
-    }
-    return retValue;
+    event.preventDefault();
 }
 
 // Заполнение вкладки "Основные"
@@ -1042,26 +887,26 @@ function mainTabFill(data, firstLoadFlag) {
         if ($('#id').val() > 255) $('#id').val(255);
         checkNew(false);
     });
-    setChange('id', 'input', '', numberFlag);
-    setChange('idevice', 'input', '', numberFlag);
+    setChange('id', 'input');
+    setChange('idevice', 'input');
     $('#idevice').val(data.state.idevice).on('change', () => {
         checkNew(false);
     });
-    setChange('area', 'select', '');
+    setChange('area', 'select');
     $('#area option[value=' + data.state.area + ']').attr('selected', 'selected');
     setChange('type', 'select', 'arrays');
     $('#type option[value=' + data.state.arrays.type + ']').attr('selected', 'selected');
     $('#subarea').val(data.state.subarea);
-    setChange('subarea', 'input', '', numberFlag);
+    setChange('subarea', 'input');
     $('#name').val(data.state.name);
-    setChange('name', 'input', '', !numberFlag);
+    setChange('name', 'input');
     $('#phone').val(data.state.phone);
-    setChange('phone', 'input', '', !numberFlag);
+    setChange('phone', 'input');
     $('#ip')[0].innerText = 'IP: ' + data.deviceIP;
     $('#tz').val(data.state.arrays.timedev.tz);
-    setChange('tz', 'input', 'arrays.timedev', numberFlag, null, true);
+    setChange('tz', 'input', 'arrays.timedev');
     $('#summer').prop('checked', data.state.arrays.timedev.summer);
-    setChange('summer', 'checkbox', 'arrays.timedev', !numberFlag, !longPathFlag);
+    setChange('summer', 'checkbox', 'arrays.timedev');
 
     $('#vpcpd').val((parseFloat(data.state.Model.vpcpdl + '.' + data.state.Model.vpcpdr) <= 12.3) ? 12.3 : 12.4);
     Number($('#vpcpd').val()) <= 12.3 ?
@@ -1074,9 +919,9 @@ function mainTabFill(data, firstLoadFlag) {
     });
 
     $('#vpbsl').val(data.state.Model.vpbsl);
-    setChange('vpbsl', 'input', 'Model', numberFlag);
+    setChange('vpbsl', 'input', 'Model');
     $('#vpbsr').val(data.state.Model.vpbsr);
-    setChange('vpbsr', 'input', 'Model', numberFlag);
+    setChange('vpbsr', 'input', 'Model');
 
     anotherTableFill('table', mainTableFlag);
 }
@@ -1123,24 +968,22 @@ function pkTabFill2(newData, firstLoadFlag) {
     setDK = JSON.parse(JSON.stringify(newData)).state.arrays.SetDK.dk;
 
     if (firstLoadFlag) {
-        setChange('tc', 'input', 'arrays.SetDK.dk', numberFlag, longPathFlag);
-        setChange('twot', 'checkbox', 'arrays.SetDK.dk', !numberFlag, longPathFlag);
-        setChange('shift', 'input', 'arrays.SetDK.dk', numberFlag, longPathFlag);
-        setChange('tpu', 'select', 'arrays.SetDK.dk', !numberFlag, longPathFlag);
+        setChange('tc', 'input', 'arrays.SetDK.dk');
+        setChange('twot', 'checkbox', 'arrays.SetDK.dk');
+        setChange('shift', 'input', 'arrays.SetDK.dk');
+        setChange('tpu', 'select', 'arrays.SetDK.dk');
         $('#tpu').on('change keyup', function (evt) {
             if (evt.target.value === '1') {
                 $('#shift').val(0).change().prop('disabled', true);
                 $('#tc').prop('disabled', true);
-                // $('#shift').change();
-                // $('#shift').prop('disabled', true);
             } else {
                 $('#shift').prop('disabled', false);
                 $('#tc').prop('disabled', false);
             }
             $('#razlen').change();
         });
-        setChange('razlen', 'checkbox', 'arrays.SetDK.dk', !numberFlag, longPathFlag);
-        setChange('desc', 'input', 'arrays.SetDK.dk', !numberFlag, longPathFlag);
+        setChange('razlen', 'checkbox', 'arrays.SetDK.dk');
+        setChange('desc', 'input', 'arrays.SetDK.dk');
     }
     pkTabFill('pkTable');
 }
@@ -1172,18 +1015,18 @@ function vvTabFill(firstLoadFlag) {
 
     $('#ite').val(data.state.arrays.SetTimeUse.ite);
     if (firstLoadFlag) {
-        setChange('ite', 'input', 'arrays.SetTimeUse', numberFlag, null, true);
+        setChange('ite', 'input', 'arrays.SetTimeUse');
         $('#ite').on('change', () => {
-            data.state.arrays.defstatis.lvs[0].ninput = Number($('#tuin').val());
+            data.state.arrays.defstatis.lvs[0].ninput = Number($('#ite').val());
         });
     }
+
     $('#tuin').val(data.state.arrays.defstatis.lvs[0].period);
     if (firstLoadFlag) {
         $('#tuin').on('change', () => {
             data.state.arrays.defstatis.lvs[0].period = Number($('#tuin').val());
         });
     }
-    // setChange('tuin', 'input', 'arrays.SetTimeUse', numberFlag);
 
     tableFill([0], 'vv2Table', vv2TableFlag);
 }
@@ -1473,11 +1316,6 @@ function pkTabFill(table) {
     });
 
     function pkTableDurationFunctional() {
-        // let $table = $('#pkTable');
-        // let cycleTime = Number($('#tc').val()) - Number($('#shift').val());
-        // let shift = $('#shift').val();
-        // let helpArray = ['start', 'tf', 'num', 'duration', 'plus'];
-        // let helpMap = {start: true, tf: true, num: true, duration: true, plus: true};
         let difLen = $('#razlen').prop('checked');
 
         currPK.sts.forEach(function (row, index) {
@@ -1900,7 +1738,6 @@ function validatePkByDuration(currSts, difLen) {
         let tf = Number($(`[class~=tf${index}]`).val());
 
         if (!checkLastLine(sw)) {
-            // TODO зам может быть больше ТВП => на последнем заме нужно знать масимальную длительность всего ТВП
             if ((tf < 5) || (tf > 7)) {
                 // Не Зам фаза
                 if (index === 0) {
@@ -1991,7 +1828,7 @@ function deleteSwitch(index) {
     let selected = $('#pkSelect').val();
     let oldData = [];
     let emptyRow = {line: 0, start: 0, num: 0, tf: 0, stop: 0, plus: false};
-    let currentRow = setDK[selected].sts[index];// getSelectedRowData('pkTable', 'sts');
+    let currentRow = setDK[selected].sts[index];
     const controlType = $('#tpu').val();
 
     if ((currentRow === undefined) || (currentRow.line === 1)) return;
@@ -2165,64 +2002,38 @@ function handsomeNumbers(num) {
 }
 
 // Функция для сохранения изменений всех не табличных элементов
-function setChange(element, type, fullPath, numFlag, hardFlag, shitcodeFlag) {
+function setChange(element, type, fullPath) {
     if (!firstLoad) return;
-    let path = fullPath.split('.');
-    if (path[1] !== undefined) {
-        if (type === 'input') {
-            $('#' + element).on('change', () => {
-                if (numFlag) {
-                    shitcodeFlag ? data.state[path[0]][path[1]][element] = Number($('#' + element).val()) :
-                        (hardFlag ? data.state[path[0]][path[1]][path[2]][$('#pkSelect').val()][element] = Number($('#' + element).val())
-                            : data.state[path[0]][path[1]][path[2]][element] = Number($('#' + element).val()));
-                } else {
-                    data.state[path[0]][path[1]][path[2]][$('#pkSelect').val()][element] = $('#' + element).val();
-                }
+    let path = fullPath === undefined ? [] : fullPath.split('.');
+
+    switch (type) {
+        case 'input':
+            $(`#${element}`).on('change', () => {
+                setValue(path, element, $(`#${element}`).val());
             });
-        }
-        if (type === 'select') {
-            $('#' + element).on('change keyup', () => {
-                hardFlag ? data.state[path[0]][path[1]][path[2]][$('#pkSelect').val()][element] = Number($('#' + element + ' option:selected').val())
-                    : data.state[path[0]][path[1]][element] = Number($('#' + element + ' option:selected').val());
+            break;
+        case 'select':
+            $(`#${element}`).on('change keyup', () => {
+                setValue(path, element, $(`#${element}` + ' option:selected').val());
             });
-        }
-        if (type === 'checkbox') {
-            $('#' + element).on('change', () => {
-                hardFlag ? data.state[path[0]][path[1]][path[2]][$('#pkSelect').val()][element] = $('#' + element).prop('checked')
-                    : data.state[path[0]][path[1]][element] = $('#' + element).prop('checked');
+            break;
+        case 'checkbox':
+            $(`#${element}`).on('change', () => {
+                setValue(path, element, $(`#${element}`).prop('checked'));
             });
-        }
-    } else {
-        if (type === 'input') {
-            $('#' + element).on('change', () => {
-                if (numFlag) {
-                    if (fullPath === '') {
-                        data.state[element] = Number($('#' + element).val());
-                    } else {
-                        data.state[path[0]][element] = Number($('#' + element).val());
-                    }
-                } else {
-                    data.state[element] = $('#' + element).val();
-                }
-            });
-        }
-        if (type === 'select') {
-            if (fullPath === '') {
-                $('#' + element).on('change keyup', () => {
-                    data.state[element] = Number($('#' + element + ' option:selected').val());
-                });
-            } else {
-                $('#' + element).on('change keyup', () => {
-                    data.state[fullPath][element] = Number($('#' + element + ' option:selected').val());
-                });
-            }
-        }
-        if (type === 'checkbox') {
-            $('#' + element).on('change', () => {
-                data.state[element] = $('#' + element).prop('checked');
-            });
-        }
+            break;
     }
+}
+
+// Гибкая функция для сохранения изменений
+function setValue(path, element, currentValue) {
+    let value = data.state;
+    path.forEach(part => value = value[part]);
+
+    // Для влкадки ПК
+    if (path.some(part => part === 'SetDK')) value = value[$("#pkSelect").val()];
+
+    value[element] = (typeof value[element] === 'number') ? Number(currentValue) : currentValue;
 }
 
 // Отображение кнопки для выбора координат и разблокирование кнопки создания нового перекрёстка
@@ -2297,7 +2108,4 @@ function checkEdit() {
     $('#sendButton')[0].className = checkButton($('#sendButton')[0].className.toString(), false);
     $('#forceSendButton')[0].className = checkButton($('#forceSendButton')[0].className.toString(), false);
     $('#addButton')[0].className = checkButton($('#addButton')[0].className.toString(), false);
-    // $('select').each(function() {
-    //     checkSelect($(this), editFlag);
-    // });
 }
