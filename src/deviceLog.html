@@ -49,9 +49,9 @@
                     <input type="time" id="timeEnd" name="time"/>
                 </div>
             </div>
-<!--        <button id="timeButton1" class="btn btn-secondary ml-4 mt-2">30 минут</button>-->
-        <button id="currentDay" class="btn btn-secondary ml-4 mt-2">Сутки</button>
-        <button id="chosenTime" class="btn btn-secondary ml-4 mt-2">Выбранное время</button>
+            <!--        <button id="timeButton1" class="btn btn-secondary ml-4 mt-2">30 минут</button>-->
+            <button id="currentDay" class="btn btn-secondary ml-4 mt-2">Сутки</button>
+            <button id="chosenTime" class="btn btn-secondary ml-4 mt-2">Выбранное время</button>
         </div>
 
         <div class="col-md-2 mt-3">
@@ -61,6 +61,21 @@
                 <option value="2">Двери и лампы</option>
             </select>
         </div>
+
+        <div class="col-md-3 mt-3 ml-3" style="display: inline;">
+            <label for="saveType">
+                <button class="btn btn-secondary" onclick="downloadLogs()">
+                    Сохранить логи
+                </button>
+            </label>
+            <select id="saveType">
+                <option value="text/plain">Text</option>
+                <option value="application/vnd.openxmlformats-officedocument.wordprocessingml.document">Word
+                </option>
+                <option value="application/vnd.ms-excel">Excel</option>
+            </select>
+        </div>
+
         <!--        <button id="timeButton1" class="btn btn-secondary ml-4 mt-2">30 минут</button>-->
         <!--        <button id="getLog" class="btn btn-secondary ml-4 mt-2">6 часов</button>-->
         <!--        <button id="timeButton2" class="btn btn-secondary ml-4 mt-2">Выбранное время</button>-->
@@ -94,7 +109,7 @@
                 <tr>
                     <th class="sorting" data-field="state" data-checkbox="true"></th>
                     <th data-field="region" data-sortable="true">Регион</th>
-                    <th data-field="area" data-sortable="true">Область</th>
+                    <th data-field="area" data-sortable="true">Район</th>
                     <th data-field="idevice" data-sortable="true">ID устройства</th>
                     <th data-field="description" data-sortable="true">Описание</th>
                 </tr>
@@ -117,7 +132,7 @@
                     <th data-field="dateStart" data-sortable="true">Время начала</th>
                     <th data-field="dateEnd" data-sortable="true">Время конца</th>
                     <th data-field="duration" data-sortable="true">Длительность</th>
-<!--                    <th data-field="cross" data-sortable="true">Перекрёсток</th>-->
+                    <!--                    <th data-field="cross" data-sortable="true">Перекрёсток</th>-->
                     <th data-field="message" data-sortable="true">Событие</th>
                 </tr>
                 </thead>

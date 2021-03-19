@@ -323,8 +323,8 @@ function buildBottom() {
         });
 
         ((inputs.length === 0) && (statistics.length === 0)) ? $('#inputErrors').hide() : $('#inputErrors').show();
-        $('#inputs')[0].innerText = inputs.join(', ');
-        $('#statistics')[0].innerText = statistics.join(', ');
+        $('#inputs')[0].innerText = ((inputs.length === 0) ? '' : 'вх. ') + inputs.join(', ');
+        $('#statistics')[0].innerText = ((statistics.length === 0) ? '' : 'ст. ') + statistics.join(', ');
     } else {
         $('#connect')[0].innerText = '';
 

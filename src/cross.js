@@ -188,12 +188,13 @@ $(function () {
                         });
                         checkEdit();
                         checkConnection(cross.tlsost.control);
-                        buildExpandedTable(data.dk);
                     },
                     error: function (request) {
                         console.log(request.status + ' ' + request.responseText);
                     }
                 });
+
+                buildExpandedTable(data.dk);
 
                 /*
                 <a class="btn btn-light border disabled" id="p1" data-toggle="tooltip" title="Включить 1 фазу" role="button"
@@ -410,18 +411,20 @@ function buildExpandedTable(data) {
 
     let toWrite = {
         column1: data.ftudk,
-        column2: data.tdk,
+        column2: ((data.fdk === 9) || (dataArr.length === 0)) ? data.tdk : dataArr[currentIndex].column2,
         column3: 0,
         column4: data.fdk,
-        column5: 0,
+        column5: ((data.fdk === 9) || (dataArr.length === 0)) ? 0 : (dataArr[currentIndex].column2 - dataArr[prevIndex].column2),
         column6: 0,
         column7: 0
     };
 
+    if (toWrite.column5 < 0) toWrite.column5 = 0;
+
     if (prevPhase === toWrite.column4) return;
     prevPhase = toWrite.column4;
 
-    if ($expandedTable.bootstrapTable('getData').length !== 0) toWrite.column2 = dataArr[prevIndex].column2;
+    // if ($expandedTable.bootstrapTable('getData').length !== 0) toWrite.column2 = dataArr[prevIndex].column2;
     switch (toWrite.column4) {
         case 0:
             toWrite.column1 = 'ЛР';
@@ -458,7 +461,7 @@ function buildExpandedTable(data) {
     if (currentIndex === maxTableSize) currentIndex = 0;
 
     if (toWrite.column4 === 'Пром. такт') {
-    // if (isNaN(toWrite.column4)) {
+        // if (isNaN(toWrite.column4)) {
         if ($expandedTable.bootstrapTable('getData').length < maxTableSize) {
             $expandedTable.bootstrapTable('append', toWrite);
         } else {
@@ -467,8 +470,18 @@ function buildExpandedTable(data) {
         if (dataArr[prevIndex] !== undefined) {
             $expandedTable.bootstrapTable('updateCell', {
                 index: prevIndex,
+                field: 'column5',
+                value: data.ttcdk
+            });
+            $expandedTable.bootstrapTable('updateCell', {
+                index: prevIndex,
+                field: 'column6',
+                value: data.ttcdk + dataArr[prevIndex].column3
+            });
+            $expandedTable.bootstrapTable('updateCell', {
+                index: prevIndex,
                 field: 'column7',
-                value: dataArr[prevIndex].column7 - toWrite.column2
+                value: (dataArr[prevIndex].column6 + dataArr[prevIndex].column2) - toWrite.column2
             });
 
             toWrite.column7 = dataArr[prevIndex].column2;
@@ -483,7 +496,7 @@ function buildExpandedTable(data) {
             console.log('updateRow ' + currentIndex + ' ', toWrite);
         }, 1000);
     } else if ($expandedTable.bootstrapTable('getData').length !== 0) {
-        toWrite.column3 = data.tdk - dataArr[prevIndex].column2;
+        toWrite.column3 = data.ttcdk;
 
         if (isNaN(toWrite.column4)) {
             if ($expandedTable.bootstrapTable('getData').length < maxTableSize) {
@@ -502,6 +515,9 @@ function buildExpandedTable(data) {
                 }
             }
         }
+
+        if (toWrite.column1 !== toWrite.column4) toWrite.column1 = toWrite.column4;
+
 
         colorizeRow(currentIndex);
         toWrite.column5++;
@@ -525,7 +541,6 @@ function buildExpandedTable(data) {
     }
 
     $('#phase')[0].innerText = 'Фаза: ' + toWrite.column4;
-
 }
 
 function checkConnection(connectionFlag) {

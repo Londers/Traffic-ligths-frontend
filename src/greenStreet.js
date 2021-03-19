@@ -893,7 +893,7 @@ let calculate = function (zoom) {
 function createAreasLayout(map) {
     if (!$('#switchLayout').prop('checked')) return;
     areaZone.forEach(area => {
-        let polygon = convexHullTry(map, area.zone, 'Регион: ' + area.region + ', Область: ' + area.area);
+        let polygon = convexHullTry(map, area.zone, 'Регион: ' + area.region + ', Район: ' + area.area);
         areaLayout.push(polygon);
     })
 }
@@ -907,7 +907,7 @@ function createSubareasLayout(map) {
     if (!$('#switchSubLayout').prop('checked')) return;
     areaZone.forEach(area => {
         area.sub.forEach(sub => {
-            let polygon = convexHullTry(map, sub.zone, 'Регион: ' + area.region + ', Область: ' + area.area + ', Подобласть:' + sub.subArea);
+            let polygon = convexHullTry(map, sub.zone, 'Регион: ' + area.region + ', Район: ' + area.area + ', Подрайон:' + sub.subArea);
             subareasLayout.push(polygon);
         })
     })

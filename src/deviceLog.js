@@ -3,16 +3,12 @@ let devices;
 let IDs = [];
 let regionInfo;
 let areaInfo;
-//0 - технология, 1 - по устройству, 2 - двери+лампы
+// 0 - технология, 1 - по устройству, 2 - двери+лампы
 let type = 0;
 
 let dateSave;
-// function sortByTime(a, b) {//new Date(log.time)
-//     return new Date(b.time).getTime() - new Date(a.time).getTime();
-// }
 
 $(function () {
-    // $('#sendButton').on('click', function () {
     $.ajax({
         url: window.location.href,
         type: 'post',
@@ -44,26 +40,16 @@ $(function () {
                 .bootstrapTable('refresh', {
                     data: data.devices
                 });
-            // console.log(data.result);
-            // disableControl('forceSendButton', true);
-            // disableControl('sendButton', false);
-
-            // counter = 0;
-            // $('.fixed-table-toolbar').each(function () {
-            //     $(this).attr('id', 'toolbar' + counter++)
-            // });
-
-            // .append('<div class="form-check mt-3">\n' +
-            //     '<label class="form-check-label">\n' +
-            //     '<input type="checkbox" class="form-check-input" id="selection" value="">\n' +
-            //     'Показать изменения режима\n' +
-            //     '</label>\n' +
-            //     '</div>')
 
             let now = new Date();
             $('#dateEnd').attr('value', (now.toISOString().slice(0, 10)));
             $('#timeEnd').attr('value', (prettyNumbers(now.getHours()) + ':' + prettyNumbers(now.getMinutes())));
-            now = new Date(now.getTime() - ((((now.getHours() * 60 + now.getMinutes() + now.getTimezoneOffset()) * 60 + now.getSeconds()) * 1000) + now.getMilliseconds()));//((24 * 60) * 60 * 1000)); // - (now.getTimezoneOffset() * 60 * 1000));
+            now = new Date(
+                now.getTime() - (
+                    (((now.getHours() * 60 + now.getMinutes() + now.getTimezoneOffset()) * 60 + now.getSeconds()) * 1000)
+                    + now.getMilliseconds()
+                )
+            );// ((24 * 60) * 60 * 1000)); // - (now.getTimezoneOffset() * 60 * 1000));
             $('#dateStart').attr('value', (now.toISOString().slice(0, 10)));
             $('#timeStart').attr('value', (prettyNumbers(now.getUTCHours()) + ':' + prettyNumbers(now.getUTCMinutes())));
             $('#currentDay').on('click', () => {
@@ -72,14 +58,6 @@ $(function () {
                 let timeEnd = now.toISOString();
                 getLogs(timeStart, timeEnd, true);
             });
-
-            // $('#timeButton1').on('click', () => {
-            //     let now = new Date();
-            //     now = new Date(now.getTime() - (now.getTimezoneOffset() * 60 * 1000));
-            //     let timeStart = timeCalc(now, 30 * 60);
-            //     let timeEnd = now.toISOString();
-            //     getLogs(timeStart, timeEnd);
-            // });
 
             $('#chosenTime').on('click', () => {
                 // let now = new Date();
@@ -101,7 +79,7 @@ $(function () {
                 let timeStart = $('#dateStart')[0].value + 'T' + $('#timeStart')[0].value + ':00Z';
                 let timeEnd = now.toISOString();
                 getLogs(timeStart, timeEnd, true, true);
-            };
+            }
         },
         // data: JSON.stringify(data.state),
         error: function (request) {
@@ -145,7 +123,7 @@ function getLogs(start, end, crutchFlag, remoteOpenFlag) {
     } else {
         $('#toolbar0Msg').remove();
     }
-    //Отправка на сервер запроса проверки данных
+    // Отправка на сервер запроса проверки данных
     $.ajax({
         type: 'POST',
         url: window.location.href + '/info',
@@ -231,7 +209,7 @@ function buildLogTable(data, crutchFlag) {
     }
 
     $('#logsTable')
-        .bootstrapTable('load', (allData))//$('#selection').prop('checked')) ? sortedData : allData)
+        .bootstrapTable('load', (allData))// $('#selection').prop('checked')) ? sortedData : allData)
         .bootstrapTable('scrollTo', 'top')
         .bootstrapTable('refresh', {
             data: allData
@@ -250,7 +228,7 @@ function findIdByDescription(description) {
     return id;
 }
 
-//Получение номера региона по описанию
+// Получение номера региона по описанию
 function getRegionNum(region) {
     let num = 0;
     for (let reg in regionInfo) {
@@ -259,11 +237,29 @@ function getRegionNum(region) {
     return num.toString();
 }
 
-//Получение номера района по описанию
+// Получение номера района по описанию
 function getAreaNum(region, area) {
     let num = 0;
     for (let ar in areaInfo[region]) {
         if (areaInfo[region][ar] === area) num = ar;
     }
     return num.toString();
+}
+
+// Функция для сохранения логов в файл
+function downloadLogs() {
+    let tableData = JSON.parse(JSON.stringify($('#logsTable').bootstrapTable('getData')));
+    if (tableData.length === 0) return;
+    let exportText = '';
+    tableData.forEach(row => {
+        delete row.time;
+        let shit = Object.values(row);
+        shit.push(shit.shift());
+        exportText += shit.join('\t') + '\n'
+    });
+    let link = document.createElement('a');
+    link.download = 'log file_' + tableData[tableData.length - 1].dateEnd.split(',')[0] + '-' + tableData[1].dateStart.split(',')[0];
+    let blob = new Blob([exportText], {type: 'application/vnd.ms-excel'});
+    link.href = window.URL.createObjectURL(blob);
+    link.click();
 }

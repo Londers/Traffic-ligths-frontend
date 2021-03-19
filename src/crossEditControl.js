@@ -143,7 +143,7 @@ function kick($armTable, $crossTable) {
 
 //Корректное заполнение описания ДК в таблице
 function build(data) {
-    return ' Регион: ' + getRegionDesc(data.pos.region) + '\n Область: ' + getAreaDesc(data.pos.region, data.pos.area)
+    return ' Регион: ' + getRegionDesc(data.pos.region) + '\n Район: ' + getAreaDesc(data.pos.region, data.pos.area)
         + '\n Описание: ' + data.description + '\n Номер устройства: ' + data.idevice;
 }
 

@@ -13,7 +13,7 @@ let authorizedFlag = false;
 let logDeviceFlag = false;
 let manageFlag = false;
 let techFlag = false;
-let licenceFlag = false;
+let licenseFlag = false;
 let gsFlag = false;
 let xctrlFlag = false;
 let chatFlag = true;
@@ -33,6 +33,11 @@ function getRandomColor() {
     }
     return color;
 }
+
+const about = 'Предназначена для упрощения процедур наблюдения, управления' +
+    'и контроля за работой дорожных контроллеров и другого ' +
+    'оборудования, работающего в системе управления дорожным движением.\n\n' +
+    'ООО "Автоматика-Д" (г.Омск). \n8-3812-370735, 8-3812-394910';
 
 function openAbout(closeOnExpiration) {
     // Instantiate new modal
@@ -117,6 +122,22 @@ ymaps.ready(function () {
         $('#newLicenseKey').val('');
         $('#licenseDialog').dialog('open');
     });
+
+    if ((localStorage.getItem('login') != null) && (localStorage.getItem('login') !== '')) {
+        $.ajax({
+            type: 'POST',
+            url: location.origin + '/user/' + localStorage.getItem('login') + '/license',
+            // data: JSON.stringify(toSend),
+            dataType: 'json',
+            success: function (data) {
+                $('#modal')[0].innerText = `АСУДД "Микро"\nЛицензия: ${data.license}\n\n` + about
+            },
+            error: function (request) {
+                console.log(request.status + ' ' + request.responseText);
+            }
+        });
+    }
+
 
     $('#checkNewLicense').on('click', (e) => {
         e.preventDefault();
@@ -255,7 +276,7 @@ ymaps.ready(function () {
                         authorizedFlag = false;
                         manageFlag = false;
                         logDeviceFlag = false;
-                        licenceFlag = false;
+                        licenseFlag = false;
                         techFlag = false;
                         gsFlag = false;
                         xctrlFlag = false;
@@ -350,7 +371,7 @@ ymaps.ready(function () {
                 authorizedFlag = data.authorizedFlag;
                 manageFlag = authorizedFlag ? data.access[2] : false;
                 logDeviceFlag = authorizedFlag ? data.access[5] : false;
-                licenceFlag = authorizedFlag ? data.access[6] : false;
+                licenseFlag = authorizedFlag ? data.access[6] : false;
                 techFlag = authorizedFlag ? data.access[7] : false;
                 gsFlag = authorizedFlag ? data.access[8] : false;
                 xctrlFlag = authorizedFlag ? data.access[9] : false;
@@ -366,7 +387,7 @@ ymaps.ready(function () {
                 fillAreas($('#area'), $('#region'), areaInfo);
 
                 if (techFlag) {
-                    makeTech(data, (data.area === null) ? areaInfo : data.area);
+                    makeTech(data, areaInfo);
                 }
 
                 // map.controls.remove('searchControl');
@@ -476,18 +497,32 @@ ymaps.ready(function () {
                 break;
             case 'login':
                 if (data.status) {
-
-                    openAbout(true);
-
                     $('#login').val('');
                     $('#password').val('');
                     document.cookie = ('Authorization=Bearer ' + data.token);
+                    if ((localStorage.getItem('login') == null) || (localStorage.getItem('login') === '')) {
+                        $.ajax({
+                            type: 'POST',
+                            url: location.origin + '/user/' + data.login + '/license',
+                            // data: JSON.stringify(toSend),
+                            dataType: 'json',
+                            success: function (data) {
+                                $('#modal')[0].innerText = `АСУДД "Микро"\nЛицензия: ${data.license}\n\n` + about;
+                                openAbout(true);
+                            },
+                            error: function (request) {
+                                console.log(request.status + ' ' + request.responseText);
+                            }
+                        });
+                    } else {
+                        openAbout(true);
+                    }
                     localStorage.setItem('login', data.login);
                     // console.log('QqQqQ', data.areaZone);
                     authorizedFlag = data.authorizedFlag;
                     manageFlag = authorizedFlag ? data.access[2] : false;
                     logDeviceFlag = authorizedFlag ? data.access[5] : false;
-                    licenceFlag = authorizedFlag ? data.access[6] : false;
+                    licenseFlag = authorizedFlag ? data.access[6] : false;
                     techFlag = authorizedFlag ? data.access[7] : false;
                     gsFlag = authorizedFlag ? data.access[8] : false;
                     xctrlFlag = authorizedFlag ? data.access[9] : false;
@@ -495,7 +530,7 @@ ymaps.ready(function () {
                     createAreasLayout(map);
 
                     if (techFlag) {
-                        makeTech(data, (data.area === null) ? areaInfo : data.area);
+                        makeTech(data, areaInfo);
                     }
 
                     $('#loginDialog').dialog('close');
@@ -515,7 +550,7 @@ ymaps.ready(function () {
                 authorizedFlag = false;
                 manageFlag = false;
                 logDeviceFlag = false;
-                licenceFlag = false;
+                licenseFlag = false;
                 techFlag = false;
                 gsFlag = false;
                 xctrlFlag = false;
@@ -716,7 +751,7 @@ function authorize() {
         }
     }
     (manageFlag) ? $('#manageButton').show() : $('#manageButton').hide();
-    //licenceFlag
+    //licenseFlag
     (logDeviceFlag) ? $('#deviceLogButton').show() : $('#deviceLogButton').hide();
     (techFlag) ? $('#techArmButton').show() : $('#techArmButton').hide();
     (gsFlag) ? $('#standardZUButton').show() : $('#standardZUButton').hide();
@@ -802,7 +837,7 @@ let calculate = function (zoom) {
 function createAreasLayout(map) {
     if (!$('#switchLayout').prop('checked')) return;
     areaZone.forEach(area => {
-        let polygon = convexHullTry(map, area.zone, 'Регион: ' + area.region + ', Область: ' + area.area);
+        let polygon = convexHullTry(map, area.zone, 'Регион: ' + area.region + ', Район: ' + area.area);
         areaLayout.push(polygon);
     })
 }
@@ -818,7 +853,7 @@ function createSubareasLayout(map) {
     if (!$('#switchSubLayout').prop('checked')) return;
     areaZone.forEach(area => {
         area.sub.forEach(sub => {
-            let polygon = convexHullTry(map, sub.zone, 'Регион: ' + area.region + ', Область: ' + area.area + ', Подобласть:' + sub.subArea);
+            let polygon = convexHullTry(map, sub.zone, 'Регион: ' + area.region + ', Район: ' + area.area + ', Подрайон:' + sub.subArea);
             subareasLayout.push(polygon);
         })
     })
