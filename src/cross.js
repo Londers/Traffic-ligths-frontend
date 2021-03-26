@@ -93,9 +93,7 @@ $(function () {
                         });
                         $('#svg0').attr('width', $('#img-col')[0].offsetWidth);
 
-                        $(window).resize(() => {
-                            $('#svg0').attr('width', $('#img-col')[0].offsetWidth);
-                        });
+                        $(window).resize(() => $('#svg0').attr('width', $('#img-col')[0].offsetWidth));
                         //     .append('<a class="btn btn-light border" id="secret" data-toggle="tooltip" title="Включить 1 фазу" role="button"\n' +
                         //         '        onclick="setPhase(randomInt(1, 12))"><img class="img-fluid" src="/file/static/img/buttons/p1.svg" height="50" alt="1 фаза"></a>');
                         // $('#secret').hide();
@@ -410,7 +408,7 @@ function buildExpandedTable(data) {
     let dataArr = $expandedTable.bootstrapTable('getData').slice();
 
     let toWrite = {
-        column1: data.ftudk,
+        column1: ((data.fdk === 9) || (dataArr.length === 0)) ? data.ftudk : dataArr[currentIndex].column1,
         column2: ((data.fdk === 9) || (dataArr.length === 0)) ? data.tdk : dataArr[currentIndex].column2,
         column3: 0,
         column4: data.fdk,
@@ -733,3 +731,5 @@ function colorizeRow(index) {
         }
     });
 }
+
+// /video?channelid=<id canala>&login={imya usera}&password={psw}

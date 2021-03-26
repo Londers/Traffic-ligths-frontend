@@ -34,7 +34,7 @@ function getRandomColor() {
     return color;
 }
 
-const about = 'Предназначена для упрощения процедур наблюдения, управления' +
+const about = 'Предназначена для упрощения процедур наблюдения, управления ' +
     'и контроля за работой дорожных контроллеров и другого ' +
     'оборудования, работающего в системе управления дорожным движением.\n\n' +
     'ООО "Автоматика-Д" (г.Омск). \n8-3812-370735, 8-3812-394910';
@@ -939,7 +939,7 @@ function fillTechAreas($area, $region, areaInfo) {
     if (areaInfo === undefined) return;
     if (Object.keys(areaInfo).length === 1) {
         $("#techArea option[value='" + num + "']").prop("selected", true);
-        $area.prop('disabled', true);
+        // $area.prop('disabled', true);
     }
 }
 

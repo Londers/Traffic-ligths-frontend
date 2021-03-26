@@ -250,16 +250,30 @@ function getAreaNum(region, area) {
 function downloadLogs() {
     let tableData = JSON.parse(JSON.stringify($('#logsTable').bootstrapTable('getData')));
     if (tableData.length === 0) return;
-    let exportText = '';
-    tableData.forEach(row => {
-        delete row.time;
-        let shit = Object.values(row);
-        shit.push(shit.shift());
-        exportText += shit.join('\t') + '\n'
-    });
-    let link = document.createElement('a');
-    link.download = 'log file_' + tableData[tableData.length - 1].dateEnd.split(',')[0] + '-' + tableData[1].dateStart.split(',')[0];
-    let blob = new Blob([exportText], {type: 'application/vnd.ms-excel'});
-    link.href = window.URL.createObjectURL(blob);
-    link.click();
+    const type = $('#saveType').val();
+    const fileName = 'log' +
+        tableData[tableData.length - 1].dateEnd.split(', ')[0].split('.').join('') + '_' +
+        tableData[tableData.length - 1].dateEnd.split(', ')[1].split(':').join('');
+    if (type === 'application/vnd.ms-excel') {
+        $("#logsTable").table2excel({
+            // exclude: ".excludeThisClass",
+            // name: "Worksheet Name",
+            filename: fileName, // do include extension
+            preserveColors: false // set to true if you want background colors and font colors preserved
+        });
+    } else {
+        let exportText = '';
+        tableData.forEach(row => {
+            delete row.time;
+            let shit = Object.values(row);
+            shit.push(shit.shift());
+            exportText += shit.join('\t') + '\n'
+        });
+        let link = document.createElement('a');
+
+        link.download = fileName;
+        let blob = new Blob([exportText], {type: type});
+        link.href = window.URL.createObjectURL(blob);
+        link.click();
+    }
 }

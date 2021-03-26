@@ -216,6 +216,7 @@ $(() => {
         prepareVVTab();
         validatePk();
         prepareDaySets();
+
         if (data.state.area === unmodifiedData.state.area) {
             ws.send(JSON.stringify({type: 'sendB', state: data.state, rePaint: coordinatesChangeFlag, z: zoom}));
         } else {
@@ -227,6 +228,8 @@ $(() => {
             let shift3 = data.state.arrays.SetTimeUse.uses.pop();
             data.state.arrays.SetTimeUse.uses.unshift(shift4);
             data.state.arrays.SetTimeUse.uses.unshift(shift3);
+            data.state.arrays.SetTimeUse.uses[0].name = '1 ТВП';
+            data.state.arrays.SetTimeUse.uses[1].name = '2 ТВП';
         }
     });
 
@@ -319,6 +322,9 @@ $(() => {
             tableData.unshift(shift4);
             tableData.unshift(shift3);
         }
+
+        data.state.arrays.SetTimeUse.uses[0].name = '1 ТВП';
+        data.state.arrays.SetTimeUse.uses[1].name = '2 ТВП';
     }
 
     // Проверка валидности ПК
@@ -956,6 +962,9 @@ function sizeVerification(length, oldVersion) {
         let shift3 = data.state.arrays.SetTimeUse.uses.pop();
         data.state.arrays.SetTimeUse.uses.unshift(shift4);
         data.state.arrays.SetTimeUse.uses.unshift(shift3);
+
+        data.state.arrays.SetTimeUse.uses[0].name = '1 ТВП';
+        data.state.arrays.SetTimeUse.uses[1].name = '2 ТВП';
     } else {
         for (let i = 2; i < length; i++) {
             vvTable[i].name = (i - 1) + ' вх';
@@ -1915,7 +1924,6 @@ function checkTransition(currSts) {
     currSts.forEach((sw, index) => {
         if (((sw.stop - sw.start) < 0)) {
             retValue.push(index);
-
         }
     });
     return retValue;

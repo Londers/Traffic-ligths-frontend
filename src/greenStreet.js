@@ -189,14 +189,52 @@ function makeSelects() {
                 let phases = getPhases(tr.rowIndex - 1);//$(this)[0].innerText.split(',');
                 let selectTxt = '';
                 phases.phases.forEach(phase => {
-                    selectTxt += '<option value="' + phase + '"' + ((phase === phases.currPhase) ? ' selected="selected"' : '') + '>' + phase + '</option>';
+                    selectTxt += `<option value="${phase}"${((phase === phases.currPhase) ? ' selected="selected"' : '')}` +
+                        `onclick="handleSelectChange(${i})">${phase}</option>>`;
+                    // + ((svg.length !== 0) ? `<image xlink:href="data:image/png;base64,${(svg[i][phase-1] === undefined) ? phase : svg[i][phase-1].phase}"/>` : '')
                 });
                 $(td)[0].innerText = '';
                 $(td)[0].innerHTML = '<select id="phase' + i + '">' + selectTxt + '</select>';
-
             }
         })
     })
+}
+
+function handleSelectChange(rowIndex) {
+    const value = $('#phase' + rowIndex).val();
+    $('#phase' + rowIndex).closest('td').next('td')[0].innerHTML = '<td>-</td>';
+    if (svg[rowIndex] === undefined) {
+        setTimeout(() => handleSelectChange(rowIndex), 1000);
+        return;
+    }
+    svg[rowIndex].forEach(pic => {
+        if (pic.num === value) $('#phase' + rowIndex).closest('td').next('td')[0].innerHTML =
+            `<td>` +
+            `<svg width="100%" height="100%"` +
+            `style="max-height: 50px; max-width: 50px; min-height: 30px; min-width: 30px;" xmlns="http://www.w3.org/2000/svg"` +
+            `xmlns:xlink="http://www.w3.org/1999/xlink">` +
+            `<image x="0" y="0" width="100%" height="100%"` +
+            `style="max-height: 50px; max-width: 50px; min-height: 30px; min-width: 30px;"` +
+            `xlink:href="data:image/png;base64,${pic.phase}"></image>` +
+            `</svg>` +
+            `</td>`
+    })
+
+    // todo Жду обновлённые картинки от Андрея
+    // const value = $('#phase' + rowIndex).val();
+    // $('#phase' + rowIndex).closest('td').next('td')[0].innerHTML = '<td>-</td>';
+    // svg[rowIndex].forEach(pic => {
+    //     if (pic._num === value) $('#phase' + rowIndex).closest('td').next('td')[0].innerHTML =
+    //         `<td>` +
+    //             `<svg width="100%" height="100%"` +
+    //             `style="max-height: 50px; max-width: 50px; min-height: 30px; min-width: 30px;" xmlns="http://www.w3.org/2000/svg"` +
+    //             `xmlns:xlink="http://www.w3.org/1999/xlink">` +
+    //                 `<image x="0" y="0" width="100%" height="100%"` +
+    //                 `style="max-height: 50px; max-width: 50px; min-height: 30px; min-width: 30px;"` +
+    //                 `xlink:href="data:image/png;base64,${pic.__text}"></image>` +
+    //             `</svg>` +
+    //         `</td>`
+    // })
 }
 
 function fillPhases() {
@@ -298,10 +336,42 @@ function setRouteArea(map, box, description, routeId) {
     lastRoute = multiRoute;
     map.geoObjects.add(multiRoute);
 
+
+    tableData.forEach(row => {
+        $.ajax({
+            url: window.location.origin + '/file/static/cross/' + row.region + '/' + row.area + '/' + row.id + '/cross.svg',
+            type: 'GET',
+            success: function (svgData) {
+                // todo Жду обновлённые картинки от Андрея
+                // let x2js = new X2JS();
+                // let data = x2js.xml2json(svgData);
+                // svg.push(data.svg.mphase.phase)
+
+                $('body').append('<img id="kostil" class="img-fluid" src="" style="display: none" alt="Перекрёсток">');
+                $('#kostil').prepend(svgData.children[0].outerHTML.replace('let currentPhase', 'var currentPhase'));
+
+                if (typeof getPhasesMass === "function") {
+                    let phases = getPhasesMass();
+                    svg.push(phases)
+                }
+
+                $('#kostil').remove();
+            },
+            error: function (request) {
+                console.log(request.status + ' ' + request.responseText);
+            }
+        });
+    });
+
     $('#table').bootstrapTable('load', tableData);
     $('#navTable').bootstrapTable('load', navTableData);
     makeSelects();
+    $('#table tbody tr td').each((i, td) => {
+        $(td).find('select option[selected=selected]').trigger('click');
+    })
 }
+
+let svg = [];
 
 function findIndex(hintContent) {
     let id = -1;
