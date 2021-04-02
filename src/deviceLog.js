@@ -144,6 +144,7 @@ function filterByType(data) {
     let filteredData = [];
     for (let dev in data.deviceLogs) {
         filteredData[dev] = [];
+        if (data.deviceLogs[dev] == null) continue;
         data.deviceLogs[dev].forEach(log => {
             if (log.type === type) filteredData[dev].push(log);
         })
@@ -214,6 +215,22 @@ function buildLogTable(data, crutchFlag) {
         .bootstrapTable('refresh', {
             data: allData
         });
+
+    colorizeCrosses();
+}
+
+function colorizeCrosses() {
+    const data =  $('#logsTable').bootstrapTable('getData');
+    const tableRows = $('#logsTable tbody tr');
+    let switchFlag = true;
+    data.forEach((row, index) => {
+        if (row.time === undefined) switchFlag = !switchFlag; //
+        if (switchFlag) {
+            $(tableRows[index]).attr('style', 'background-color: lightgray');
+        } else {
+            $(tableRows[index]).attr('style', '');
+        }
+    })
 }
 
 function prettyNumbers(number) {

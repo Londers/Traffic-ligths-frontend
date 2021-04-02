@@ -65,34 +65,41 @@ function createIdeviceArray() {
     return idevices;
 }
 
+function handlePhaseCommand(map, idevice) {
+    let phase = -1;
+    let dataArr = $('#table').bootstrapTable('getData');
+    dataArr.forEach((tf, index) => {
+        if (tf.idevice === idevice) phase = Number($('#phase' + index).val())
+    });
+
+    let navTable = $('#navTable').bootstrapTable('getData');
+    let index = -1;
+    navTable.forEach((row, rowIndex) => {
+        if (row.idevice === idevice) index = rowIndex;
+    });
+    if (navTable.length > (index + 1)) $($('#navTable tbody tr')[index + 1]).trigger('click');
+
+    if (executionFlag && (phase !== -1)) {
+        if (!sendedPhaseSave.get(idevice)) {
+            sendedPhaseSave.set(idevice, true);
+            modifiedControlSend({id: idevice, cmd: 9, param: phase});
+        }
+    }
+}
+
 function handleClick(map, trafficLight, diffCoords) {
     let coordinates = (diffCoords === undefined) ? [trafficLight.points.Y, trafficLight.points.X] : diffCoords;
     let region = trafficLight.region.num;
     let area = trafficLight.area.num;
     let id = trafficLight.ID;
+    let idevice = trafficLight.idevice;
     let description = trafficLight.description;
     let phases = trafficLight.phases;
     let returnFlag = false;
 
     if (!creatingFlag) {
-        let phase = -1;
-        let dataArr = $('#table').bootstrapTable('getData');
-        dataArr.forEach((tf, index) => {
-            if ((tf.region === region) && (tf.area === area) && (tf.id === id)) {
-                phase = Number($('#phase' + index).val());
-            }
-        });
-        map.setCenter(coordinates, 17);
-
-        if (executionFlag && (phase !== -1)) {
-            if (!sendedPhaseSave.get(trafficLight.region + trafficLight.area + trafficLight.ID)) {
-                sendedPhaseSave.set(trafficLight.region + trafficLight.area + trafficLight.ID, true)
-            } else {
-                phase = 9;
-                sendedPhaseSave.set(trafficLight.region + trafficLight.area + trafficLight.ID, false)
-            }
-            modifiedControlSend({id: trafficLight.idevice, cmd: 9, param: phase});
-        }
+        // map.setCenter(coordinates, 17);
+        handlePhaseCommand(map, trafficLight.idevice);
         return;
     }
 
@@ -125,9 +132,9 @@ function handleClick(map, trafficLight, diffCoords) {
     ], {
         // Описываем свойства круга.
         // Содержимое балуна.
-        balloonContent: "Радиус круга - 10 км",
+        // balloonContent: "Радиус круга - 10 км",
         // Содержимое хинта.
-        hintContent: "Подвинь меня"
+        // hintContent: "Подвинь меня"
     }, {
         // Задаем опции круга.
         // Включаем возможность перетаскивания круга.
@@ -155,15 +162,15 @@ function handleClick(map, trafficLight, diffCoords) {
         phase: phases,
         region: region,
         area: area,
-        id: id
+        id: id,
+        idevice: idevice
     }];
 
     $('#table').bootstrapTable('append', tflight).bootstrapTable('scrollTo', 'top');
     $('#navTable').bootstrapTable('append', {
         id: $('#navTable').bootstrapTable('getData').length + 1,
         tflight: description
-    })
-        .bootstrapTable('scrollTo', 'top');
+    }).bootstrapTable('scrollTo', 'top');
 
     makeSelects();
 }
@@ -317,9 +324,14 @@ function setRouteArea(map, box, description, routeId) {
             phase: [tf.phase],
             region: tf.pos.region,
             area: tf.pos.area,
-            id: tf.pos.id
+            id: tf.pos.id,
+            idevice: findIdevice(tf.pos.region, tf.pos.area, tf.pos.id)
         });
-        navTableData.push({id: index + 1, tflight: tf.description});
+        navTableData.push({
+            id: index + 1,
+            tflight: tf.description,
+            idevice: findIdevice(tf.pos.region, tf.pos.area, tf.pos.id)
+        });
     });
 
     // Построение маршрута.
@@ -353,6 +365,8 @@ function setRouteArea(map, box, description, routeId) {
                 if (typeof getPhasesMass === "function") {
                     let phases = getPhasesMass();
                     svg.push(phases)
+                } else {
+                    svg.push([]);
                 }
 
                 $('#kostil').remove();
@@ -376,11 +390,7 @@ let svg = [];
 function findIndex(hintContent) {
     let id = -1;
     $('#navTable tbody tr').each((i, tr) => {
-        $(tr).find('td').each((j, td) => {
-            if (td.cellIndex === 2) {
-                if ($(td)[0].innerText.replace(/\s/g, "") === hintContent.replace(/\s/g, "")) id = i;
-            }
-        })
+        if (tr.cells[3].innerText.replace(/\s/g, "") === hintContent.replace(/\s/g, "")) id = i;
     });
     return id;
 }
@@ -440,6 +450,17 @@ ymaps.ready(function () {
         circlesControl(map);
     });
 
+    $('#map').on('mousedown', function (evt) {
+        if (evt.which === 3) {
+            sendedPhaseSave.forEach((value, key) => {
+                if (value) {
+                    sendedPhaseSave.set(key, false);
+                    modifiedControlSend({id: key, cmd: 9, param: 9});
+                }
+            })
+        }
+    });
+
     $('#dropdownLayersButton').trigger('click');
     $('#dropdownControlButton').trigger('click');
 
@@ -453,7 +474,7 @@ ymaps.ready(function () {
     });
 
     $('#deleteButton').on('click', function () {
-        if (confirm('Вы уверены? Маршрутs будет безвозвратно удалён.')) {
+        if (confirm('Вы уверены? Маршрут будет безвозвратно удалён.')) {
             let selected = $('#table').bootstrapTable('getSelections')[0];
             let place = $('#routes').val().split('---');
             allRoutesList.forEach((route, index) => {
@@ -539,6 +560,7 @@ ymaps.ready(function () {
         $('#deleteRouteButton').hide();
         $('#updateRouteButton').hide();
         $('#endRouteButton').show();
+        $($('#navTable tbody tr')[0]).trigger('click');
         ws.send(JSON.stringify({type: 'route', devices: createIdeviceArray(), turnOn: true}));
     });
 
@@ -555,6 +577,8 @@ ymaps.ready(function () {
     $('#routes').on('change', function () {
         let place = $('#routes').val().split('---');
         $('#endRouteButton').hide();
+        sendedPhaseSave = new Map();
+        svg = [];
         if ((place[0] === '0') && (place[1] === '0')) {
             $('#tableCol').hide();
             $('#startRouteButton').hide();
@@ -753,6 +777,26 @@ ymaps.ready(function () {
                     [data.boxPoint.point1.Y, data.boxPoint.point1.X]
                 ]);
                 break;
+            case 'phases':
+                // let arr = [{idevice: 159519, phase: 2}];
+                const tableData = $('#navTable').bootstrapTable('getData');
+                tableData.forEach((row, rowIndex) => {
+                    data.phases.forEach(phaseRow => {
+                        if (phaseRow.device === row.idevice) {
+                            $('#navTable tbody tr')[rowIndex].cells[2].innerHTML =
+                                (phaseRow.phase === 9) ? 'Пром. такт' :
+                                    ((svg[rowIndex][phaseRow.phase - 1]) === undefined) ? 'Отсуствует картинка фазы' :
+                                        `<svg width="100%" height="100%"` +
+                                        `style="max-height: 50px; max-width: 50px; min-height: 30px; min-width: 30px;" xmlns="http://www.w3.org/2000/svg"` +
+                                        `xmlns:xlink="http://www.w3.org/1999/xlink">` +
+                                        `<image x="0" y="0" width="100%" height="100%"` +
+                                        `style="max-height: 50px; max-width: 50px; min-height: 30px; min-width: 30px;"` +
+                                        `xlink:href="data:image/png;base64,${svg[rowIndex][phaseRow.phase - 1].phase}"></image>` +
+                                        `</svg>`
+                        }
+                    })
+                });
+                break;
             case 'createRoute':
                 if (data.error) {
                     alert(data.error);
@@ -883,6 +927,14 @@ ymaps.ready(function () {
         }
     });
 });
+
+function findIdevice(region, area, id) {
+    let idevice = -1;
+    tflights.forEach(tf => {
+        if ((tf.region.num === region) && (tf.area.num === area) && (tf.ID === id)) idevice = tf.idevice
+    });
+    return idevice;
+}
 
 let createChipsLayout = function (calculateSize) {
     if (currnum === 0) {

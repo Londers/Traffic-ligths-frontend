@@ -74,6 +74,7 @@ ymaps.ready(function () {
     createEye();
     $('#dropdownControlButton').trigger('click');
     $('#dropdownConnectionButton').trigger('click');
+    $('#dropdownMultipleCrossButton').trigger('click');
     $('#dropdownSettingsButton').trigger('click');
     $('#dropdownAdminMenu').trigger('click');
     $('#dropdownHelpButton').trigger('click');
@@ -346,6 +347,18 @@ ymaps.ready(function () {
         }
     });
 
+    $('#multipleCrossOpen').on('click', function () {
+        if ((localStorage.getItem('multipleCross') == null) ||
+            (localStorage.getItem('multipleCross') === JSON.stringify([]))) return;
+
+        $('#multipleCrossCheck').prop('checked', false);
+        openPage('/multipleCross');
+    });
+
+    $('#multipleCrossClear').on('click', function () {
+        localStorage.setItem('multipleCross', JSON.stringify([]));
+    });
+
     ws = new WebSocket('wss://' + location.host + '/mapW');
     ws.onerror = function (evt) {
         console.log('WebSocket error:' + evt);
@@ -416,7 +429,7 @@ ymaps.ready(function () {
                     });
                     //Функция для вызова АРМ нажатием на контроллер
                     placemark.events.add('click', function () {
-                        if (authorizedFlag) window.open(location.origin + '/user/' + localStorage.getItem('login') + '/cross?Region=' + trafficLight.region.num + '&Area=' + trafficLight.area.num + '&ID=' + trafficLight.ID);
+                        if (authorizedFlag) handlePlacemarkClick(trafficLight);
                     });
                     //Добавление метки контроллера на карту
                     map.geoObjects.add(placemark);
@@ -456,7 +469,7 @@ ymaps.ready(function () {
                             })
                         });
                         placemark.events.add('click', function () {
-                            if (authorizedFlag) window.open(location.origin + '/user/' + localStorage.getItem('login') + '/cross?Region=' + trafficLight.region.num + '&Area=' + trafficLight.area.num + '&ID=' + trafficLight.ID);
+                            if (authorizedFlag) handlePlacemarkClick(trafficLight);
                         });
                         //Замена метки контроллера со старым состоянием на метку с новым
                         map.geoObjects.splice(index, 1, placemark);
@@ -481,7 +494,7 @@ ymaps.ready(function () {
                     });
                     //Функция для вызова АРМ нажатием на контроллер
                     placemark.events.add('click', function () {
-                        if (authorizedFlag) window.open(location.origin + '/user/' + localStorage.getItem('login') + '/cross?Region=' + trafficLight.region.num + '&Area=' + trafficLight.area.num + '&ID=' + trafficLight.ID);
+                        if (authorizedFlag) handlePlacemarkClick(trafficLight);
                     });
                     //Добавление метки контроллера на карту
                     map.geoObjects.add(placemark);
@@ -497,6 +510,8 @@ ymaps.ready(function () {
                 break;
             case 'login':
                 if (data.status) {
+                    localStorage.setItem('multipleCross', JSON.stringify([]));
+
                     $('#login').val('');
                     $('#password').val('');
                     document.cookie = ('Authorization=Bearer ' + data.token);
@@ -969,11 +984,19 @@ function check(sendFlag, msg) {
             $('#passwordForm').append('<div style="color: red;" id="passwordMsg"><h5>' + msg + '</h5></div>');
         }
     }
-    // ws.addEventListener('login', function (evt) {
-    //     let allData = JSON.parse(evt.data);
-    //     let data = JSON.parse(allData.data);
-    //     document.cookie = ('Authorization=Bearer ' + data.token);
-    // });
+}
+
+function handlePlacemarkClick(trafficLight) {
+    let multipleCrossCheck = $('#multipleCrossCheck').prop('checked');
+    if (multipleCrossCheck) {
+        let crossArr = (localStorage.getItem('multipleCross') === null) ? [] : JSON.parse(localStorage.getItem('multipleCross'));
+        if (crossArr.length > 5) return;
+        if (crossArr.some(cross => ((cross.region === trafficLight.region.num) && (cross.area === trafficLight.area.num) && (cross.id === trafficLight.ID)))) return;
+        crossArr.push({region: trafficLight.region.num, area: trafficLight.area.num, id: trafficLight.ID});
+        localStorage.setItem('multipleCross', JSON.stringify(crossArr));
+    } else {
+        window.open(location.origin + '/user/' + localStorage.getItem('login') + '/cross?Region=' + trafficLight.region.num + '&Area=' + trafficLight.area.num + '&ID=' + trafficLight.ID);
+    }
 }
 
 function createEye() {

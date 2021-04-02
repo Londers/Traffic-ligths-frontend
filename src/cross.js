@@ -10,7 +10,7 @@ let control;
 let idevice = undefined;
 let ws;
 
-$(function () {
+$(function () { //                    192.168.115.120  /user/Admin/cross   W    ?Region=1&Area=1&ID=1
     ws = new WebSocket('wss://' + location.host + location.pathname + 'W' + location.search);
     ws.onopen = function () {
         console.log('connected');
@@ -65,7 +65,7 @@ $(function () {
                     $('#controlButton').show();
                 }
 
-                console.log(data);
+                // console.log(data);
 
                 //Отображение полученных данных на экране АРМа
                 $('#description').html(data.state.name);
@@ -85,7 +85,7 @@ $(function () {
                     url: window.location.origin + '/file/static/cross/' + region + '/' + area + '/' + ID + '/cross.svg',
                     type: 'GET',
                     success: function (svgData) {
-                        console.log(svgData);
+                        // console.log(svgData);
                         // $('div[class="col-sm-3 text-left mt-3"]').prepend(svgData.children[0].outerHTML);
                         $('#img-col').prepend(svgData.children[0].outerHTML);
                         $('svg').each(function (index) {
@@ -253,14 +253,14 @@ $(function () {
                 });
                 break;
             case 'changeEdit':
-                console.log('edit:' + data.edit);
+                // console.log('edit:' + data.edit);
                 editFlag = data.edit;
                 // if (editFlag) controlSend({id: idevice, cmd: 4, param: 1});
                 checkEdit();
                 checkConnection();
                 break;
             case 'dispatch':
-                console.log('dispatch', data);
+                // console.log('dispatch', data);
                 let time = new Date();
                 let strTime = '';
                 strTime += (time.getHours().toString().length === 2) ? time.getHours() : '0' + time.getHours();
@@ -295,7 +295,7 @@ $(function () {
                 }).bootstrapTable('scrollTo', 'top');
                 break;
             case 'crossUpdate':
-                console.log('crossUpdate', data);
+                // console.log('crossUpdate', data);
                 $('#status').html('Статус: ' + data.status.description);
                 $('#pk').find('option').each(function () {
                     $(this).removeAttr('selected');
@@ -345,7 +345,7 @@ $(function () {
                     if (flag) $('#nk').append(new Option('НК ' + (counter + 1), counter + 1));
                 });
 
-                console.log('stateChange', data);
+                // console.log('stateChange', data);
                 $('#pk').find('option').each(function () {
                     $(this).removeAttr('selected');
                 });
@@ -360,7 +360,7 @@ $(function () {
                 $('#connection')[0].innerText = data.scon ? data.eth ? 'LAN' : 'GPRS' : '';
                 break;
             case 'phase':
-                console.log('phase ', data);
+                // console.log('phase ', data);
                 //Обработка таблицы
                 buildExpandedTable(data.dk);
                 if (data.dk.edk === 1) {
@@ -491,7 +491,7 @@ function buildExpandedTable(data) {
             toWrite.column7++;
             $expandedTable.bootstrapTable('updateRow', {index: currentIndex, row: Object.assign({}, toWrite)});
             colorizeRow(currentIndex);
-            console.log('updateRow ' + currentIndex + ' ', toWrite);
+            // console.log('updateRow ' + currentIndex + ' ', toWrite);
         }, 1000);
     } else if ($expandedTable.bootstrapTable('getData').length !== 0) {
         toWrite.column3 = data.ttcdk;
@@ -527,7 +527,7 @@ function buildExpandedTable(data) {
             toWrite.column7++;
             $expandedTable.bootstrapTable('updateRow', {index: currentIndex - 1, row: Object.assign({}, toWrite)});
             colorizeRow(currentIndex - 1);
-            console.log('updateRow ' + (currentIndex - 1) + ' ', toWrite);
+            // console.log('updateRow ' + (currentIndex - 1) + ' ', toWrite);
         }, 1000);
         if (currentIndex < $expandedTable.bootstrapTable('getData').length) prevIndex = currentIndex;
         currentIndex++;

@@ -175,9 +175,9 @@ function buildTable(firstLoadFlag) {
             sv: devFlag ? device.scon ? device.Status.ethernet ? 'L' : '+' : '' : '',
             type: devFlag ? switchArrayTypeFromDevice(device.Model) : switchArrayType(cross.arrayType),
             exTime: devFlag ? timeFormat(device.ltime).substring(0, 15) : '',
-            malfDk: devFlag ? checkMalfunction(device.Error) : '',
+            malfDk: cross.status,
             gps: devFlag ? checkGPS(device.GPS) : '',
-            addData: devFlag ? 'М:' + device.Status.elc : '',
+            addData: (devFlag ? 'М:' + device.Status.elc + checkMalfunction(device.Error) : ''), //devFlag ? checkMalfunction(device.Error) : '',
             place: cross.describe,
             idevice: cross.idevice
         };
@@ -189,6 +189,12 @@ function buildTable(firstLoadFlag) {
     $table.bootstrapTable('hideColumn', 'idevice');
     $table.bootstrapTable('scrollTo', {unit: 'px', value: scrollSave});
 
+    let data = $table.bootstrapTable('getData');
+    devicesSave.forEach(devSave => {
+        let id = findDevice(data, devSave);
+        $('#table tbody tr')[id].cells[3].style.backgroundColor = devSave.device.StatusCommandDU.IsReqSFDK1 ? 'lightblue' : '';
+    });
+
     $table.unbind().on('click', function () {
         buildBottom();
     });
@@ -199,6 +205,14 @@ function buildTable(firstLoadFlag) {
 
     checkDifference();
     buildBottom();
+}
+
+function findDevice(data, device) {
+    let id = -1;
+    data.forEach((row, index) => {
+        if (row.idevice === device.idevice) id = index;
+    });
+    return id;
 }
 
 //ПРОБЕЛЫ ВАЖНЫ #SPACELIVESMATTER
@@ -416,16 +430,16 @@ function timeFormat(time) {
 }
 
 let ErrorsText = {
-    V220DK1: 'Срабатывание входа контроля 220В ДК1',
-    V220DK2: 'Срабатывание входа контроля 220В ДК2',
-    RTC: 'Неисправность часов RTC',
-    TVP1: 'Неисправность ТВП1',
-    TVP2: 'Неисправность ТВП2',
-    FRAM: 'Неисправность FRAM'
+    V220DK1: '220В ДК1',
+    V220DK2: '220В ДК2',
+    RTC: 'Часы RTC',
+    TVP1: 'ТВП1',
+    TVP2: 'ТВП2',
+    FRAM: 'FRAM'
 };
 
 function checkMalfunction(Error) {
-    let retValue = '';
+    let retValue = ', ';
     for (const [key, value] of Object.entries(Error)) {
         if (value) retValue += ErrorsText[key] + ', ';
     }
@@ -438,7 +452,7 @@ let GPSText = {
     E02: 'Ошибка CRC',
     E03: 'Нет валидного времени',
     E04: 'Мало спутников',
-    Seek: 'Поиск спутников после включения'
+    Seek: 'Поиск спутников'
 };
 
 function checkGPS(GPS) {
