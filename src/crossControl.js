@@ -100,7 +100,6 @@ $(() => {
                     loadData(data, false);
                 } else {
                     unmodifiedData = JSON.parse(JSON.stringify(data));
-                    disableControl('forceSendButton', true);
                     disableControl('sendButton', false);
                 }
                 break;
@@ -323,8 +322,9 @@ $(() => {
             tableData.unshift(shift3);
         }
 
-        data.state.arrays.SetTimeUse.uses[0].name = '1 ТВП';
-        data.state.arrays.SetTimeUse.uses[1].name = '2 ТВП';
+        tableData[0].name = '1 ТВП';
+        tableData[1].name = '2 ТВП';
+        data.state.arrays.SetTimeUse.uses = tableData;
     }
 
     // Проверка валидности ПК
@@ -796,7 +796,6 @@ function loadData(newData, firstLoadFlag) {
     if (firstLoadFlag) {
         $('#forceSendButton').on('click', () => {
             controlSend(newData.state.idevice);
-            disableControl('forceSendButton', false);
         });
     }
 
@@ -830,7 +829,6 @@ function loadData(newData, firstLoadFlag) {
 
     $('input').each(function () {
         $(this).on('click keypress', () => disableUnchecked());
-
     });
 
     $('select').each(function () {
@@ -841,8 +839,8 @@ function loadData(newData, firstLoadFlag) {
 // Отключает функционал некоторых кнопок, если данные не проверены
 function disableUnchecked() {
     disableControl('sendButton', false);
-    disableControl('forceSendButton', false);
     disableControl('addButton', false);
+    disableControl('checkButton', ((JSON.stringify(data)) !== (JSON.stringify(unmodifiedData))));
 }
 
 // Навигация по таблицам с помощью стрелочек, Enter и Tab

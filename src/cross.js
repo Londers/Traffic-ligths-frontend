@@ -514,9 +514,6 @@ function buildExpandedTable(data) {
             }
         }
 
-        if (toWrite.column1 !== toWrite.column4) toWrite.column1 = toWrite.column4;
-
-
         colorizeRow(currentIndex);
         toWrite.column5++;
         toWrite.column6 = toWrite.column3 + toWrite.column5;

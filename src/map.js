@@ -5,6 +5,7 @@ let IDs = [];
 let areaLayout = [];
 let subareasLayout = [];
 let regionInfo;
+let userRegion;
 let areaInfo;
 let areaZone;
 let boxRemember = {Y: 0, X: 0};
@@ -167,6 +168,10 @@ ymaps.ready(function () {
         $('#techDialog').dialog('open');
     });
 
+    $('#alarmButton').on('click', function () {
+        (userRegion === '*') ? $('#alarmDialog').dialog('open') : openPage('/alarm?Region=' + userRegion);
+    });
+
     //Смена пароля текущего аккаунта
     $('#changeButton').on('click', function () {
         $('#oldPassword').val('');
@@ -215,11 +220,6 @@ ymaps.ready(function () {
     $('#charPointsButton').on('click', () => {
         openPage('/charPoints');
     });
-
-    // $('#soundButton').on('click', () => {
-    //     let audio = new Audio('/free/resources/zvuk-kasperskogo-vizg-svini.mp3');
-    //     audio.autoplay = true;
-    // });
 
     $('#dropdownConnectionButton').on('click', function () {
         if ($('#dropdownConnectionButton').attr('aria-expanded') === 'true') {
@@ -379,6 +379,7 @@ ymaps.ready(function () {
             case 'mapInfo':
                 regionInfo = data.regionInfo;
                 areaInfo = data.areaInfo;
+                userRegion = data.region;
                 // let techRegionInfo = (data.region === '*') ? regionInfo : data.region;
                 // let techAreaInfo = (data.area === null) ? areaInfo : data.area;
                 authorizedFlag = data.authorizedFlag;
@@ -440,7 +441,7 @@ ymaps.ready(function () {
                 if (authorizedFlag) {
                     $('#workPlace')[0].innerText = 'АСУДД "Микро" '
                         + ((data.region === '*') ? 'Все регионы' : ((reg === undefined) ? '' : reg))
-                        + '\n' + ((desc === undefined) ? 'АРМ' : ((data.role === 'Viewer') ? 'АРМ наблюдателя' : 'АРМ дежурного - ') + data.description)
+                        + '\n' + ((desc === undefined) ? 'АРМ ' : ((data.role === 'Viewer') ? 'АРМ наблюдателя ' : 'АРМ дежурного - ') + data.description)
                         + '\n' + localStorage.getItem('login');
                     openAbout(true);
                 }
@@ -678,6 +679,22 @@ ymaps.ready(function () {
         }
     });
 
+    $('#alarmDialog').dialog({
+        autoOpen: false,
+        buttons: {
+            'Подтвердить': function () {
+                //Проверка корректности введённых данных
+                openPage('/alarm?Region=' + $('#alarmRegion option:selected').val());
+                $(this).dialog('close');
+            },
+            'Отмена': function () {
+                $(this).dialog('close');
+            }
+        },
+        modal: true,
+        resizable: false
+    });
+
     $('#licenseDialog').dialog({
         autoOpen: false,
         buttons: {
@@ -741,7 +758,7 @@ function authorize() {
         // $('#standardZUButton').hide();
         // $('#arbitraryZUButton').hide();
         // $('#charPointsButton').hide();
-        // $('#soundButton').hide();
+        // $('#alarmButton').hide();
         $('#switchLayout').parent().hide();
         $('button[class*="dropdown"]').each(function () {
             $(this).hide();
@@ -755,7 +772,7 @@ function authorize() {
         // $('#standardZUButton').show();
         // $('#arbitraryZUButton').show();
         // $('#charPointsButton').show();
-        // $('#soundButton').show();
+        // $('#alarmButton').show();
         $('#switchLayout').parent().show();
         $('button[class*="dropdown"]').each(function () {
             $(this).show();
@@ -770,7 +787,10 @@ function authorize() {
     (logDeviceFlag) ? $('#deviceLogButton').show() : $('#deviceLogButton').hide();
     (techFlag) ? $('#techArmButton').show() : $('#techArmButton').hide();
     (gsFlag) ? $('#standardZUButton').show() : $('#standardZUButton').hide();
-    (xctrlFlag) ? $('#charPointsButton').show() : $('#charPointsButton').hide();
+
+    // todo доделать экран характерных точек
+    // (xctrlFlag) ? $('#charPointsButton').show() : $('#charPointsButton').hide();
+    $('#charPointsButton').hide();
 }
 
 let createChipsLayout = function (calculateSize) {
@@ -915,6 +935,7 @@ function makeTech(data, techAreaInfo) {
     if (data.region === '*') {
         for (let reg in regionInfo) {
             $('#techRegion').append(new Option(regionInfo[reg], reg));
+            $('#alarmRegion').append(new Option(regionInfo[reg], reg));
         }
         fillTechAreas($('#techArea'), $('#techRegion'), areaInfo);
     } else {

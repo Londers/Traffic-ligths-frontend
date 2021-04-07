@@ -111,7 +111,16 @@
         </div>
     </form>
 </div>
-<div id="licenseDialog" title="Информация о лицензции">
+<div id="alarmDialog" title="Выбор региона">
+    <form class="needs-validated">
+        <div class="form-group" id="alarmRegionForm">
+            <label for="region">Регион</label>
+            <select class="form-control" id="alarmRegion">
+            </select>
+        </div>
+    </form>
+</div>
+<div id="licenseDialog" title="Информация о лицензии">
     <form class="needs-validated">
         <div class="form-group" id="currentLicense">
             <p id="license" class="text-center"></p>
@@ -287,8 +296,8 @@
     </button>
 </div>
 <div style="position: absolute; top: 750px; left: 10px; z-index: 2">
-    <button class="btn btn-secondary" type="button" id="soundButton" style="min-width: 250px;">
-        Звуковое сопровождение
+    <button class="btn btn-secondary" type="button" id="alarmButton" style="min-width: 250px;">
+        Предупреждения
     </button>
 </div>
 </div>

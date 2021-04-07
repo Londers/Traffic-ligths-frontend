@@ -5,7 +5,7 @@
     <meta http-equiv="content-type" content="text/html; charset=UTF-8">
     <meta charset="UTF-8">
     <meta http-equiv="Cache-control" content="must-revalidate">
-    <title>Просмотр перекрёстков</title>
+    <title>Предупреждения</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link href="https://unpkg.com/bootstrap-table@1.15.5/dist/bootstrap-table.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
@@ -23,7 +23,8 @@
             width: 100%;
         }
 
-        th, td {
+        th,
+        td {
             padding: 8px 16px;
         }
 
@@ -33,8 +34,40 @@
     </style>
 </head>
 
-<body>
-hey
+<body >
+<div class="container-fluid" id="top" style="max-width: 98%;">
+    <div class="row-fluid overflow-auto">
+        <div class="row m-3">
+            <div class="col-md-6" id="toolbar">
+                <label for="alarmSound">Выберите звук предупреждения</label>
+                <select class="custom-select" id="alarmSound" style="	width: 20%;"></select>
+                <button class="btn btn-md btn-secondary" id="checkSound">Прослушать</button>
+            </div>
+            <div class="col-md-3">
+                <button class="btn btn-md btn-secondary" id="muteSound">Отключить звук</button>
+            </div>
+            <div class="col-md-3">
+                <button class="btn btn-md btn-secondary" id="openCross">Открыть перекрёсток</button>
+            </div>
+        </div>
+        <table class="table table-bordered" id="table" data-toggle="table" data-click-to-select="true" data-single-select="true" data-height="520" cellspacing="0">
+            <thead>
+            <tr style="">
+                <th data-field="state" data-checkbox="true"></th>
+                <th data-field="area">Район</th>
+                <th data-field="id">Номер</th>
+                <th data-field="idevice">№ модема</th>
+                <th data-field="describe">Описание</th>
+                <th data-field="status">Статус</th>
+                <th data-field="time">Время</th>
+                <th data-field="region" data-visible="false">region</th>
+            </tr>
+            </thead>
+            <tbody style="">
+            </tbody>
+        </table>
+    </div>
+</div>
 </body>
 
 </html>
