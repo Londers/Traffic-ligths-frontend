@@ -9,6 +9,12 @@ let type = 0;
 let dateSave;
 
 $(function () {
+    $('#table').bootstrapTable('showLoading');
+    // Перевод на русский
+    $('[class~=loading-text]').text('Загрузка. Пожалуйста, подождите');
+    $('[class~=no-records-found] td').text('Записей не найдено');
+    $('[class~=search]').each(({},search) => {$(search).html(search.innerHTML.replace('Search', 'Поиск'))});
+
     $.ajax({
         url: window.location.href,
         type: 'post',
@@ -40,6 +46,7 @@ $(function () {
                 .bootstrapTable('refresh', {
                     data: data.devices
                 });
+            $('#table').bootstrapTable('hideLoading');
 
             let now = new Date();
             $('#dateEnd').attr('value', (now.toISOString().slice(0, 10)));
@@ -90,6 +97,9 @@ $(function () {
 });
 
 function getLogs(start, end, crutchFlag, remoteOpenFlag) {
+    $('#logsTable').bootstrapTable('showLoading');
+    $('[class~=loading-text]').text('Загрузка. Пожалуйста, подождите');
+
     // {ID: '', area: '', region: ''}
     // console.log('start:' + start + '   end' + end);
     let toSend = {devices: [], timeStart: start, timeEnd: end};
@@ -131,7 +141,8 @@ function getLogs(start, end, crutchFlag, remoteOpenFlag) {
         dataType: 'json',
         success: function (data) {
             dateSave = new Date();
-            buildLogTable(data, crutchFlag)
+            buildLogTable(data, crutchFlag);
+            $('#logsTable').bootstrapTable('hideLoading');
         },
         error: function (request) {
             console.log(request.status + ' ' + request.responseText);
@@ -171,9 +182,10 @@ function collapseDuplicates(data) {
 
 function buildLogTable(data, crutchFlag) {
     (data === undefined) ? data = dataSave : dataSave = data;
-    let allData = [];
 
     let filteredData = collapseDuplicates(filterByType(data));
+
+    let allData = new Array(filteredData.length);
 
     for (let dev in filteredData) {
         filteredData[dev].forEach((log, index) => {
@@ -184,18 +196,21 @@ function buildLogTable(data, crutchFlag) {
             }
             let localPrevDate, duration;
             let date = new Date(log.time);
+
+
             if (index < filteredData[dev].length) {
                 if ((crutchFlag) && (index === (filteredData[dev].length - 1))) date = new Date($('#dateStart')[0].value + 'T' + $('#timeStart')[0].value + ':00.00' + log.time.slice(-6));
                 let prevDate = (index === 0) ? dateSave : new Date(filteredData[dev][index - 1].time);
-                localPrevDate = prevDate.toLocaleString('ru-RU', {timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone});
+                localPrevDate = prevDate.toLocaleString('ru-RU');
                 duration = Math.floor(prevDate.getTime() - date.getTime()) + date.getTimezoneOffset() * 60 * 1000;// 1000);
                 let hours = new Date(duration).getHours();
                 let minutes = new Date(duration).getMinutes();
                 let seconds = new Date(duration).getSeconds();
                 duration = hours + 'ч ' + minutes + 'м ' + seconds + 'с';
             }
+
             let text = log.text;
-            let localDate = date.toLocaleString('ru-RU', {timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone});
+            let localDate = date.toLocaleString('ru-RU');
             let add = {
                 message: text,
                 dateStart: localDate,
@@ -203,7 +218,6 @@ function buildLogTable(data, crutchFlag) {
                 duration: (duration !== undefined) ? duration : '',
                 time: date.getTime()
             };
-
             allData.push(add);
         });
         if (!crutchFlag) allData.pop();
@@ -220,7 +234,7 @@ function buildLogTable(data, crutchFlag) {
 }
 
 function colorizeCrosses() {
-    const data =  $('#logsTable').bootstrapTable('getData');
+    const data = $('#logsTable').bootstrapTable('getData');
     const tableRows = $('#logsTable tbody tr');
     let switchFlag = true;
     data.forEach((row, index) => {

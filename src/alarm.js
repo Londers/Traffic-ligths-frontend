@@ -64,7 +64,11 @@ $(function () {
                 scrollSave = $('#table').bootstrapTable('getScrollPosition');
                 let tableData = data.alarm.CrossInfo;
                 tableData.forEach(row => {
-                    row.time = new Date(row.time).toLocaleString('ru-RU', {timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone});
+                    if (row.time.includes('1970')) {
+                        row.time = 'Не подключался';
+                    } else {
+                        row.time = new Date(row.time).toLocaleString('ru-RU', {timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone});
+                    }
                 });
 
                 $('#table').bootstrapTable('load', tableData)

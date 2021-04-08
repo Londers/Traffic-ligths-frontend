@@ -78,12 +78,15 @@ function colorizeSelectedRow(table) {
 
 $(() => {
     ws = new WebSocket('wss://' + location.host + location.pathname + 'W' + location.search);
+
     ws.onopen = () => {
         console.log('connected');
     };
+
     ws.onclose = function (evt) {
         console.log('disconnected', evt);
     };
+
     ws.onmessage = function (evt) {
         let allData = JSON.parse(evt.data);
         let data = allData.data;
@@ -113,6 +116,7 @@ $(() => {
                 break;
             case 'controlInfo':
                 console.log('controlInfo');
+                validatePkArray(data);
                 loadData(data, firstLoad);
                 document.title = 'АРМ ДК-' + data.state.area + '-' + data.state.id;
                 firstLoad = false;
@@ -780,9 +784,6 @@ function loadData(newData, firstLoadFlag) {
     points.Y = coords[0];
     points.X = coords[1];
     data = newData;
-    unmodifiedData = JSON.parse(JSON.stringify(data));
-
-    checkNew();
 
     $('#table').bootstrapTable('removeAll');
     $('#pkTable').bootstrapTable('removeAll');
@@ -834,13 +835,24 @@ function loadData(newData, firstLoadFlag) {
     $('select').each(function () {
         $(this).on('click keypress', () => disableUnchecked());
     });
+
+    $('input, select').each(function () {
+        $(this).on('change', () => $('#checkButton')[0].disabled = (JSON.stringify(data)) === (JSON.stringify(unmodifiedData)));
+    });
+
+    unmodifiedData = JSON.parse(JSON.stringify(data));
+    checkNew();
+
+    $('input').not('table input').each(({}, input) => {
+        calcInputWidth(input);
+        $(input).on('keyup', () => calcInputWidth(input));
+    })
 }
 
 // Отключает функционал некоторых кнопок, если данные не проверены
 function disableUnchecked() {
     disableControl('sendButton', false);
     disableControl('addButton', false);
-    disableControl('checkButton', ((JSON.stringify(data)) !== (JSON.stringify(unmodifiedData))));
 }
 
 // Навигация по таблицам с помощью стрелочек, Enter и Tab
@@ -882,6 +894,10 @@ function handleKeyboard($this, event) {
     event.preventDefault();
 }
 
+function calcInputWidth(input) {
+    $(input).width(((($(input).val().length + 1) * 8)) + 'px');
+}
+
 // Заполнение вкладки "Основные"
 function mainTabFill(data, firstLoadFlag) {
     for (let area in data.areaMap) {
@@ -907,6 +923,8 @@ function mainTabFill(data, firstLoadFlag) {
     $('#phone').val(data.state.phone);
     setChange('phone', 'input');
     $('#ip')[0].innerText = 'IP: ' + data.deviceIP;
+    $('#wifi').val(data.state.wifi).width(calcInputWidth($('#wifi')[0]));
+    setChange('wifi', 'input');
     $('#tz').val(data.state.arrays.timedev.tz);
     setChange('tz', 'input', 'arrays.timedev');
     $('#summer').prop('checked', data.state.arrays.timedev.summer);
@@ -928,6 +946,17 @@ function mainTabFill(data, firstLoadFlag) {
     setChange('vpbsr', 'input', 'Model');
 
     anotherTableFill('table', mainTableFlag);
+}
+
+// Верификация массива ПК
+function validatePkArray(data) {
+    data.state.arrays.SetDK.dk.forEach(pk => {
+        while (pk.sts.length !== 12) {
+            pk.sts.push({dt: 0, line: pk.sts.length + 1, num: 0, plus: false, start: 0, stop: 0, tf: 0, trs: false})
+        }
+        pk.sts[0].num = 1;
+        pk.sts.forEach((sw, index) => sw.line = index + 1);
+    })
 }
 
 function sizeVerification(length, oldVersion) {
@@ -2112,6 +2141,6 @@ function checkEdit() {
     });
     $('#reloadButton')[0].className = checkButton($('#reloadButton')[0].className.toString(), true);
     $('#sendButton')[0].className = checkButton($('#sendButton')[0].className.toString(), false);
-    $('#forceSendButton')[0].className = checkButton($('#forceSendButton')[0].className.toString(), false);
+    $('#forceSendButton')[0].className = checkButton($('#forceSendButton')[0].className.toString(), editFlag);
     $('#addButton')[0].className = checkButton($('#addButton')[0].className.toString(), false);
 }

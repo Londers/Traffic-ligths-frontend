@@ -172,15 +172,19 @@ function buildTable(firstLoadFlag) {
             state: (selected.length !== 0) ? (cross.idevice === selected[0].idevice) : false,
             area: cross.area,
             usdk: cross.id,
-            sv: devFlag ? device.scon ? device.Status.ethernet ? 'L' : '+' : '' : '',
+            sv: devFlag ? (device.scon ? (device.Status.ethernet ? 'L' : '+') : '') : '',
             type: devFlag ? switchArrayTypeFromDevice(device.Model) : switchArrayType(cross.arrayType),
             exTime: devFlag ? timeFormat(device.ltime).substring(0, 15) : '',
             malfDk: cross.status,
             gps: devFlag ? checkGPS(device.GPS) : '',
-            addData: (devFlag ? 'М:' + device.Status.elc + checkMalfunction(device.Error) : ''), //devFlag ? checkMalfunction(device.Error) : '',
+            addData: devFlag ? (((mErrorText[device.Status.elc] === undefined)
+                ? ('Неизвестный код неисправности ' + device.Status.elc) : mErrorText[device.Status.elc])
+                + checkMalfunction(device.Error)) : '',
+            traffic: devFlag ? (`${prettyTraffic(device.Traffic.FromDevice1Hour)}Кб / ${prettyTraffic(device.Traffic.LastFromDevice1Hour)}Кб`) : '',
             place: cross.describe,
             idevice: cross.idevice
         };
+
         if ((cross.idevice === crossesSave[0].idevice) && (firstLoadFlag)) copy.state = true;
         toWrite.push(copy);
     });
@@ -205,6 +209,10 @@ function buildTable(firstLoadFlag) {
 
     checkDifference();
     buildBottom();
+}
+
+function prettyTraffic(tf) {
+    return (tf / 1024).toFixed(1);
 }
 
 function findDevice(data, device) {
@@ -321,7 +329,6 @@ function buildBottom() {
         }
 
         $('#pbs')[0].innerText = device.Model.vpbsl + '.' + device.Model.vpbsr;
-
         let inputs = [];
         let statistics = [];
 
@@ -429,7 +436,7 @@ function timeFormat(time) {
     return dateTimeFormat.format(date);
 }
 
-let ErrorsText = {
+const ErrorsText = {
     V220DK1: '220В ДК1',
     V220DK2: '220В ДК2',
     RTC: 'Часы RTC',
@@ -446,7 +453,7 @@ function checkMalfunction(Error) {
     return (retValue.length !== 0) ? retValue.substring(0, retValue.length - 2) : '';
 }
 
-let GPSText = {
+const GPSText = {
     Ok: 'Исправно',
     E01: 'Нет связи с приемником',
     E02: 'Ошибка CRC',
@@ -462,6 +469,36 @@ function checkGPS(GPS) {
     }
     return (retValue.length !== 0) ? retValue.substring(0, retValue.length - 2) : '';
 }
+
+const mErrorText = {
+    0: 'Ошибок в процессе соединения с сервером не зарегистрировано',
+    1: 'Нет обмена или некорректный обмен с модемом',
+    2: 'Не удалось зарегистрироваться в GSM-сети за отведенный интервал времени',
+    3: 'Не удалось войти в GPRS-канал за отведённый интервал времени',
+    4: 'Нет соединения с сервером после нескольких попыток',
+    5: 'Sim-карта не установлена',
+    6: 'Нет ответов от сервера при попытке подключения',
+    7: 'Нет ответов от сервера при попытке подключения',
+    8: 'Сервер разорвал существующее соединение',
+    9: 'Модем не подчинился сигналу включения/выключения',
+    10: 'Нет связи с сервером',
+    11: 'Неверная контрольная сумма принимаемого сообщения',
+    12: 'Нет подтверждения от сервера на прием информации от УСКД',
+    16: 'Внутренняя ошибка модема',
+    20: 'Получены новые параметры обмена с сервера',
+    21: 'Таймаут по отсутствию связи с сервером',
+    22: 'Получено СМС с настройками',
+    23: 'Перезагрузка по пропаданию и восстановлению сетевого питания',
+    24: 'Обновление программы',
+    25: 'Нет данных с сервера в режиме обмена',
+    26: 'Суточная перезагрузка',
+    27: 'Несанкционированное выключение модема',
+    28: 'Загружен новый IP-адрес сервера по USB',
+    29: 'Тайм-аут при установлении соединения',
+    50: 'Нет данных от сервера в течение интервала обмена  +1 минута',
+    51: 'Разрыв связи по команде ПСПД',
+    52: 'Модем выдал сообщение об ошибке  в процессе обмена'
+};
 
 function switchArrayType(type) {
     let retValue = 'Нет данных';

@@ -81,7 +81,7 @@
         }
     </style>
 </head>
-<div id="modal"> </div>
+<div id="modal"></div>
 
 <div id="locationDialog" title="Выбор района">
     <form class="needs-validated">
@@ -126,9 +126,12 @@
             <p id="license" class="text-center"></p>
         </div>
         <div class="form-group text-center">
-            <button id="checkNewLicense" class="btn btn-secondary mt-3">Внести новую лицензцию</button>
+            <button id="checkNewLicense" class="btn btn-secondary mt-3" style="position: absolute;
+            left: 50%;-ms-transform: translate(-50%, -50%);transform: translate(-50%, -50%);">
+                Внести новую лицензцию
+            </button>
         </div>
-        <div class="form-group text-center">
+        <div class="form-group text-center" style="position: relative; top: 50px;">
             <input type="text" id="newLicenseKey" name="time"/>
         </div>
     </form>
@@ -166,7 +169,8 @@
             <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
                 <b class="dropdown-item" id="multipleCross">
                     <label class="form-check-label">
-                        <input type="checkbox" class="form-check-input" id="multipleCrossCheck">Активировать выбор перекрёстков
+                        <input type="checkbox" class="form-check-input" id="multipleCrossCheck">Активировать выбор
+                        перекрёстков
                     </label>
                 </b>
                 <b class="dropdown-item" id="multipleCrossClear">Очистить список перекрёстков</b>
@@ -255,51 +259,51 @@
 </div>
 
 <div id="leftToolbar">
-<div style="position: absolute; top: 400px; left: 10px; z-index: 2">
-    <button class="btn btn-secondary" type="button" id="techArmButton" style="min-width: 250px;">
-        Сервер связи
-    </button>
-</div>
-<div style="position: absolute; top: 450px; left: 10px; z-index: 2">
-    <button class="btn btn-secondary" type="button" id="deviceLogButton" style="min-width: 250px;">
-        Журнал клиентов
-    </button>
-</div>
-<div style="position: absolute; top: 500px; left: 10px; z-index: 2">
-    <button class="btn btn-secondary" type="button" id="serverLogButton" style="min-width: 250px;">
-        Журнал системы
-    </button>
-</div>
-<!--<div style="position: absolute; top: 500px; left: 10px; z-index: 2">-->
-<!--    <button class="btn btn-secondary" type="button" id="techArmButton" style="min-width: 250px;">-->
-<!--        Технологические режимы-->
-<!--    </button>-->
-<!--</div>-->
-<div style="position: absolute; top: 550px; left: 10px; z-index: 2">
-    <button class="btn btn-secondary" type="button" id="DUJournalButton" style="min-width: 250px;">
-        ДУ
-    </button>
-</div>
-<div style="position: absolute; top: 600px; left: 10px; z-index: 2">
-    <button class="btn btn-secondary" type="button" id="standardZUButton" style="min-width: 250px;">
-        Стандартные ЗУ
-    </button>
-</div>
-<div style="position: absolute; top: 650px; left: 10px; z-index: 2">
-    <button class="btn btn-secondary" type="button" id="arbitraryZUButton" style="min-width: 250px;">
-        Произвольные ЗУ
-    </button>
-</div>
-<div style="position: absolute; top: 700px; left: 10px; z-index: 2">
-    <button class="btn btn-secondary" type="button" id="charPointsButton" style="min-width: 250px;">
-        Управление по хар. точкам
-    </button>
-</div>
-<div style="position: absolute; top: 750px; left: 10px; z-index: 2">
-    <button class="btn btn-secondary" type="button" id="alarmButton" style="min-width: 250px;">
-        Предупреждения
-    </button>
-</div>
+    <div style="position: absolute; top: 400px; left: 10px; z-index: 2">
+        <button class="btn btn-secondary" type="button" id="techArmButton" style="min-width: 250px;">
+            Сервер связи
+        </button>
+    </div>
+    <div style="position: absolute; top: 450px; left: 10px; z-index: 2">
+        <button class="btn btn-secondary" type="button" id="deviceLogButton" style="min-width: 250px;">
+            Журнал клиентов
+        </button>
+    </div>
+    <div style="position: absolute; top: 500px; left: 10px; z-index: 2">
+        <button class="btn btn-secondary" type="button" id="serverLogButton" style="min-width: 250px;">
+            Журнал системы
+        </button>
+    </div>
+    <!--<div style="position: absolute; top: 500px; left: 10px; z-index: 2">-->
+    <!--    <button class="btn btn-secondary" type="button" id="techArmButton" style="min-width: 250px;">-->
+    <!--        Технологические режимы-->
+    <!--    </button>-->
+    <!--</div>-->
+    <div style="position: absolute; top: 550px; left: 10px; z-index: 2">
+        <button class="btn btn-secondary" type="button" id="DUJournalButton" style="min-width: 250px;">
+            ДУ
+        </button>
+    </div>
+    <div style="position: absolute; top: 600px; left: 10px; z-index: 2">
+        <button class="btn btn-secondary" type="button" id="standardZUButton" style="min-width: 250px;">
+            Стандартные ЗУ
+        </button>
+    </div>
+    <div style="position: absolute; top: 650px; left: 10px; z-index: 2">
+        <button class="btn btn-secondary" type="button" id="arbitraryZUButton" style="min-width: 250px;">
+            Произвольные ЗУ
+        </button>
+    </div>
+    <div style="position: absolute; top: 700px; left: 10px; z-index: 2">
+        <button class="btn btn-secondary" type="button" id="charPointsButton" style="min-width: 250px;">
+            Управление по хар. точкам
+        </button>
+    </div>
+    <div style="position: absolute; top: 750px; left: 10px; z-index: 2">
+        <button class="btn btn-secondary" type="button" id="alarmButton" style="min-width: 250px;">
+            Предупреждения
+        </button>
+    </div>
 </div>
 
 <div id="loginDialog" class="container-sm" style="display: none;" title="Авторизация">

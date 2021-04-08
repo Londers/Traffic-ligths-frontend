@@ -45,6 +45,10 @@ $(function () { //                    192.168.115.120  /user/Admin/cross   W    
 
                 $('#connection')[0].innerText = data.scon ? data.eth ? 'LAN' : 'GPRS' : '';
 
+                $('#deviceLog').width($('#ky').width());
+                $(window).resize(() => {
+                    $('#deviceLog').width($('#ky').width());
+                });
                 // if (editFlag) controlSend({id: idevice, cmd: 4, param: 1});
 
                 // $(window).on("beforeunload", function () {
@@ -201,7 +205,7 @@ $(function () { //                    192.168.115.120  /user/Admin/cross   W    
                 //---------------------------------------------------------------------------------------------------------------------------------------------------
                 $('#status').html('Статус: ' + data.cross.tlsost.description);
 
-                $('#openDeviceLog').on('click', () => {
+                $('#deviceLog').on('click', () => {
                     localStorage.setItem('ID', cross.ID);
                     localStorage.setItem('area', cross.area.num);
                     localStorage.setItem('region', cross.region.num);

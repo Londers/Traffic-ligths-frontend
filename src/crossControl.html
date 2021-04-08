@@ -36,7 +36,7 @@
 </div>
 
 <div class="row " style="display: flex">
-    <div class="container col-sm-1 position-fixed">
+    <div class="container col-sm-1 position-fixed p-0">
         <div class="row ">
             <div class="col-md-12">
                 <a class="btn btn-secondary mt-2 mx-auto border disabled" id="sendButton" data-toggle="tooltip"
@@ -90,16 +90,16 @@
         </div>
         <div class="row">
             <div class="col-md-12 mt-5">
-                <a class="btn btn-secondary mt-2 mx-auto border disabled" id="forceSendButton" data-toggle="tooltip"
+                <a class="btn btn-secondary mt-2 mx-auto border" id="forceSendButton" data-toggle="tooltip"
                    title="Принудительно обновить контроллер" role="button"
                    style="width: 100%; display: flex; min-height: 50px;	min-width: 50px; max-width: 60px;	max-height: 60px;">
                     <img src="/file/static/icons/8.svg" class="img-fluid"
                          style="min-height: 25px;	min-width: 25px; max-width: 40px;	max-height: 40px;">
                 </a>
-                <button type="button" class="btn btn-secondary justify-content-center mt-5 mx-auto border"
-                        id="checkButton"
-                        style="display: flex; max-width: 85px;">Проверка
-                </button>
+                <div class="btn btn-secondary border mt-2" id="checkButton" data-toggle="tooltip"
+                     title="Проверить корректность массивов" disabled="" role="button" style="max-width: 76px;display: inline-table;">
+                    <span id="openDeviceLog" style="display: contents; font-size: calc(4px + 0.5vw);">Проверка</span>
+                </div>
             </div>
         </div>
         <div class="row">
@@ -211,7 +211,7 @@
                         <div class="col-md-6 w-100">
                             <div class="form-group">
                                 <input type="text" class="form-control" id="name" required=""
-                                                           style="max-height: 30px;"></div>
+                                       style="max-height: 30px;"></div>
                         </div>
                     </div>
                     <div class="row my-2 ml-0" style="">
@@ -221,11 +221,20 @@
                         <div class="col-md-3" style="max-width: 400px;">
                             <div class="form-group">
                                 <input type="text" class="form-control" required="" id="phone"
-                                                           style="max-height: 30px;"></div>
+                                       style="max-height: 30px;">
+                            </div>
                         </div>
-                        <div class="col-md-3" style="max-width: 400px;">
-                            <div class="mt-3">
-                                <p id="ip" style="max-height: 30px;"></div>
+                        <div class="col-md-6" style="max-width: 400px;">
+                            <div id="ip" style="max-height: 30px;"></div>
+                            <div class="form-group row" style="margin: 5px 0 5px">
+                                <div class="col-sm-2" style="padding: 0;">
+                                    <label for="wifi">Wi-Fi:</label>
+                                </div>
+                                <div class="col-sm-10" style="padding: 0;">
+                                    <input type="text" class="form-control" id="wifi"
+                                           style="max-height: 30px; min-width: 100px;">
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <div class="form-group row w-100 ml-0 mt-3 mb-2" style="">
@@ -269,7 +278,7 @@
                     <div class="form-group row w-100 ml-0 mt-1 mb-3" style="">
                         <div class="col-xs-2 mr-1" style="" id="progVer">
                             <div class="row">
-                                <div class="col-md-2"> ПСПД </div>
+                                <div class="col-md-3"> ПСПД</div>
                                 <div class="col-md-4">
                                     <select id="vpcpd">
                                         <option value="12.3">12.3 и меньше</option>
@@ -278,13 +287,15 @@
                                 </div>
                             </div>
                             <div class="row mt-2">
-                                <div class="col-md-2"> ПБС </div>
+                                <div class="col-md-2"> ПБС</div>
                                 <div class="col-md-4">
-                                    <input type="number" class="form-control" id="vpbsl" required="" style="	max-width: 100px;	max-height: 30px;">
+                                    <input type="number" class="form-control" id="vpbsl" required=""
+                                           style="	max-width: 100px;	max-height: 30px;">
                                 </div>
                                 <div class="mt-2">.</div>
                                 <div class="col-md-4">
-                                    <input type="number" class="form-control" id="vpbsr" required="" style="	max-width: 100px;	max-height: 30px;">
+                                    <input type="number" class="form-control" id="vpbsr" required=""
+                                           style="	max-width: 100px;	max-height: 30px;">
                                 </div>
                             </div>
                         </div>
@@ -415,7 +426,8 @@
                             </a>
                         </div>
                         <div class="col-sm-1 mr-0" style="">
-                            <a class="btn btn-light mx-auto border" id="pkNewButton" data-toggle="tooltip" role="button"
+                            <a class="btn btn-light mx-auto border" id="pkNewButton" data-toggle="tooltip"
+                               role="button"
                                style="width:110%; display: flex; min-height: 50px;	min-width: 50px; max-width: 60px;	max-height: 60px;">
                                 <img src="/file/static/icons/2.svg" class="img-fluid"
                                      style="	min-height: 25px;	min-width: 25px; max-width: 35px;	max-height: 35px;">
@@ -429,7 +441,7 @@
                                     <div class="form-group mt-2">
                                         <select class="" id="tf">
                                             <option value="-1">Вставить перекл.</option>
-                                            <option value="0"> </option>
+                                            <option value="0"></option>
                                             <option value="1">МГР</option>
                                             <option value="2">1 ТВП</option>
                                             <option value="3">2 ТВП</option>
@@ -470,7 +482,8 @@
                                     <label for="tc">Время цикла</label>
                                 </div>
                                 <div class="col-xs-10 ml-1">
-                                    <input list="special" class="form-control" id="tc" style="	max-width: 100px;	max-height: 30px;">
+                                    <input list="special" class="form-control" id="tc"
+                                           style="	max-width: 100px;	max-height: 30px;">
                                     <datalist id="special">
                                         <option value="ЛР">ЛР</option>
                                         <option value="ЖМ">ЖМ</option>
@@ -484,7 +497,8 @@
                                 <div class="mt-1 col-md-12" style="">
                                     <div class="form-check">
                                         <label class="form-check-label">
-                                            <input type="checkbox" class="form-check-input" id="twot" value="">2 T цикла</label>
+                                            <input type="checkbox" class="form-check-input" id="twot" value="">2 T
+                                            цикла</label>
                                     </div>
                                 </div>
                             </div>
@@ -564,14 +578,16 @@
                             </div>
                         </div>
                         <div class="col-md-1" style="">
-                            <a class="btn btn-light mx-auto border" id="skAddButton" data-toggle="tooltip" role="button"
+                            <a class="btn btn-light mx-auto border" id="skAddButton" data-toggle="tooltip"
+                               role="button"
                                style="width:110%; display: flex; min-height: 50px;	min-width: 50px; max-width: 60px;	max-height: 60px;">
                                 <img src="/file/static/icons/11.svg" class="img-fluid"
                                      style=" min-height: 25px;	min-width: 25px;	max-width: 35px;	max-height: 35px;">
                             </a>
                         </div>
                         <div class="col-md-1 mr-3" style="">
-                            <a class="btn btn-light mx-auto border" id="skSubButton" data-toggle="tooltip" role="button"
+                            <a class="btn btn-light mx-auto border" id="skSubButton" data-toggle="tooltip"
+                               role="button"
                                style="width:110%; display: flex; min-height: 50px;	min-width: 50px; max-width: 60px;	max-height: 60px;">
                                 <img src="/file/static/icons/12.svg" class="img-fluid"
                                      style=" min-height: 25px;	min-width: 25px;	max-width: 35px;	max-height: 35px;">
@@ -602,7 +618,8 @@
                             </a>
                         </div>
                         <div class="col-md-1" style="">
-                            <a class="btn btn-light mx-auto border" id="skNewButton" data-toggle="tooltip" role="button"
+                            <a class="btn btn-light mx-auto border" id="skNewButton" data-toggle="tooltip"
+                               role="button"
                                style="width:110%; display: flex; min-height: 50px;	min-width: 50px; max-width: 60px;	max-height: 60px;">
                                 <img src="/file/static/icons/2.svg" class="img-fluid"
                                      style=" min-height: 25px;	min-width: 25px;	max-width: 35px;	max-height: 35px;">
@@ -655,7 +672,8 @@
                             </a>
                         </div>
                         <div class="col-md-1" style="">
-                            <a class="btn btn-light mx-auto border" id="nkNewButton" data-toggle="tooltip" role="button"
+                            <a class="btn btn-light mx-auto border" id="nkNewButton" data-toggle="tooltip"
+                               role="button"
                                style="width:110%; display: flex; min-height: 50px;	min-width: 50px; max-width: 60px;	max-height: 60px;">
                                 <img src="/file/static/icons/2.svg" class="img-fluid"
                                      style=" min-height: 25px;	min-width: 25px;	max-width: 35px;	max-height: 35px;">
@@ -712,7 +730,8 @@
                             </a>
                         </div>
                         <div class="col-md-1" style="">
-                            <a class="btn btn-light mx-auto border" id="gkNewButton" data-toggle="tooltip" role="button"
+                            <a class="btn btn-light mx-auto border" id="gkNewButton" data-toggle="tooltip"
+                               role="button"
                                style="width:110%; display: flex; min-height: 50px;	min-width: 50px; max-width: 60px;	max-height: 60px;">
                                 <img src="/file/static/icons/2.svg" class="img-fluid"
                                      style=" min-height: 25px;	min-width: 25px;	max-width: 35px;	max-height: 35px;">
@@ -815,7 +834,8 @@
                         <h5>Длительность МГР при неисправности ДТ&nbsp;</h5>
                     </div>
                     <div class="row" style="position:absolute; bottom:0px;">
-                        <table class="table table-bordered" id="vv2Table" data-toggle="table" data-toolbar="#toolbar"
+                        <table class="table table-bordered" id="vv2Table" data-toggle="table"
+                               data-toolbar="#toolbar"
                                data-single-select="true" data-click-to-select="true" cellspacing="0">
                             <thead>
                             <tr style="">

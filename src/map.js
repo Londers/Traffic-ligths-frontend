@@ -512,6 +512,7 @@ ymaps.ready(function () {
             case 'login':
                 if (data.status) {
                     localStorage.setItem('multipleCross', JSON.stringify([]));
+                    userRegion = data.region;
 
                     $('#login').val('');
                     $('#password').val('');
@@ -786,7 +787,15 @@ function authorize() {
     //licenseFlag
     (logDeviceFlag) ? $('#deviceLogButton').show() : $('#deviceLogButton').hide();
     (techFlag) ? $('#techArmButton').show() : $('#techArmButton').hide();
-    (gsFlag) ? $('#standardZUButton').show() : $('#standardZUButton').hide();
+    if (gsFlag) {
+        $('#DUJournalButton').show();
+        $('#standardZUButton').show();
+        $('#arbitraryZUButton').show();
+    } else {
+        $('#DUJournalButton').hide();
+        $('#standardZUButton').hide();
+        $('#arbitraryZUButton').hide();
+    }
 
     // todo доделать экран характерных точек
     // (xctrlFlag) ? $('#charPointsButton').show() : $('#charPointsButton').hide();

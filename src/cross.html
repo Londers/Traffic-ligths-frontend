@@ -22,11 +22,12 @@
         min-width: 30px;
         max-height: 50px;
     }
+
     /* Just common table stuff. Really. */
-     table {
-         border-collapse: collapse;
-         width: 100%;
-     }
+    table {
+        border-collapse: collapse;
+        width: 100%;
+    }
 
     th, td {
         padding: 8px 16px;
@@ -75,11 +76,13 @@
                role="button" style="display: none;"><img class="img-fluid" src="/file/static/img/buttons/ky.svg"
                                                          height="50"
                                                          alt="коорд упралвение"></a>
-            <div class="container-sm text-center" style="min-height: 50px">
-                <button id="openDeviceLog" class="btn btn-light border">Открыть лог</button>
+            <div class="btn btn-light border mt-2" id="deviceLog" data-toggle="tooltip" title="Открыть логи устройства"
+               role="button" style="max-width: 76px; display: inline-table;">
+                <span id="openDeviceLog" style="display: inline-block; font-size: calc(10px + 0.2vw);
+                    max-width: calc(76px - 1.5rem); min-width: 36px;">Открыть логи</span>
             </div>
         </div>
-<!--        <div class="col-sm-3 text-left mt-3" style=" min-width: 250px;">-->
+        <!--        <div class="col-sm-3 text-left mt-3" style=" min-width: 250px;">-->
         <div class="col-sm-3 text-left mt-3" id="img-col">
             <img class="img-fluid" src="" style="" id="img" alt="Перекрёсток">
             <div class="container-sm ml-3 mt-5 text-center">
@@ -131,7 +134,8 @@
             <label class="mt-3" id="connection"></label>
         </div>
         <div class="col-sm-5 mt-3" style=" min-width: 250px; max-height: 700px">
-            <table class="table table-bordered" id="expandedTable" cellspacing="0" data-toggle="table" data-toolbar="#toolbar"
+            <table class="table table-bordered" id="expandedTable" cellspacing="0" data-toggle="table"
+                   data-toolbar="#toolbar"
                    data-single-select="true" data-click-to-select="true">
                 <thead>
                 <tr>
