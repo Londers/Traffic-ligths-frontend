@@ -75,7 +75,7 @@ $(function () {
                     .bootstrapTable('hideLoading')
                     .bootstrapTable('scrollTo', {unit: 'px', value: scrollSave});
                 $('[class~=fixed-table-container]').css({height: (($(window).height() - $('#toolbar').height()) * 0.9)});
-
+                if (tableData.length === 0) $('[class~=no-records-found] td').text('Записей не найдено');
                 $(window).on('resize', () => $('[class~=fixed-table-container]').css({height: (($(window).height() - $('#toolbar').height()) * 0.9)}));
 
                 if (data.alarm.ring) playSound();

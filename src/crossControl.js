@@ -954,7 +954,7 @@ function validatePkArray(data) {
         while (pk.sts.length !== 12) {
             pk.sts.push({dt: 0, line: pk.sts.length + 1, num: 0, plus: false, start: 0, stop: 0, tf: 0, trs: false})
         }
-        pk.sts[0].num = 1;
+        if (pk.tc > 3) pk.sts[0].num = 1;
         pk.sts.forEach((sw, index) => sw.line = index + 1);
     })
 }

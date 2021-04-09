@@ -388,6 +388,8 @@ function setRouteArea(map, box, description, routeId) {
 let svg = [];
 
 function findIndex(hintContent) {
+    if ($('#tableCol')[0].style.display === 'none') return -1;
+
     let id = -1;
     $('#navTable tbody tr').each((i, tr) => {
         if (tr.cells[3].innerText.replace(/\s/g, "") === hintContent.replace(/\s/g, "")) id = i;
@@ -452,10 +454,12 @@ ymaps.ready(function () {
 
     $('#map').on('mousedown', function (evt) {
         if (evt.which === 3) {
+            let sended = false;
             sendedPhaseSave.forEach((value, key) => {
-                if (value) {
+                if (value && !sended) {
                     sendedPhaseSave.set(key, false);
                     modifiedControlSend({id: key, cmd: 9, param: 9});
+                    sended = true;
                 }
             })
         }
@@ -595,6 +599,9 @@ ymaps.ready(function () {
             creatingFlag = true;
             return;
         }
+
+        $('#tableCol').show();
+
         allRoutesList.forEach((route, index) => {
             if ((route.region === place[0]) && (route.description === place[1])) {
                 currentRouteTflights = new Map();
@@ -620,7 +627,6 @@ ymaps.ready(function () {
 
 
         $('#sendRouteButton').hide();
-        $('#tableCol').show();
         $('#updateRouteButton').show();
         $('#deleteRouteButton').show();
         $('#startRouteButton').show();
@@ -746,30 +752,39 @@ ymaps.ready(function () {
                 }
                 break;
             case 'repaint':
-                map.geoObjects.removeAll();
-                //Разбор полученной от сервера информации
-                data.tflight.forEach(trafficLight => {
-                    currnum = trafficLight.tlsost.num;
-                    IDs.push(trafficLight.region.num + '-' + trafficLight.area.num + '-' + trafficLight.ID);
-                    //Создание меток контроллеров на карте
-                    let placemark = new ymaps.Placemark([trafficLight.points.Y, trafficLight.points.X], {
-                        hintContent: trafficLight.description
-                    }, {
-                        iconLayout: createChipsLayout(function (zoom) {
-                            // Размер метки будет определяться функией с оператором switch.
-                            return calculate(zoom);
-                        }),
-                    });
-                    placemark.pos = {region: trafficLight.region.num, area: trafficLight.area.num, id: trafficLight.ID};
-                    //Функция для вызова АРМ нажатием на контроллер
-                    placemark.events.add('click', function () {
-                        handleClick(map, trafficLight);
-                    });
-                    //Добавление метки контроллера на карту
-                    map.geoObjects.add(placemark);
-                });
-                areaZone = data.areaZone;
-                createAreasLayout(map);
+                let execWaiter = setInterval(() => {
+                    if (!executionFlag) {
+                        map.geoObjects.removeAll();
+                        //Разбор полученной от сервера информации
+                        data.tflight.forEach(trafficLight => {
+                            currnum = trafficLight.tlsost.num;
+                            IDs.push(trafficLight.region.num + '-' + trafficLight.area.num + '-' + trafficLight.ID);
+                            //Создание меток контроллеров на карте
+                            let placemark = new ymaps.Placemark([trafficLight.points.Y, trafficLight.points.X], {
+                                hintContent: trafficLight.description
+                            }, {
+                                iconLayout: createChipsLayout(function (zoom) {
+                                    // Размер метки будет определяться функией с оператором switch.
+                                    return calculate(zoom);
+                                }),
+                            });
+                            placemark.pos = {
+                                region: trafficLight.region.num,
+                                area: trafficLight.area.num,
+                                id: trafficLight.ID
+                            };
+                            //Функция для вызова АРМ нажатием на контроллер
+                            placemark.events.add('click', function () {
+                                handleClick(map, trafficLight);
+                            });
+                            //Добавление метки контроллера на карту
+                            map.geoObjects.add(placemark);
+                        });
+                        areaZone = data.areaZone;
+                        createAreasLayout(map);
+                        clearInterval(execWaiter);
+                    }
+                }, 5000);
                 break;
             case 'jump':
                 map.setBounds([

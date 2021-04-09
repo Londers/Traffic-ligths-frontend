@@ -39,6 +39,7 @@ $(function () {
             });
             console.log(data);
 
+            $('#table').bootstrapTable('hideLoading');
             $('#table')
                 .bootstrapTable('removeAll')
                 .bootstrapTable('append', data.devices)
@@ -46,7 +47,6 @@ $(function () {
                 .bootstrapTable('refresh', {
                     data: data.devices
                 });
-            $('#table').bootstrapTable('hideLoading');
 
             let now = new Date();
             $('#dateEnd').attr('value', (now.toISOString().slice(0, 10)));
@@ -216,7 +216,7 @@ function buildLogTable(data, crutchFlag) {
                 dateStart: localDate,
                 dateEnd: (localPrevDate !== undefined) ? localPrevDate : '',
                 duration: (duration !== undefined) ? duration : '',
-                time: date.getTime()
+                time: date.getTime().toString()
             };
             allData.push(add);
         });
@@ -224,7 +224,7 @@ function buildLogTable(data, crutchFlag) {
     }
 
     $('#logsTable')
-        .bootstrapTable('load', (allData))// $('#selection').prop('checked')) ? sortedData : allData)
+        .bootstrapTable('load', allData)// $('#selection').prop('checked')) ? sortedData : allData)
         .bootstrapTable('scrollTo', 'top')
         .bootstrapTable('refresh', {
             data: allData
@@ -238,7 +238,7 @@ function colorizeCrosses() {
     const tableRows = $('#logsTable tbody tr');
     let switchFlag = true;
     data.forEach((row, index) => {
-        if (row.time === undefined) switchFlag = !switchFlag; //
+        if (row.time === 'undefined') switchFlag = !switchFlag; //
         if (switchFlag) {
             $(tableRows[index]).attr('style', 'background-color: lightgray');
         } else {

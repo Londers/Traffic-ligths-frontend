@@ -196,6 +196,7 @@ $(function () { //                    192.168.115.120  /user/Admin/cross   W    
                     }
                 });
 
+                if ($('#expandedTable').length === 0) $('[class~=no-records-found] td').text('Ожидание Пром. такта');
                 buildExpandedTable(data.dk);
 
                 /*
@@ -366,6 +367,10 @@ $(function () { //                    192.168.115.120  /user/Admin/cross   W    
             case 'phase':
                 // console.log('phase ', data);
                 //Обработка таблицы
+
+                if ($('#expandedTable')[0].style.display === 'none') $('#expandedTable').show();
+                if ($('#phase')[0].style.display === 'none') $('#phase').show();
+
                 buildExpandedTable(data.dk);
                 if (data.dk.edk === 1) {
                     $('#transition').show();
@@ -409,6 +414,7 @@ let prevPhase = -1;
 
 function buildExpandedTable(data) {
     let $expandedTable = $('#expandedTable');
+
     let dataArr = $expandedTable.bootstrapTable('getData').slice();
 
     let toWrite = {
