@@ -1,6 +1,5 @@
 'use strict';
 
-let currnum = -1;
 let IDs = [];
 let areaLayout = [];
 let subareasLayout = [];
@@ -439,7 +438,6 @@ ymaps.ready(function () {
 
                 //Разбор полученной от сервера информации
                 data.tflight.forEach(trafficLight => {
-                    currnum = trafficLight.tlsost.num;
                     IDs.push(trafficLight.region.num + '-' + trafficLight.area.num + '-' + trafficLight.ID);
                     //Создание меток контроллеров на карте
                     let placemark = new ymaps.Placemark([trafficLight.points.Y, trafficLight.points.X], {
@@ -448,7 +446,7 @@ ymaps.ready(function () {
                         iconLayout: createChipsLayout(function (zoom) {
                             // Размер метки будет определяться функией с оператором switch.
                             return calculate(zoom);
-                        }),
+                        }, trafficLight.tlsost.num),
                     });
                     //Функция для вызова АРМ нажатием на контроллер
                     placemark.events.add('click', function () {
@@ -480,7 +478,6 @@ ymaps.ready(function () {
                     }
                     //Обновление статуса контроллера происходит только при его изменении
                     data.tflight.forEach(trafficLight => {
-                        currnum = trafficLight.tlsost.num;
                         let id = trafficLight.ID;
                         let index = IDs.indexOf(trafficLight.region.num + '-' + trafficLight.area.num + '-' + id);
                         let placemark = new ymaps.Placemark([trafficLight.points.Y, trafficLight.points.X], {
@@ -489,7 +486,7 @@ ymaps.ready(function () {
                             iconLayout: createChipsLayout(function (zoom) {
                                 // Размер метки будет определяться функией с оператором switch.
                                 return calculate(zoom);
-                            })
+                            }, trafficLight.tlsost.num)
                         });
                         placemark.events.add('click', function () {
                             if (authorizedFlag) handlePlacemarkClick(map, trafficLight);
@@ -504,7 +501,6 @@ ymaps.ready(function () {
                 map.geoObjects.removeAll();
                 //Разбор полученной от сервера информации
                 data.tflight.forEach(trafficLight => {
-                    currnum = trafficLight.tlsost.num;
                     IDs.push(trafficLight.region.num + '-' + trafficLight.area.num + '-' + trafficLight.ID);
                     //Создание меток контроллеров на карте
                     let placemark = new ymaps.Placemark([trafficLight.points.Y, trafficLight.points.X], {
@@ -513,7 +509,7 @@ ymaps.ready(function () {
                         iconLayout: createChipsLayout(function (zoom) {
                             // Размер метки будет определяться функией с оператором switch.
                             return calculate(zoom);
-                        }),
+                        }, trafficLight.tlsost.num),
                     });
                     //Функция для вызова АРМ нажатием на контроллер
                     placemark.events.add('click', function () {
@@ -826,7 +822,7 @@ function authorize() {
     $('#charPointsButton').hide();
 }
 
-let createChipsLayout = function (calculateSize) {
+let createChipsLayout = function (calculateSize, currnum) {
     if (currnum === 0) {
         console.log('Возвращен несуществующий статус');
         return null;

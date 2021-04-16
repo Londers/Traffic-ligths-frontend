@@ -97,7 +97,7 @@ $(function () { //                    192.168.115.120  /user/Admin/cross   W    
                         });
                         $('#svg0').attr('width', $('#img-col')[0].offsetWidth);
 
-                        $(window).resize(() => $('#svg0').attr('width', $('#img-col')[0].offsetWidth));
+                        $(window).on('resize', () => $('#svg0').attr('width', $('#img-col')[0].offsetWidth));
                         //     .append('<a class="btn btn-light border" id="secret" data-toggle="tooltip" title="Включить 1 фазу" role="button"\n' +
                         //         '        onclick="setPhase(randomInt(1, 12))"><img class="img-fluid" src="/file/static/img/buttons/p1.svg" height="50" alt="1 фаза"></a>');
                         // $('#secret').hide();
