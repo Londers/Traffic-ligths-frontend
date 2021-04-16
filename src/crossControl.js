@@ -25,7 +25,7 @@ const vvTableFlag = false;
 const vv2TableFlag = true;
 const kvTableFlag = false;
 
-let tempIndex;
+// let tempIndex;
 let copyPk = [];
 let copySk = [];
 let copyNk = [];
@@ -41,7 +41,7 @@ let ws;
 // Получение информации из выбранной строки
 function getSelectedRowData(table, fullPath, force) {
     let index = (force === undefined) ? $('#' + table).find('tr.success').data('index') : force;
-    if (force === undefined) tempIndex = index;
+    // if (force === undefined) tempIndex = index;
     let path = (fullPath !== undefined) ? fullPath.split('.') : undefined;
     let rowData = [];
     if (index === undefined) return;
@@ -133,7 +133,7 @@ $(() => {
                 (data.status) ? window.close() : alert('Не удалось удалить перекрёсток');
                 // }
                 break;
-            case 'checkB':
+            case 'checkB': {
                 console.log('checkB');
                 counter = 0;
                 let flag = false;
@@ -161,6 +161,7 @@ $(() => {
                 $('th[data-field="left"]').attr('style', 'min-width: 346px;');
                 $('th[data-field="right"]').attr('style', 'min-width: 276px;');
                 break;
+            }
             case 'changeEdit':
                 console.log('changeEdit');
                 editFlag = data.edit;
@@ -319,16 +320,16 @@ $(() => {
         // data.state.arrays.defstatis.lvs[0].ninput = tableData.length;
         // data.state.arrays.defstatis.lvs[0].count = 0;
 
-        if (oldVersion) {
-            let shift4 = tableData.pop();
-            let shift3 = tableData.pop();
-            tableData.unshift(shift4);
-            tableData.unshift(shift3);
-        }
-
-        tableData[0].name = '1 ТВП';
-        tableData[1].name = '2 ТВП';
-        data.state.arrays.SetTimeUse.uses = tableData;
+        // if (oldVersion) {
+        //     let shift4 = tableData.pop();
+        //     let shift3 = tableData.pop();
+        //     tableData.unshift(shift4);
+        //     tableData.unshift(shift3);
+        // }
+        //
+        // tableData[0].name = '1 ТВП';
+        // tableData[1].name = '2 ТВП';
+        // data.state.arrays.SetTimeUse.uses = tableData;
     }
 
     // Проверка валидности ПК
@@ -717,7 +718,7 @@ $(() => {
             zoom: 15
         });
         console.log(points);
-        map.events.add(['wheel', 'mousemove'], function (e) {
+        map.events.add(['wheel', 'mousemove'], function () {
             zoom = map._zoom;
         });
 
@@ -837,13 +838,17 @@ function loadData(newData, firstLoadFlag) {
     });
 
     $('input, select').each(function () {
-        $(this).on('change', () => $('#checkButton')[0].disabled = (JSON.stringify(data)) === (JSON.stringify(unmodifiedData)));
+        $(this).on('change', () => {
+            setTimeout(() => {
+                $('#checkButton').prop('disabled', (JSON.stringify(data)) === (JSON.stringify(unmodifiedData)))
+            }, 50)
+        })
     });
 
     unmodifiedData = JSON.parse(JSON.stringify(data));
     checkNew();
 
-    $('input').not('table input').each(({}, input) => {
+    $('input').not('table input').not('#tc').not('[type=checkbox]').each(({}, input) => {
         calcInputWidth(input);
         $(input).on('keyup', () => calcInputWidth(input));
     })
@@ -1449,6 +1454,13 @@ function pkTabFill(table) {
                 })
             });
 
+            $('#tc').on('click', () => {
+                if ($('#tc').val() !== '') {
+                    $('#tc').val('');
+                    $('#tc').trigger('click');
+                }
+            })
+
             $('#shift').on('change keyup', (event) => {
                 if ((event.type === 'keyup') && (event.originalEvent.code !== 'Enter')) return;
 
@@ -1915,8 +1927,7 @@ function deleteSwitch(index) {
         // Для режима ПК
         let i = (checkLastLine(setDK[selected].sts[index])) ? 0 : index;
         let replCount = findReplacementCount(setDK[selected].sts, index);
-        if ((deletedTf > 4) && (deletedTf < 8)) {
-        } else if ((deletedTf === 2) || (deletedTf === 3) || (deletedTf === 4)) {
+        if ((deletedTf === 2) || (deletedTf === 3) || (deletedTf === 4)) {
             for (i = index; i < (index + replCount); i++) {
                 deleteSwitch(index);
             }

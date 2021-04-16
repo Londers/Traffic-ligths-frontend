@@ -21,6 +21,9 @@ let chatFlag = true;
 let fixationFlag = false;
 let ws;
 
+let circlesMap = new Map();
+let zoom = 19;
+
 //Функция для открытия вкладки
 function openPage(url) {
     window.open(location.origin + '/user/' + localStorage.getItem('login') + url);
@@ -69,6 +72,7 @@ function openAbout(closeOnExpiration) {
 }
 
 ymaps.ready(function () {
+    let antiBruteForceCounter = 0;
     // $('#workPlace').hide();
     $('#modal').hide();
     $('#switchLayout').parent().hide();
@@ -81,6 +85,7 @@ ymaps.ready(function () {
     $('#dropdownHelpButton').trigger('click');
     $('#dropdownLayersButton').trigger('click');
     $('#password').attr('style', 'position: initial;');
+    $('#crossesCount').parent().hide();
 
     // //Для управления закладками
     // localStorage.setItem("maintab", "open");
@@ -228,14 +233,14 @@ ymaps.ready(function () {
     });
 
     //Проверка валидности пароля
-    $('#newPassword').bind('input', function () {
+    $('#newPassword').on('input', function () {
         $('#newPasswordMsg').remove();
         if ($('#newPassword').val().length < 6) {
             $('#newPasswordForm').append('<div style="color: red;" id="newPasswordMsg"><h5>Пароль слишком короткий</h5></div>');
         }
     });
 
-    $('#repPassword').bind('input', function () {
+    $('#repPassword').on('input', function () {
         $('#repPasswordMsg').remove();
         if (($('#newPassword').val() !== $('#repPassword').val()) && ($('#repPassword') !== '')) {
             $('#repPasswordForm').append('<div style="color: red;" id="repPasswordMsg"><h5>Пароли не совпадают</h5></div>');
@@ -316,6 +321,10 @@ ymaps.ready(function () {
         zoom: 19,
     });
 
+    map.events.add(['wheel', 'mousemove', 'click'], function () {
+        if ($('#multipleCrossCheck').prop('checked')) circlesControl(map);
+    });
+
     $('#fixationButton').on('click', function () {
         if (fixationFlag) {
             map.setBounds(boxRemember);
@@ -351,11 +360,22 @@ ymaps.ready(function () {
         if ((localStorage.getItem('multipleCross') == null) ||
             (localStorage.getItem('multipleCross') === JSON.stringify([]))) return;
 
+        circlesMap.forEach((value, key) => deleteCircle(map, value, key));
+        $('#crossesCount').parent().hide();
+
         $('#multipleCrossCheck').prop('checked', false);
         openPage('/multipleCross');
     });
 
+    $('#multipleCrossCheck').on('change', function(e) {
+        if (!e.target.checked) {
+            $('#multipleCrossClear').trigger('click');
+        }
+    })
+
     $('#multipleCrossClear').on('click', function () {
+        circlesMap.forEach((value, key) => deleteCircle(map, value, key));
+        $('#crossesCount').parent().hide();
         localStorage.setItem('multipleCross', JSON.stringify([]));
     });
 
@@ -415,6 +435,8 @@ ymaps.ready(function () {
                     [data.boxPoint.point1.Y, data.boxPoint.point1.X]
                 ]);
 
+                zoom = map.getZoom();
+
                 //Разбор полученной от сервера информации
                 data.tflight.forEach(trafficLight => {
                     currnum = trafficLight.tlsost.num;
@@ -430,7 +452,7 @@ ymaps.ready(function () {
                     });
                     //Функция для вызова АРМ нажатием на контроллер
                     placemark.events.add('click', function () {
-                        if (authorizedFlag) handlePlacemarkClick(trafficLight);
+                        if (authorizedFlag) handlePlacemarkClick(map, trafficLight);
                     });
                     //Добавление метки контроллера на карту
                     map.geoObjects.add(placemark);
@@ -470,7 +492,7 @@ ymaps.ready(function () {
                             })
                         });
                         placemark.events.add('click', function () {
-                            if (authorizedFlag) handlePlacemarkClick(trafficLight);
+                            if (authorizedFlag) handlePlacemarkClick(map, trafficLight);
                         });
                         //Замена метки контроллера со старым состоянием на метку с новым
                         map.geoObjects.splice(index, 1, placemark);
@@ -495,7 +517,7 @@ ymaps.ready(function () {
                     });
                     //Функция для вызова АРМ нажатием на контроллер
                     placemark.events.add('click', function () {
-                        if (authorizedFlag) handlePlacemarkClick(trafficLight);
+                        if (authorizedFlag) handlePlacemarkClick(map, trafficLight);
                     });
                     //Добавление метки контроллера на карту
                     map.geoObjects.add(placemark);
@@ -557,9 +579,11 @@ ymaps.ready(function () {
                         + ((data.region === '*') ? 'Все регионы' : regionInfo[data.region])
                         + '\n' + ((data.role === 'Viewer') ? 'АРМ наблюдателя' : 'АРМ дежурного - ')
                         + data.description + '\n' + localStorage.getItem('login');
+                    antiBruteForceCounter = 0;
                 } else {
                     check(false, data.message);
                     $('#password').val('');
+                    antiBruteForceCounter++;
                 }
                 break;
             case 'logOut':
@@ -1016,7 +1040,7 @@ function check(sendFlag, msg) {
     }
 }
 
-function handlePlacemarkClick(trafficLight) {
+function handlePlacemarkClick(map, trafficLight) {
     let multipleCrossCheck = $('#multipleCrossCheck').prop('checked');
     if (multipleCrossCheck) {
         let crossArr = (localStorage.getItem('multipleCross') === null) ? [] : JSON.parse(localStorage.getItem('multipleCross'));
@@ -1024,6 +1048,9 @@ function handlePlacemarkClick(trafficLight) {
         if (crossArr.some(cross => ((cross.region === trafficLight.region.num) && (cross.area === trafficLight.area.num) && (cross.id === trafficLight.ID)))) return;
         crossArr.push({region: trafficLight.region.num, area: trafficLight.area.num, id: trafficLight.ID});
         localStorage.setItem('multipleCross', JSON.stringify(crossArr));
+        handleClick(map, trafficLight);
+        $('#crossesCount').parent().show();
+        $('#crossesCount').text(crossArr.length);
     } else {
         window.open(location.origin + '/user/' + localStorage.getItem('login') + '/cross?Region=' + trafficLight.region.num + '&Area=' + trafficLight.area.num + '&ID=' + trafficLight.ID);
     }
@@ -1260,4 +1287,114 @@ function createEye() {
     $(() => {
         $('[data-toggle="password"]').password()
     })
+}
+
+function radiusCalculate(zoom) {
+    switch (zoom) {
+        case 3:
+            return 32000;
+        case 4:
+            return 16000;
+        case 5:
+            return 8000;
+        case 6:
+            return 4000;
+        case 7:
+            return 2000;
+        case 8:
+            return 1000;
+        case 9:
+            return 750;
+        case 10:
+            return 500;
+        case 11:
+            return 400;
+        case 12:
+            return 300;
+        case 13:
+            return 250;
+        case 14:
+            return 200;
+        case 15:
+            return 150;
+        case 16:
+            return 100;
+        case 17:
+            return 75;
+        case 18:
+            return 50;
+        case 19:
+            return 40;
+        default:
+            return 30;
+    }
+}
+
+function circlesControl(map) {
+    if (zoom !== map.getZoom()) {
+        circlesMap.forEach(circle => {
+            map.geoObjects.remove(circle);
+        });
+        circlesMap.forEach(circle => {
+            circle.geometry.setRadius(radiusCalculate(map.getZoom()));
+            map.geoObjects.add(circle);
+        });
+        zoom = map.getZoom();
+    }
+}
+
+function deleteCircle(map, circle, pos) {
+    map.geoObjects.remove(circle);
+    circlesMap.delete(pos);
+}
+
+function handleClick(map, trafficLight) {
+    let coordinates = [trafficLight.points.Y, trafficLight.points.X];
+    let region = trafficLight.region.num;
+    let area = trafficLight.area.num;
+    let id = trafficLight.ID;
+    let description = trafficLight.description;
+    let returnFlag = false;
+
+    circlesMap.forEach((value, key) => {
+        if ((key.region === region) && (key.area === area) && (key.id === id)) {
+            deleteCircle(map, value, key);
+            returnFlag = true;
+        }
+    });
+
+    if (returnFlag) return;
+
+    // Создаем круг.
+    let myCircle = new ymaps.Circle([
+        // Координаты центра круга.
+        coordinates,
+        // Радиус круга в метрах.
+        radiusCalculate(map.getZoom())
+    ], {
+        // Описываем свойства круга.
+        // Содержимое балуна.
+        // balloonContent: "Радиус круга - 10 км",
+        // Содержимое хинта.
+        // hintContent: "Подвинь меня"
+    }, {
+        // Задаем опции круга.
+        // Включаем возможность перетаскивания круга.
+        draggable: false,
+        // Цвет заливки.
+        // Последний байт (77) определяет прозрачность.
+        // Прозрачность заливки также можно задать используя опцию "fillOpacity".
+        fillColor: "#DB709377",
+        // Цвет обводки.
+        strokeColor: "#990066",
+        // Прозрачность обводки.
+        strokeOpacity: 0.8,
+        // Ширина обводки в пикселях.
+        strokeWidth: 5
+    });
+
+    circlesMap.set({region: region, area: area, id: id, description: description}, myCircle);
+
+    // Добавляем круг на карту.
+    map.geoObjects.add(myCircle);
 }

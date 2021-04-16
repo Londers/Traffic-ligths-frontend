@@ -89,17 +89,17 @@
             </div>
         </div>
         <div class="row">
-            <div class="col-md-12 mt-5">
+            <div class="col-md-12 mt-5 text-center">
                 <a class="btn btn-secondary mt-2 mx-auto border" id="forceSendButton" data-toggle="tooltip"
                    title="Принудительно обновить контроллер" role="button"
                    style="width: 100%; display: flex; min-height: 50px;	min-width: 50px; max-width: 60px;	max-height: 60px;">
                     <img src="/file/static/icons/8.svg" class="img-fluid"
                          style="min-height: 25px;	min-width: 25px; max-width: 40px;	max-height: 40px;">
                 </a>
-                <div class="btn btn-secondary border mt-2" id="checkButton" data-toggle="tooltip"
-                     title="Проверить корректность массивов" disabled="" role="button" style="max-width: 76px;display: inline-table;">
+                <button class="btn btn-secondary border mt-2" id="checkButton" data-toggle="tooltip"
+                     title="Проверить корректность массивов" disabled="" role="button" style="max-width: 95px;display: inline-table; transform: scale(1.25);">
                     <span id="openDeviceLog" style="display: contents; font-size: calc(4px + 0.5vw);">Проверка</span>
-                </div>
+                </button>
             </div>
         </div>
         <div class="row">
@@ -434,48 +434,16 @@
                             </a>
                         </div>
                     </div>
-                    <div class="row mt-2">
-                        <div class="col-md-6 mt-1" style="">
-                            <div class="form-group row ml-1 mr-1">
-                                <div class="col-xs-10 ml-1">
-                                    <div class="form-group mt-2">
-                                        <select class="" id="tf">
-                                            <option value="-1">Вставить перекл.</option>
-                                            <option value="0"></option>
-                                            <option value="1">МГР</option>
-                                            <option value="2">1 ТВП</option>
-                                            <option value="3">2 ТВП</option>
-                                            <option value="4">1,2 ТВП</option>
-                                            <option value="5">Зам. 1ТВП</option>
-                                            <option value="6">Зам. 2ТВП</option>
-                                            <option value="7">Зам.</option>
-                                            <option value="8">МДК</option>
-                                            <option value="9">ВДК</option>
-                                        </select>
-                                    </div>
-                                </div>
-                            </div>
+                    <div class="form-group row ml-2 mr-1 mt-4">
+                        <div class="col-md-2 mt-1">
+                            <label for="desc">Описание</label>
                         </div>
-                        <div class="col-md-4" style="">
-                            <button type="button" class="btn-lg btn-light mx-5 justify-content-center disabled"
-                                    id="switchDel" style=""> Удалить перекл.
-                            </button>
-                        </div>
-                        <div class="col-md-4" style="">
-                            <div class="form-group row mx-1">
-                                <div class="col-xs-10 ml-1">
-                                    <div class="form-group mt-3">
-                                        <label for="tpu" class="mr-2">Редакция</label>
-                                        <select class="" id="pkTableType">
-                                            <option value="0">Длительностей</option>
-                                            <option value="1">Вр. включения</option>
-                                        </select>
-                                    </div>
-                                </div>
-                            </div>
+                        <div class="col-md-6 ml-1">
+                            <input type="text" class="form-control" id="desc" required=""
+                                   style="	max-width: 388px;	max-height: 30px;">
                         </div>
                     </div>
-                    <div class="form-group row w-100 ml-0 mt-1 mb-1" style="">
+                    <div class="form-group row w-100 ml-0 mt-4 mb-1" style="">
                         <div class="mr-1 col-md-3" style="">
                             <div class="form-group row mt-2">
                                 <div class="col-xs-2 mt-1 mr-2">
@@ -537,13 +505,45 @@
                             </div>
                         </div>
                     </div>
-                    <div class="form-group row ml-2 mr-1 mt-2">
-                        <div class="col-md-2 mt-1">
-                            <label for="desc">Описание</label>
+                    <div class="row">
+                        <div class="col-md-4 mt-1" style="">
+                            <div class="form-group row ml-1 mr-1">
+                                <div class="col-xs-10 ml-1">
+                                    <div class="form-group mt-2">
+                                        <select class="" id="tf">
+                                            <option value="-1">Вставить перекл.</option>
+                                            <option value="0"></option>
+                                            <option value="1">МГР</option>
+                                            <option value="2">1 ТВП</option>
+                                            <option value="3">2 ТВП</option>
+                                            <option value="4">1,2 ТВП</option>
+                                            <option value="5">Зам. 1ТВП</option>
+                                            <option value="6">Зам. 2ТВП</option>
+                                            <option value="7">Зам.</option>
+                                            <option value="8">МДК</option>
+                                            <option value="9">ВДК</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="col-md-6 ml-1">
-                            <input type="text" class="form-control" id="desc" required=""
-                                   style="	max-width: 388px;	max-height: 30px;">
+                        <div class="col-md-4" style="">
+                            <button type="button" class="btn-lg btn-light mx-5 justify-content-center disabled"
+                                    id="switchDel" style=""> Удалить перекл.
+                            </button>
+                        </div>
+                        <div class="col-md-4" style="">
+                            <div class="form-group row mx-1">
+                                <div class="col-xs-10 ml-1">
+                                    <div class="form-group mt-3">
+                                        <label for="tpu" class="mr-2">Редакция</label>
+                                        <select class="" id="pkTableType">
+                                            <option value="0">Длительностей</option>
+                                            <option value="1">Вр. включения</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <div class="row">

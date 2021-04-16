@@ -86,7 +86,7 @@ $(function () {
         console.log(data);
 
         switch (allData.type) {
-            case 'armInfo':
+            case 'armInfo': {
                 crossesSave = data.crosses.sort(sortByID);
                 devicesSave = data.devices;
 
@@ -101,6 +101,7 @@ $(function () {
 
                 buildTable(true);
                 break;
+            }
             case 'crosses':
                 crossesSave = data.crosses.sort(sortByID);
                 buildTable(false);
@@ -257,13 +258,13 @@ function buildBottom() {
     } else {
         $('#type').attr('style', '');
     }
-    $('#type')[0].innerText = switchArrayType(cross.arrayType);
-    $('#id')[0].innerText = cross.id;
-    $('#description')[0].innerText = cross.describe;
-    $('#phone')[0].innerText = cross.phone.substring(1, cross.phone.length - 1).trim();
-    $('#area')[0].innerText = cross.area;
-    $('#subarea')[0].innerText = cross.subarea;
-    $('#crossButton')[0].innerText = 'ДК ' + cross.id;
+    $('#type').text(switchArrayType(cross.arrayType));
+    $('#id').text(cross.id);
+    $('#description').text(cross.describe);
+    $('#phone').text(cross.phone.substring(1, cross.phone.length - 1).trim());
+    $('#area').text(cross.area);
+    $('#subarea').text(cross.subarea);
+    $('#crossButton').text('ДК ' + cross.id);
 
     $('#bindButton').unbind().on('click', function () {
         openPage('/cross/control?Region=' + cross.region + '&Area=' + cross.area + '&ID=' + cross.id);
@@ -273,7 +274,7 @@ function buildBottom() {
     });
 
     if (device !== undefined) {
-        $('#connect')[0].innerText = device.Status.ethernet ? 'LAN' : 'G';
+        $('#connect').text(device.Status.ethernet ? 'LAN' : 'G');
 
         checkCommand('dudk', device.StatusCommandDU.IsDUDK1);
         checkCommand('sfdk', device.StatusCommandDU.IsReqSFDK1);
@@ -281,48 +282,49 @@ function buildBottom() {
         checkCommand('cmdSk', device.StatusCommandDU.IsCK);
         checkCommand('cmdNk', device.StatusCommandDU.IsNK);
 
-        $('#exTime')[0].innerText = device.Status.tobm;
-        $('#lnow')[0].innerText = device.Status.lnow;
-        $('#gps')[0].innerText = device.Status.sGPS;
-        $('#addData')[0].innerText = 'М:' + device.Status.elc;
+        $('#exTime').text(device.Status.tobm);
+        $('#lnow').text(device.Status.lnow);
+        $('#gps').text(device.Status.sGPS);
+        $('#addData').text(((mErrorText[device.Status.elc] === undefined))
+            ? ('Неизвестный код неисправности ' + device.Status.elc) : mErrorText[device.Status.elc]);
 
         $('#technology').innerText = device.techMode;
 
-        $('#pk')[0].innerText = device.pk;
-        $('#sk')[0].innerText = device.ck;
-        $('#nk')[0].innerText = device.nk;
+        $('#pk').text(device.pk);
+        $('#sk').text(device.ck);
+        $('#nk').text(device.nk);
 
-        $('#idevice')[0].innerText = device.id;
+        $('#idevice').text(device.id);
 
         $('#sfSwitchButton').unbind().on('click', function () {
             (device.StatusCommandDU.IsReqSFDK1) ?
                 controlSend({id: cross.idevice, cmd: 4, param: 0}) :
                 controlSend({id: cross.idevice, cmd: 4, param: 1});
         });
-        $('#sfSwitchButton')[0].innerText = (device.StatusCommandDU.IsReqSFDK1) ? 'Выкл. СФ' : 'Вкл. СФ';
+        $('#sfSwitchButton').text((device.StatusCommandDU.IsReqSFDK1) ? 'Выкл. СФ' : 'Вкл. СФ');
         $('#changeGPRSButton').unbind().on('click', function () {
             $('#exTimeD').val(device.Status.tobm);
             $('#gprsDialog').dialog('open');
         });
 
-        $('#lastOpDev')[0].innerText = timeFormat(device.dtime);
-        $('#lastOp')[0].innerText = timeFormat(device.ltime);
-        if (Math.abs((new Date(device.ltime) - new Date(device.dtime))) > 1000) {
+        $('#lastOpDev').text(timeFormat(device.dtime));
+        $('#lastOp').text(timeFormat(device.ltime));
+        if (Math.abs((new Date(device.ltime) - new Date(device.dtime))) > 2 * 60 * 1000) {
             $('#lastOpDev').attr('style', 'background-color: red;');
         } else {
             $('#lastOpDev').attr('style', '');
         }
 
-        $('#ip')[0].innerText = 'IP: ' + device.ip;
+        $('#ip').text('IP: ' + device.ip);
 
-        $('#status')[0].innerText = deviceInfo.modeRdk;
-        $('#type2')[0].innerText = switchArrayTypeFromDevice(device.Model);
-        $('#phase')[0].innerText = device.DK.fdk;
-        $('#state')[0].innerText = (checkMalfunction(device.Error) === '') ? '-' : checkMalfunction(device.Error);
-        $('#lamps')[0].innerText = device.DK.ldk;
-        $('#doors')[0].innerText = device.DK.odk ? 'Открыты' : 'Закрыты';
+        $('#status').text(deviceInfo.modeRdk);
+        $('#type2').text(switchArrayTypeFromDevice(device.Model));
+        $('#phase').text(device.DK.fdk);
+        $('#state').text((checkMalfunction(device.Error) === '') ? '-' : checkMalfunction(device.Error));
+        $('#lamps').text(device.DK.ldk);
+        $('#doors').text(device.DK.odk ? 'Открыты' : 'Закрыты');
 
-        $('#pspd')[0].innerText = device.Model.vpcpdl + '.' + device.Model.vpcpdr;
+        $('#pspd').text(device.Model.vpcpdl + '.' + device.Model.vpcpdr);
 
         let deviceVer = parseFloat(device.Model.vpcpdl + '.' + device.Model.vpcpdr);
         let crossVer = parseFloat(cross.Model.vpcpdl + '.' + cross.Model.vpcpdr);
@@ -332,9 +334,11 @@ function buildBottom() {
             $('#pspd').attr('style', 'background-color: red;');
         }
 
-        $('#pbs')[0].innerText = device.Model.vpbsl + '.' + device.Model.vpbsr;
+        $('#pbs').text(device.Model.vpbsl + '.' + device.Model.vpbsr);
         let inputs = [];
         let statistics = [];
+
+        $('#signal').text(device.Status.lnow + ', ' + device.Status.llast)
 
         Object.entries(device.Input).forEach((entry, index) => {
             const [key, value] = entry;
@@ -348,10 +352,10 @@ function buildBottom() {
         });
 
         ((inputs.length === 0) && (statistics.length === 0)) ? $('#inputErrors').hide() : $('#inputErrors').show();
-        $('#inputs')[0].innerText = ((inputs.length === 0) ? '' : 'вх. ') + inputs.join(', ');
-        $('#statistics')[0].innerText = ((statistics.length === 0) ? '' : 'ст. ') + statistics.join(', ');
+        $('#inputs').text(((inputs.length === 0) ? '' : 'вх. ') + inputs.join(', '));
+        $('#statistics').text(((statistics.length === 0) ? '' : 'ст. ') + statistics.join(', '));
     } else {
-        $('#connect')[0].innerText = '';
+        $('#connect').text('');
 
         checkCommand('dudk', false);
         checkCommand('sfdk', false);
@@ -359,37 +363,39 @@ function buildBottom() {
         checkCommand('cmdSk', false);
         checkCommand('cmdNk', false);
 
-        $('#exTime')[0].innerText = '';
-        $('#lnow')[0].innerText = '';
-        $('#gps')[0].innerText = '';
-        $('#addData')[0].innerText = '';
+        $('#exTime').text('');
+        $('#lnow').text('');
+        $('#gps').text('');
+        $('#addData').text('');
 
-        $('#technology').innerText = '';
+        $('#technology').text('');
 
-        $('#pk')[0].innerText = '';
-        $('#sk')[0].innerText = '';
-        $('#nk')[0].innerText = '';
+        $('#pk').text('');
+        $('#sk').text('');
+        $('#nk').text('');
 
-        $('#idevice')[0].innerText = cross.idevice;
+        $('#idevice').text(cross.idevice);
 
         $('#sfSwitchButton').unbind();
-        $('#sfSwitchButton')[0].innerText = 'Вкл. СФ';
+        $('#sfSwitchButton').text('Вкл. СФ');
         $('#gprsDialog').unbind();
 
-        $('#lastOpDev')[0].innerText = '';
-        $('#lastOp')[0].innerText = '';
+        $('#lastOpDev').text('');
+        $('#lastOp').text('');
 
-        $('#ip')[0].innerText = '';
+        $('#ip').text('');
 
-        $('#status')[0].innerText = '-';
-        $('#type2')[0].innerText = '-';
-        $('#phase')[0].innerText = '-';
-        $('#state')[0].innerText = '-';
-        $('#lamps')[0].innerText = '-';
-        $('#doors')[0].innerText = '-';
+        $('#status').text('-');
+        $('#type2').text('-');
+        $('#phase').text('-');
+        $('#state').text('-');
+        $('#lamps').text('-');
+        $('#doors').text('-');
 
-        $('#pspd')[0].innerText = '-';
-        $('#pbs')[0].innerText = '-';
+        $('#pspd').text('-');
+        $('#pbs').text('-');
+        
+        $('#signal').text('')
 
         $('#inputErrors').hide();
     }
