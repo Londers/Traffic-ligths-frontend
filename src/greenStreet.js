@@ -68,7 +68,7 @@ function handlePhaseCommand(map, idevice) {
     let phase = -1;
     let dataArr = $('#table').bootstrapTable('getData');
     dataArr.forEach((tf, index) => {
-        if (tf.idevice === idevice) phase = Number($('#phase' + index).val())
+        if (tf.idevice === idevice) phase = Number($('#cross' + index).val())
     });
 
     let navTable = $('#navTable').bootstrapTable('getData');
@@ -193,28 +193,27 @@ function makeSelects() {
         $(tr).find('td').each((j, td) => {
             if (td.cellIndex === 2) {
                 let phases = getPhases(tr.rowIndex - 1);//$(this)[0].innerText.split(',');
-                let selectTxt = '';
+                let optionsHtml = '';
                 phases.phases.forEach(phase => {
-                    selectTxt += `<option value="${phase}"${((phase === phases.currPhase) ? ' selected="selected"' : '')}` +
-                        `onclick="handleSelectChange(${i})">${phase}</option>>`;
-                    // + ((svg.length !== 0) ? `<image xlink:href="data:image/png;base64,${(svg[i][phase-1] === undefined) ? phase : svg[i][phase-1].phase}"/>` : '')
+                    optionsHtml +=
+                        `<option value="${phase}" ${((phase === phases.currPhase) ? ' selected="selected"' : '')}>${phase}</option>>`;
                 });
-                $(td)[0].innerText = '';
-                $(td)[0].innerHTML = '<select id="phase' + i + '">' + selectTxt + '</select>';
+                $(td)[0].innerHTML = `<select onchange="handleSelectChange(${i})" id="cross${i}">${optionsHtml}</select>`;
+                handleSelectChange(i);
             }
         })
     })
 }
 
 function handleSelectChange(rowIndex) {
-    const value = $('#phase' + rowIndex).val();
-    $('#phase' + rowIndex).closest('td').next('td')[0].innerHTML = '<td>-</td>';
+    const value = $('#cross' + rowIndex).val();
+    $('#cross' + rowIndex).closest('td').next('td')[0].innerHTML = '<td>-</td>';
     if (svg[rowIndex] === undefined) {
         setTimeout(() => handleSelectChange(rowIndex), 1000);
         return;
     }
     svg[rowIndex].forEach(pic => {
-        if (pic.num === value) $('#phase' + rowIndex).closest('td').next('td')[0].innerHTML =
+        if (pic.num === value) $('#cross' + rowIndex).closest('td').next('td')[0].innerHTML =
             `<td>` +
             `<svg width="100%" height="100%"` +
             `style="max-height: 50px; max-width: 50px; min-height: 30px; min-width: 30px;" xmlns="http://www.w3.org/2000/svg"` +
@@ -227,10 +226,10 @@ function handleSelectChange(rowIndex) {
     })
 
     // todo Жду обновлённые картинки от Андрея
-    // const value = $('#phase' + rowIndex).val();
-    // $('#phase' + rowIndex).closest('td').next('td')[0].innerHTML = '<td>-</td>';
+    // const value = $('#cross' + rowIndex).val();
+    // $('#cross' + rowIndex).closest('td').next('td')[0].innerHTML = '<td>-</td>';
     // svg[rowIndex].forEach(pic => {
-    //     if (pic._num === value) $('#phase' + rowIndex).closest('td').next('td')[0].innerHTML =
+    //     if (pic._num === value) $('#cross' + rowIndex).closest('td').next('td')[0].innerHTML =
     //         `<td>` +
     //             `<svg width="100%" height="100%"` +
     //             `style="max-height: 50px; max-width: 50px; min-height: 30px; min-width: 30px;" xmlns="http://www.w3.org/2000/svg"` +
@@ -537,7 +536,7 @@ ymaps.ready(function () {
             }
         });
 
-        currRoute.listTL.map((tl, index) => tl.phase = Number($('#phase' + index).val()));
+        currRoute.listTL.map((tl, index) => tl.phase = Number($('#cross' + index).val()));
 
         ws.send(JSON.stringify({
             type: 'updateRoute',
@@ -574,6 +573,15 @@ ymaps.ready(function () {
         $('#deleteRouteButton').show();
         $('#updateRouteButton').show();
         $('#startRouteButton').show();
+
+        for (let [key, value] of loopFuncMap) {
+            clearInterval(value);
+            loopFuncMap.delete(key);
+        }
+
+        for (let [key] of sendedPhaseSave) modifiedControlSend({id: key, cmd: 9, param: 9});
+
+        sendedPhaseSave = new Map();
         ws.send(JSON.stringify({type: 'route', devices: [], turnOn: false}));
     });
 

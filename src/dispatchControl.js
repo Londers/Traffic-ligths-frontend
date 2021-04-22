@@ -6,16 +6,18 @@ let IDs = [];
 let areaZone = undefined;
 let areaLayout = [];
 let subareasLayout = [];
+let ws = undefined;
+let map = undefined;
 
 ymaps.ready(function () {
 
     //Создание и первичная настройка карты
-    let map = new ymaps.Map('map', {
+    map = new ymaps.Map('map', {
         center: [54.9912, 73.3685],
         zoom: 19
     });
 
-    const ws = new WebSocket('wss://' + location.host + location.pathname + 'W');
+    ws = new WebSocket('wss://' + location.host + location.pathname + 'W');
 
     ws.onerror = function (evt) {
         console.log('WebSocket error:', evt);
@@ -51,7 +53,7 @@ ymaps.ready(function () {
                     IDs.push(trafficLight.region.num + '-' + trafficLight.area.num + '-' + trafficLight.ID);
                     //Создание меток контроллеров на карте
                     let placemark = new ymaps.Placemark([trafficLight.points.Y, trafficLight.points.X], {
-                        balloonContentHeader: 'Выберите фазу',
+                        // balloonContentHeader: 'Выберите фазу',
                         balloonContentBody: 'Содержимое <em>балуна</em> метки',
                         // balloonContentFooter: 'Подвал',
                         hintContent: trafficLight.description
@@ -69,10 +71,6 @@ ymaps.ready(function () {
                     //Добавление метки контроллера на карту
                     map.geoObjects.add(placemark);
                 });
-
-                data.routes.forEach(route => {
-                    $('#routes').append(new Option(route.description, route.region + '---' + route.description));
-                });
                 // .append(new Option(regionInfo[reg], reg));
                 break;
             case 'tflight':
@@ -89,11 +87,9 @@ ymaps.ready(function () {
                     data.tflight.forEach(trafficLight => {
                         let id = trafficLight.ID;
                         let index = IDs.indexOf(trafficLight.region.num + '-' + trafficLight.area.num + '-' + id);
-                        let balloon = new ymaps.Balloon(map);
-                        balloon.setData('<div style="background-color: dodgerblue">fuck you</div>');
                         //Создание меток контроллеров на карте
                         let placemark = new ymaps.Placemark([trafficLight.points.Y, trafficLight.points.X], {
-                            balloonContent: balloon,
+                            balloonContent: 'balloon',
                             hintContent: trafficLight.description + '<br>' + trafficLight.idevice
                         }, {
                             iconLayout: createChipsLayout(function (zoom) {
@@ -102,38 +98,44 @@ ymaps.ready(function () {
                             }, trafficLight.tlsost.num)
                         });
                         placemark.events.add('click', function () {
-                            handlePlacemarkClick(map, trafficLight);
+                            handlePlacemarkClick(map, trafficLight, placemark);
                         });
                         //Замена метки контроллера со старым состоянием на метку с новым
                         map.geoObjects.splice(index, 1, placemark);
+                        if (trafficLight.idevice === ideviceSave) handlePlacemarkClick(map, trafficLight, placemark);
                     })
                 }
                 break;
-            case 'repaint':
-                map.geoObjects.removeAll();
-                //Разбор полученной от сервера информации
-                data.tflight.forEach(trafficLight => {
-                    IDs.push(trafficLight.region.num + '-' + trafficLight.area.num + '-' + trafficLight.ID);
-                    let balloon = new ymaps.Balloon(map);
-                    balloon.setData('<div style="background-color: dodgerblue">fuck you</div>');
-                    //Создание меток контроллеров на карте
-                    let placemark = new ymaps.Placemark([trafficLight.points.Y, trafficLight.points.X], {
-                        balloonContent: balloon,                        hintContent: trafficLight.description + '<br>' + trafficLight.idevice
-                    }, {
-                        iconLayout: createChipsLayout(function (zoom) {
-                            // Размер метки будет определяться функией с оператором switch.
-                            return calculate(zoom);
-                        }, trafficLight.tlsost.num),
-                    });
-                    //Функция для вызова АРМ нажатием на контроллер
-                    placemark.events.add('click', function () {
-                        handlePlacemarkClick(map, trafficLight);
-                    });
-                    //Добавление метки контроллера на карту
-                    map.geoObjects.add(placemark);
-                });
-                areaZone = data.areaZone;
-                createAreasLayout(map);
+            //  case 'repaint':
+            //     map.geoObjects.removeAll();
+            //     //Разбор полученной от сервера информации
+            //     data.tflight.forEach(trafficLight => {
+            //         IDs.push(trafficLight.region.num + '-' + trafficLight.area.num + '-' + trafficLight.ID);
+            //         //Создание меток контроллеров на карте
+            //         let placemark = new ymaps.Placemark([trafficLight.points.Y, trafficLight.points.X], {
+            //             balloonContent: 'balloon',
+            //             hintContent: trafficLight.description + '<br>' + trafficLight.idevice
+            //         }, {
+            //             iconLayout: createChipsLayout(function (zoom) {
+            //                 // Размер метки будет определяться функией с оператором switch.
+            //                 return calculate(zoom);
+            //             }, trafficLight.tlsost.num),
+            //         });
+            //         //Функция для вызова АРМ нажатием на контроллер
+            //         placemark.events.add('click', function () {
+            //             handlePlacemarkClick(map, trafficLight);
+            //         });
+            //         //Добавление метки контроллера на карту
+            //         map.geoObjects.add(placemark);
+            //     });
+            //     areaZone = data.areaZone;
+            //     createAreasLayout(map);
+            //     break;
+            case 'phases':
+                if (data.phases[0].phase === 9) return;
+                $('#table tbody tr[style="background-color: lightgreen;"]').css({backgroundColor: 'white'})
+                $(`#table tbody td:hidden:contains("${data.phases[0].phase}")`).parent().css({backgroundColor: 'lightgreen'})
+                // console.log('phases', data)
                 break;
             case 'jump':
                 map.setBounds([
@@ -305,17 +307,22 @@ ymaps.ready(function () {
         return myPolygon;
     }
 
+    let ideviceSave = -1;
     function handlePlacemarkClick(map, trafficLight, oldplacemark) {
         console.log(map, trafficLight);
-// let q =
 
+        // Команда на влкючение передачи фаз
+        // controlSend(trafficLight.idevice, 4, 1)
+        ideviceSave = trafficLight.idevice;
         $.ajax({
             url: window.location.origin + '/file/static/cross/' + trafficLight.region.num + '/' + trafficLight.area.num + '/' + trafficLight.ID + '/cross.svg',
             type: 'GET',
             success: function (svgData) {
                 let placemark = new ymaps.Placemark([trafficLight.points.Y, trafficLight.points.X], {
-                    balloonContentHeader: 'Выберите фазу',
-                    balloonContentBody: svgData.children[0].outerHTML,
+                    // balloonContentHeader: 'Выберите фазу',
+                    balloonContentBody:
+                        buildPhaseTable(svgData.children[0].outerHTML
+                            .replace('let currentPhase', 'var currentPhase'), trafficLight.idevice),
                     // balloonContentFooter: 'Подвал',svgData.children[0].outerHTML
                     hintContent: trafficLight.description
                 }, {
@@ -329,11 +336,24 @@ ymaps.ready(function () {
                 placemark.events.add('click', function () {
                     handlePlacemarkClick(map, trafficLight, placemark);
                 });
+                placemark.events.add('balloonclose', function () {
+                    // Выключение передачи фаз предыдущего перекрёстка
+                    controlSend(trafficLight.idevice, 4, 0);
+                    clearInterval(phaseSender);
+                });
+                placemark.events.add('balloonopen', function () {
+                    // Выключение передачи фаз предыдущего перекрёстка
+                    controlSend(trafficLight.idevice, 4, 1);
+                });
                 //Добавление метки контроллера на карту
                 // map.geoObjects.add(placemark);
-
-
-                map.geoObjects.splice(map.geoObjects.indexOf(oldplacemark), 1, placemark);
+                try {
+                    map.geoObjects.splice(map.geoObjects.indexOf(oldplacemark), 1, placemark);
+                } catch (e) {
+                    console.log('error', e.message);
+                    // handlePlacemarkClick(map, trafficLight, oldplacemark);
+                    return;
+                }
                 placemark.balloon.open();
             },
             error: function (request) {
@@ -342,9 +362,70 @@ ymaps.ready(function () {
         });
     }
 
-    // function createBalloonBody(trafficLight) {
-    //     let retValue = 'shit';
-    //
-    //     return retValue;
-    // }
+    function buildPhaseTable(svg, idevice) {
+        $('#del').remove();
+        $('body').append(`<div id="del" style="display: none">${svg}</div>`);
+        let table =
+            '<table id="table" class="table table-bordered" style="text-align: center;">' +
+            '   <thead>' +
+            '       <tr>' +
+            '           <th data-field="num" style="display: none">Номер</th>' +
+            '           <th data-field="desc">Фаза</th>' +
+            '       </tr>' +
+            '   </thead>' +
+            '   <tbody>' +
+            '   </tbody>' +
+            '</table>';
+        if (getPhasesMass === undefined) {
+            table = 'Отсутсвуют картинки фаз';
+        } else {
+            const phasesMass = getPhasesMass();
+            let phases = '';
+            const specialCommands = [{num: 10, phase: '/jm.svg'}, {num: 11, phase: '/os.svg'},
+                {num: 0, phase: '/lr.svg'}, {num: 9, phase: '/ky.svg'}]
+
+            phasesMass.forEach((pic, i) => {
+                phases +=
+                    `<tr data-index="${i}" class="" onclick="colorControl(${idevice}, 9, ${pic.num})">` +
+                    `    <td style="display: none">${pic.num}</td>` +
+                    `    <td style="">` +
+                    `        <svg width="100%" height="100%"` +
+                    `            style="max-height: 50px; max-width: 50px; min-height: 30px; min-width: 30px;" xmlns="http://www.w3.org/2000/svg"` +
+                    `            xmlns:xlink="http://www.w3.org/1999/xlink">` +
+                    `             <image x="0" y="0" width="100%" height="100%"` +
+                    `               style="max-height: 50px; max-width: 50px; min-height: 30px; min-width: 30px;"` +
+                    `               xlink:href="data:image/png;base64,${pic.phase}"></image>` +
+                    `        </svg>` +
+                    `    </td>` +
+                    `</tr>`
+            });
+
+            const index = table.indexOf('<tbody>');
+            table = table.slice(0, index) + phases + table.slice(index, table.length);
+
+            specialCommands.forEach((pic) => {
+                table +=
+                    `<div class="btn btn-light border" onclick="controlSend(${idevice}, 9, ${pic.num})">` +
+                    ` <img className="img-fluid" src="/file/static/img/buttons${pic.phase}"` +
+                    ` height="50" alt="error">` +
+                    `</div>`
+            })
+        }
+        return table;
+    }
 })
+
+let phaseSender;
+
+function colorControl(idevice, cmd, num) {
+    clearInterval(phaseSender);
+    $('#table tbody tr[style="background-color: lightblue;"]').css({backgroundColor: 'white'})
+    $(`#table tbody td:hidden:contains("${num}")`).parent().css({backgroundColor: 'lightblue'})
+    controlSend(idevice, cmd, num)
+    phaseSender = setInterval(() => controlSend(idevice, cmd, num), 1000)
+}
+
+//Отправка выбранной команды на сервер
+function controlSend(idevice, cmd, num) {
+    ws.send(JSON.stringify({type: 'dispatch', id: idevice, cmd: cmd, param: num}));
+}

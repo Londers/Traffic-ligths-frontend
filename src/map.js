@@ -217,6 +217,10 @@ ymaps.ready(function () {
         $('#loginDialog').dialog('open');
     });
 
+    // $('#dispatchControlButton').on('click', () => {
+    //     openPage('/dispatchControl');
+    // });
+
     $('#standardZUButton').on('click', () => {
         openPage('/greenStreet');
     });
@@ -467,8 +471,8 @@ ymaps.ready(function () {
                 }
                 break;
             case 'tflight':
-                if (data.tflight === null) {
-                    console.log('null');
+                if ((data.tflight === null) || (data.tflight === undefined)) {
+                    console.log('error: tflight ', data.tflight);
                 } else {
                     console.log('Обновление');
                     if (data.areaZone !== undefined) {
@@ -627,7 +631,7 @@ ymaps.ready(function () {
     ws.onclose = function (evt) {
         console.log('disconnected', evt);
         // alert('Связь с сервером была разорвана');
-        location.reload();
+        setTimeout(() => location.reload(), 2000);
         // automatically try to reconnect on connection loss
     };
 
@@ -962,6 +966,8 @@ function convexHullTry(map, coordinates, description) {
 //Заполнение поля выбора регионов для АРМ технолога
 function makeTech(data, techAreaInfo) {
     if (data.region === '*') {
+        $('#techRegion option').remove();
+        $('#alarmRegion option').remove();
         for (let reg in regionInfo) {
             $('#techRegion').append(new Option(regionInfo[reg], reg));
             $('#alarmRegion').append(new Option(regionInfo[reg], reg));

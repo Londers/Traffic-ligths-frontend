@@ -320,46 +320,9 @@ $(function () { //                    192.168.115.120  /user/Admin/cross   W    
                 break;
             case 'stateChange':
                 $('#description').html(data.state.name);
-
-                // $('#pk').find('option').remove();
-                $('#sk').find('option').remove();
-                $('#nk').find('option').remove();
-
-                // data.state.arrays.SetDK.dk.forEach((rec, counter) => {
-                //     $('#pk').append(new Option('ПК ' + (counter + 1), counter + 1));
-                // });
-                $('#pk').find('option').each(function () {
-                    $(this).removeAttr('selected');
-                });
-                $('#pk option[value=' + data.state.pk + ']').attr('selected', 'selected');
-
-                $('#sk').append(new Option('0', '0'));
-                data.state.arrays.DaySets.daysets.forEach((rec, counter) => {
-                    if (rec.lines[0].npk !== 0) {
-                        $('#sk').append(new Option('CК ' + (counter + 1), counter + 1));
-                    }
-                });
-                $('#sk option[value=' + data.state.ck + ']').attr('selected', 'selected');
-
-                $('#nk').append(new Option('0', '0'));
-                data.state.arrays.WeekSets.wsets.forEach((rec, counter) => {
-                    let flag = true;
-                    rec.days.forEach(day => {
-                        if (rec.days[day] === 0) flag = false;
-                    });
-                    if (flag) $('#nk').append(new Option('НК ' + (counter + 1), counter + 1));
-                });
-
-                // console.log('stateChange', data);
-                $('#pk').find('option').each(function () {
-                    $(this).removeAttr('selected');
-                });
-                $('#sk').find('option').each(function () {
-                    $(this).removeAttr('selected');
-                });
-                $('#nk').find('option').each(function () {
-                    $(this).removeAttr('selected');
-                });
+                $('#pk').val(data.state.pk)
+                $('#sk').val(data.state.ck)
+                $('#nk').val(data.state.nk)
                 break;
             case 'crossConnection':
                 $('#connection')[0].innerText = data.scon ? data.eth ? 'LAN' : 'GPRS' : '';
@@ -367,7 +330,6 @@ $(function () { //                    192.168.115.120  /user/Admin/cross   W    
             case 'phase':
                 // console.log('phase ', data);
                 //Обработка таблицы
-
                 if ($('#expandedTable')[0].style.display === 'none') $('#expandedTable').show();
                 if ($('#phase')[0].style.display === 'none') $('#phase').show();
 
@@ -539,7 +501,6 @@ function buildExpandedTable(data) {
         if (currentIndex < $expandedTable.bootstrapTable('getData').length) prevIndex = currentIndex;
         currentIndex++;
     }
-
 
     if (typeof setPhase !== "undefined") {
         setPhase(data.fdk);
