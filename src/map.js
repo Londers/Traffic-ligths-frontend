@@ -217,9 +217,9 @@ ymaps.ready(function () {
         $('#loginDialog').dialog('open');
     });
 
-    // $('#dispatchControlButton').on('click', () => {
-    //     openPage('/dispatchControl');
-    // });
+    $('#dispatchControlButton').on('click', () => {
+        openPage('/dispatchControl');
+    });
 
     $('#standardZUButton').on('click', () => {
         openPage('/greenStreet');

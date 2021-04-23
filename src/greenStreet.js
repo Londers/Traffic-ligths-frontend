@@ -623,7 +623,7 @@ ymaps.ready(function () {
                 currentRouteTflights = new Map([...currentRouteTflights.entries()].sort());
                 $('#navTable tbody tr').each((i, tr) => {
                     $(tr).on('click', () => {
-                        map.setCenter(currentRouteTflights.get(tr.rowIndex - 1).geometry.getCoordinates(), 17);
+                        map.setCenter(currentRouteTflights.get(tr.rowIndex - 1).geometry.getCoordinates(), zoom);
                     });
                     tr.cells[1].innerHTML = '<div class="placemark"  style="background-image:url(\'' + location.origin +
                         '/free/img/trafficLights/' + getStatus(route.listTL[i].pos) + '.svg\');' +

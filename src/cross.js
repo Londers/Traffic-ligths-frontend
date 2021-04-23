@@ -18,6 +18,7 @@ $(function () { //                    192.168.115.120  /user/Admin/cross   W    
 
     ws.onclose = function (evt) {
         console.log('disconnected', evt);
+        alert('WebSocket closed')
     };
 
     let $table = $('#expandedTable');
@@ -264,7 +265,7 @@ $(function () { //                    192.168.115.120  /user/Admin/cross   W    
                 checkEdit();
                 checkConnection();
                 break;
-            case 'dispatch':
+            case 'dispatch': {
                 // console.log('dispatch', data);
                 let time = new Date();
                 let strTime = '';
@@ -299,6 +300,7 @@ $(function () { //                    192.168.115.120  /user/Admin/cross   W    
                     // }
                 }).bootstrapTable('scrollTo', 'top');
                 break;
+            }
             case 'crossUpdate':
                 // console.log('crossUpdate', data);
                 $('#status').html('Статус: ' + data.status.description);

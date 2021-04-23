@@ -1,13 +1,14 @@
 'use strict'
 
 let IDs = [];
-// let regionInfo;
-// let areaInfo;
-let areaZone = undefined;
-let areaLayout = [];
-let subareasLayout = [];
 let ws = undefined;
 let map = undefined;
+let waiter = undefined;
+
+let boxRemember = {Y: 0, X: 0};
+let fixationFlag = false;
+
+let ideviceSave = -1;
 
 ymaps.ready(function () {
 
@@ -17,6 +18,22 @@ ymaps.ready(function () {
         zoom: 19
     });
 
+    $('#dropdownControlButton').trigger('click');
+
+    $('#fixationButton').on('click', function () {
+        if (fixationFlag) {
+            map.setBounds(boxRemember);
+        } else {
+            boxRemember = map.getBounds();
+            $('#fixationButton')[0].innerText = 'Вернуться';
+            fixationFlag = true;
+        }
+    });
+
+    $('#fixationReset').on('click', function () {
+        fixationFlag = false;
+        $('#fixationButton')[0].innerText = 'Зафиксировать экран';
+    });
     ws = new WebSocket('wss://' + location.host + location.pathname + 'W');
 
     ws.onerror = function (evt) {
@@ -36,12 +53,15 @@ ymaps.ready(function () {
         // localStorage.setItem("maintab", "closed");
         switch (allData.type) {
             case 'mapInfo':
-                // regionInfo = data.regionInfo;
-                // areaInfo = data.areaInfo;
-                if ((areaZone === undefined) && (data.areaZone !== undefined)) {
-                    areaZone = data.areaZone;
-                    createAreasLayout(map);
+                //Заполнение поля выбора регионов для перемещения
+                for (let reg in data.regionInfo) {
+                    $('#region').append(new Option(data.regionInfo[reg], reg));
                 }
+                fillAreas($('#area'), $('#region'), data.areaInfo);
+
+                $('#regionForm').on('change', function () {
+                    fillAreas($('#area'), $('#region'), data.areaInfo);
+                });
 
                 map.setBounds([
                     [data.boxPoint.point0.Y, data.boxPoint.point0.X],
@@ -78,11 +98,6 @@ ymaps.ready(function () {
                     console.log('null');
                 } else {
                     console.log('Обновление');
-                    if (data.areaZone !== undefined) {
-                        areaZone = data.areaZone;
-                        deleteSubareasLayout(map);
-                        createSubareasLayout(map);
-                    }
                     //Обновление статуса контроллера происходит только при его изменении
                     data.tflight.forEach(trafficLight => {
                         let id = trafficLight.ID;
@@ -100,9 +115,20 @@ ymaps.ready(function () {
                         placemark.events.add('click', function () {
                             handlePlacemarkClick(map, trafficLight, placemark);
                         });
-                        //Замена метки контроллера со старым состоянием на метку с новым
-                        map.geoObjects.splice(index, 1, placemark);
-                        if (trafficLight.idevice === ideviceSave) handlePlacemarkClick(map, trafficLight, placemark);
+
+                        // Если открыто управление перекрёстком, замена объекта на карте произойдет по закрытию управления
+                        if (ideviceSave !== trafficLight.idevice){
+                            //Замена метки контроллера со старым состоянием на метку с новым
+                            map.geoObjects.splice(index, 1, placemark);
+                        } else {
+                            clearInterval(waiter);
+                            waiter = setInterval(() => {
+                                if (ideviceSave === -1) {
+                                    map.geoObjects.splice(index, 1, placemark);
+                                    clearInterval(waiter);
+                                }
+                            }, 100);
+                        }
                     })
                 }
                 break;
@@ -161,113 +187,46 @@ ymaps.ready(function () {
         }
     };
 
-    let createChipsLayout = function (calculateSize, currnum) {
-        if (currnum === 0) {
-            console.log('Возвращен несуществующий статус');
-            return null;
-        }
-        // Создадим макет метки.
-        let Chips = ymaps.templateLayoutFactory.createClass(
-            '<div class="placemark"  style="background-image:url(\'' + location.origin + '/free/img/trafficLights/' + currnum + '.svg\'); background-size: 100%"></div>', {
-                build: function () {
-                    Chips.superclass.build.call(this);
-                    let map = this.getData().geoObject.getMap();
-                    if (!this.inited) {
-                        this.inited = true;
-                        // Получим текущий уровень зума.
-                        let zoom = map.getZoom();
-                        // Подпишемся на событие изменения области просмотра карты.
-                        map.events.add('boundschange', function () {
-                            // Запустим перестраивание макета при изменении уровня зума.
-                            let currentZoom = map.getZoom();
-                            if (currentZoom !== zoom) {
-                                zoom = currentZoom;
-                                this.rebuild();
-                            }
-                        }, this);
+    //Выбор места для открытия на карте
+    $('#locationButton').on('click', function () {
+        $('#locationDialog').dialog('open');
+    });
+
+    //Всплывающее окно для создания пользователя /locationButton
+    $('#locationDialog').dialog({
+        autoOpen: false,
+        buttons: {
+            'Подтвердить': function () {
+                //Проверка корректности введённых данных
+                if (($('#area option:selected').text() === '')) {
+                    if (!($('#areasMsg').length) && ($('#area option:selected').text() === '')) {
+                        $('#areasForm').append('<div style="color: red;" id="areasMsg"><h5>Выберите районы</h5></div>');
                     }
-                    let options = this.getData().options,
-                        // Получим размер метки в зависимости от уровня зума.
-                        size = calculateSize(map.getZoom()),
-                        element = this.getParentElement().getElementsByClassName('placemark')[0],
-                        // По умолчанию при задании своего HTML макета фигура активной области не задается,
-                        // и её нужно задать самостоятельно.
-                        // Создадим фигуру активной области "Круг".
-                        circleShape = {
-                            type: 'Circle',
-                            coordinates: [0, 0],
-                            radius: size / 2
-                        };
-                    // Зададим высоту и ширину метки.
-                    element.style.width = element.style.height = size + 'px';
-                    // Зададим смещение.
-                    element.style.marginLeft = element.style.marginTop = -size / 2 + 'px';
-                    // Зададим фигуру активной области.
-                    options.set('shape', circleShape);
+                    return;
                 }
+                let selectedAreas = $('#area option:selected').toArray().map(item => item.value);
+
+                //Сбор данных для отправки на сервер
+                let toSend = {
+                    type: 'jump',
+                    region: $('#region option:selected').val(),
+                    area: selectedAreas
+                };
+                //Отправка данных на сервер
+                ws.send(JSON.stringify(toSend));
+
+                $(this).dialog('close');
+            },
+            'Отмена': function () {
+                $(this).dialog('close');
             }
-        );
-        return Chips;
-    };
-
-//Мастшабирование иконов светофороф на карте
-    let calculate = function (zoom) {
-        switch (zoom) {
-//		          case 11:
-//		            return 5;
-//		          case 12:
-//		            return 10;
-//		          case 13:
-//		            return 20;
-            case 14:
-                return 30;
-            case 15:
-                return 35;
-            case 16:
-                return 50;
-            case 17:
-                return 60;
-            case 18:
-                return 80;
-            case 19:
-                return 130;
-            default:
-                return 25;
-            // return 80;
+        },
+        modal: true,
+        resizable: false,
+        close: function () {
+            $('#areasMsg').remove();
         }
-    };
-
-    function createAreasLayout(map) {
-        if (!$('#switchLayout').prop('checked')) return;
-        areaZone.forEach(area => {
-            let polygon = convexHullTry(map, area.zone, 'Регион: ' + area.region + ', Район: ' + area.area);
-            areaLayout.push(polygon);
-        })
-    }
-
-    // function deleteAreasLayout(map) {
-    //     areaLayout.forEach(layout => {
-    //         map.geoObjects.remove(layout);
-    //     });
-    //     areaLayout = [];
-    // }
-
-    function createSubareasLayout(map) {
-        if (!$('#switchSubLayout').prop('checked')) return;
-        areaZone.forEach(area => {
-            area.sub.forEach(sub => {
-                let polygon = convexHullTry(map, sub.zone, 'Регион: ' + area.region + ', Район: ' + area.area + ', Подрайон:' + sub.subArea);
-                subareasLayout.push(polygon);
-            })
-        })
-    }
-
-    function deleteSubareasLayout(map) {
-        subareasLayout.forEach(layout => {
-            map.geoObjects.remove(layout);
-        });
-        subareasLayout = [];
-    }
+    });
 
     function getRandomColor() {
         let letters = '0123456789A';
@@ -307,7 +266,6 @@ ymaps.ready(function () {
         return myPolygon;
     }
 
-    let ideviceSave = -1;
     function handlePlacemarkClick(map, trafficLight, oldplacemark) {
         console.log(map, trafficLight);
 
@@ -339,11 +297,13 @@ ymaps.ready(function () {
                 placemark.events.add('balloonclose', function () {
                     // Выключение передачи фаз предыдущего перекрёстка
                     controlSend(trafficLight.idevice, 4, 0);
+                    ideviceSave = -1;
                     clearInterval(phaseSender);
                 });
                 placemark.events.add('balloonopen', function () {
                     // Выключение передачи фаз предыдущего перекрёстка
                     controlSend(trafficLight.idevice, 4, 1);
+                    ideviceSave = trafficLight.idevice;
                 });
                 //Добавление метки контроллера на карту
                 // map.geoObjects.add(placemark);
@@ -413,6 +373,18 @@ ymaps.ready(function () {
         }
         return table;
     }
+
+    //Заполнение поля выбора районов для создания или изменения пользователя
+    function fillAreas($area, $region, areaInfo) {
+        $area.empty();
+        for (let regAreaJson in areaInfo) {
+            for (let areaJson in areaInfo[regAreaJson]) {
+                if (regAreaJson === $region.find(':selected').text()) {
+                    $area.append(new Option(areaInfo[regAreaJson][areaJson], areaJson));
+                }
+            }
+        }
+    }
 })
 
 let phaseSender;
@@ -422,10 +394,86 @@ function colorControl(idevice, cmd, num) {
     $('#table tbody tr[style="background-color: lightblue;"]').css({backgroundColor: 'white'})
     $(`#table tbody td:hidden:contains("${num}")`).parent().css({backgroundColor: 'lightblue'})
     controlSend(idevice, cmd, num)
-    phaseSender = setInterval(() => controlSend(idevice, cmd, num), 1000)
+    phaseSender = setInterval(() => controlSend(idevice, cmd, num), 60000)
 }
 
 //Отправка выбранной команды на сервер
 function controlSend(idevice, cmd, num) {
     ws.send(JSON.stringify({type: 'dispatch', id: idevice, cmd: cmd, param: num}));
 }
+
+let createChipsLayout = function (calculateSize, currnum) {
+    if (currnum === 0) {
+        console.log('Возвращен несуществующий статус');
+        return null;
+    }
+    // Создадим макет метки.
+    let Chips = ymaps.templateLayoutFactory.createClass(
+        '<div class="placemark"  style="background-image:url(\'' + location.origin + '/free/img/trafficLights/' + currnum + '.svg\'); background-size: 100%"></div>', {
+            build: function () {
+                Chips.superclass.build.call(this);
+                let map = this.getData().geoObject.getMap();
+                if (!this.inited) {
+                    this.inited = true;
+                    // Получим текущий уровень зума.
+                    let zoom = map.getZoom();
+                    // Подпишемся на событие изменения области просмотра карты.
+                    map.events.add('boundschange', function () {
+                        // Запустим перестраивание макета при изменении уровня зума.
+                        let currentZoom = map.getZoom();
+                        if (currentZoom !== zoom) {
+                            zoom = currentZoom;
+                            this.rebuild();
+                        }
+                    }, this);
+                }
+                let options = this.getData().options,
+                    // Получим размер метки в зависимости от уровня зума.
+                    size = calculateSize(map.getZoom()),
+                    element = this.getParentElement().getElementsByClassName('placemark')[0],
+                    // По умолчанию при задании своего HTML макета фигура активной области не задается,
+                    // и её нужно задать самостоятельно.
+                    // Создадим фигуру активной области "Круг".
+                    circleShape = {
+                        type: 'Circle',
+                        coordinates: [0, 0],
+                        radius: size / 2
+                    };
+                // Зададим высоту и ширину метки.
+                element.style.width = element.style.height = size + 'px';
+                // Зададим смещение.
+                element.style.marginLeft = element.style.marginTop = -size / 2 + 'px';
+                // Зададим фигуру активной области.
+                options.set('shape', circleShape);
+            }
+        }
+    );
+    return Chips;
+};
+
+//Мастшабирование иконов светофороф на карте
+let calculate = function (zoom) {
+    switch (zoom) {
+//		          case 11:
+//		            return 5;
+//		          case 12:
+//		            return 10;
+//		          case 13:
+//		            return 20;
+        case 14:
+            return 30;
+        case 15:
+            return 35;
+        case 16:
+            return 50;
+        case 17:
+            return 60;
+        case 18:
+            return 80;
+        case 19:
+            return 130;
+        default:
+            return 25;
+        // return 80;
+    }
+};

@@ -26,10 +26,10 @@ const vv2TableFlag = true;
 const kvTableFlag = false;
 
 // let tempIndex;
-let copyPk = [];
-let copySk = [];
-let copyNk = [];
-let copyGk = [];
+// let copyPk = [];
+// let copySk = [];
+// let copyNk = [];
+// let copyGk = [];
 let points = {
     Y: 0,
     X: 0
@@ -77,6 +77,11 @@ function colorizeSelectedRow(table) {
 }
 
 $(() => {
+
+    if (localStorage.getItem('copyArr') == null) {
+        localStorage.setItem('copyArr', JSON.stringify({'pk': [], 'sk': [], 'nk': [], 'gk': [], 'kv': []}));
+    }
+
     ws = new WebSocket('wss://' + location.host + location.pathname + 'W' + location.search);
 
     ws.onopen = () => {
@@ -448,16 +453,17 @@ $(() => {
 // Функционал кнопок на вкладке "ПК"
     // Кнопка для копирования всей информации выбранного ПК
     $('#pkCopyButton').on('click', () => {
-        let selected = $('#pkSelect').val();
-        copyPk = JSON.parse(JSON.stringify(setDK[selected]));
+        handleCopy('pk')
+        // copyPk = JSON.parse(JSON.stringify(setDK[$('#pkSelect').val()]));
     });
 
     // Кнопка для перезаписи строки
     $('#pkPasteButton').on('click', () => {
-        let selected = $('#pkSelect').val();
-        if (copyPk.length === 0) return;
-        setDK[selected] = JSON.parse(JSON.stringify(copyPk));
-        pkTabFill('pkTable');
+        handlePaste('pk')
+        // let selected = $('#pkSelect').val();
+        // if (copyPk.length === 0) return;
+        // setDK[selected] = JSON.parse(JSON.stringify(copyPk));
+        // pkTabFill('pkTable');
     });
 
     // Кнопка для возвращения исходных данных
@@ -562,16 +568,18 @@ $(() => {
 
     // Кнопка для копирования строки суточной карты
     $('#skCopyButton').on('click', () => {
-        copySk = [];
-        $('#skTable').find('tr.success').find('input')
-            .each(({}, input) => copySk.push(input.value));
+        handleCopy('sk')
+        // copySk = [];
+        // $('#skTable tr.success input')
+        //     .each((i, input) => copySk.push(input.value));
     });
 
     // Кнопка для перезаписи строки суточной карты
     $('#skPasteButton').on('click', () => {
-        $('#skTable').find('tr.success').find('input')
-            .each((index, input) => $(input).val(copySk[index]))
-            .change();
+        handlePaste('sk')
+        // $('#skTable').find('tr.success').find('input')
+        //     .each((index, input) => $(input).val(copySk[index]))
+        //     .change();
     });
 
     // Кнопка для загрузки исходных данных
@@ -594,16 +602,18 @@ $(() => {
 // Функционал кнопок на вкладке "Нед. карты"
     // Кнопка для копирования строки
     $('#nkCopyButton').on('click', () => {
-        copyNk = [];
-        $('#nkTable').find('tr.success').find('input')
-            .each(({}, input) => copyNk.push(input.value));
+        handleCopy('nk');
+        // copyNk = [];
+        // $('#nkTable tr.success input')
+        //     .each((i, input) => copyNk.push(input.value));
     });
 
     // Кнопка для перезаписи строки
     $('#nkPasteButton').on('click', () => {
-        $('#nkTable').find('tr.success').find('input')
-            .each((index, input) => $(input).val(copyNk[index]))
-            .change();
+        handlePaste('nk')
+        // $('#nkTable').find('tr.success').find('input')
+        //     .each((index, input) => $(input).val(copyNk[index]))
+        //     .change();
     });
 
     // Кнопка для загрузки исходных данных
@@ -624,16 +634,18 @@ $(() => {
 // Функционал кнопок на вкладке "Карта года"
     // Кнопка для копирования строки
     $('#gkCopyButton').on('click', () => {
-        copyGk = [];
-        $('#gkTable').find('tr.success').find('input')
-            .each(({}, input) => copyGk.push(input.value));
+        handleCopy('gk');
+        // copyGk = [];
+        // $('#gkTable tr.success input')
+        //     .each((i, input) => copyGk.push(input.value));
     });
 
     // Кнопка для перезаписи строки
     $('#gkPasteButton').on('click', () => {
-        $('#gkTable').find('tr.success').find('input')
-            .each((index, input) => $(input).val(copyGk[index]))
-            .change();
+        handlePaste('gk')
+        // $('#gkTable').find('tr.success').find('input')
+        //     .each((index, input) => $(input).val(copyGk[index]))
+        //     .change();
     });
 
     // Кнопка для загрузки исходных данных
@@ -655,15 +667,16 @@ $(() => {
 
     // Кнопка для копирования строки
     $('#kvCopyButton').on('click', () => {
-        copyPk = JSON.parse(JSON.stringify(getSelectedRowData('kvTable')));
+        handleCopy('kv');
+        // copyPk = JSON.parse(JSON.stringify(getSelectedRowData('kvTable')));
     });
 
     // Кнопка для перезаписи строки
     $('#kvPasteButton').on('click', () => {
-        let index = $('#kvTable').find('tr.success').data('index');
-        if (getSelectedRowData('kvTable') === undefined) return;
-        stageSets[index] = JSON.parse(JSON.stringify(copyPk));
-        newTableFill('kvTable', kvTableFlag);
+        handlePaste('kv')
+        // if (getSelectedRowData('kvTable') === undefined) return;
+        // stageSets[$('#kvTable').find('tr.success').data('index')] = JSON.parse(JSON.stringify(copyPk));
+        // newTableFill('kvTable', kvTableFlag);
     });
 
     // Кнопка для загрузки исходных данных
@@ -708,7 +721,56 @@ $(() => {
         pkTabFill('pkTable');
     });
 
-    // let x = undefined, y = undefined;
+    function handleCopy(id) {
+        const copyArr = JSON.parse(localStorage.getItem('copyArr'));
+        switch (id) {
+            case 'pk':
+                copyArr['pk'] = setDK[$('#pkSelect').val()];
+                break;
+            case 'sk':
+                copyArr['sk'] = daySets[$('#mapNum').val()];
+                break;
+            case 'nk':
+                copyArr['nk'] = weekSets;
+                break;
+            case 'gk':
+                copyArr['gk'] = monthSets;
+                break;
+            case 'kv':
+                copyArr['kv'] = stageSets;
+                break;
+        }
+        localStorage.setItem('copyArr', JSON.stringify(copyArr));
+    }
+
+    function handlePaste(id) {
+        const copyArr = JSON.parse(localStorage.getItem('copyArr'));
+        switch (id) {
+            case 'pk':
+                copyArr['pk'].pk = Number($('#pkSelect').val()) + 1;
+                copyArr['pk'].desc = 'План координации ' + (copyArr['pk'].pk);
+                setDK[$('#pkSelect').val()] = copyArr['pk']
+                pkTabFill('pkTable')
+                break;
+            case 'sk':
+                data.state.arrays.DaySets.daysets[$('#mapNum').val()] = copyArr['sk']
+                copyArr['sk'].num = Number($('#mapNum').val()) + 1;
+                skTabFill(false)
+                break;
+            case 'nk':
+                data.state.arrays.WeekSets.wsets = copyArr['nk']
+                nkTabFill()
+                break;
+            case 'gk':
+                data.state.arrays.MonthSets.monthset = copyArr['gk']
+                gkTabFill()
+                break;
+            case 'kv':
+                data.state.arrays.SetCtrl.Stage = copyArr['kv']
+                kvTabFill()
+                break;
+        }
+    }
 
     // Функционирование карты для выбора координат
     ymaps.ready(() => {
