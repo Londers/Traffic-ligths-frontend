@@ -656,7 +656,7 @@ $(() => {
 
     // Кнопка для обнуления текущей годовой карты
     $('#gkNewButton').on('click', () => {
-        const blankArr = Array.from({length: 31}, () => 0); // массив из 31 нулевого элемента
+        const blankArr = Array.from({length: 31}, () => 1); // массив из 31 нулевого элемента
         data.state.arrays.MonthSets.monthset.forEach(row => {
             row.days = blankArr.slice();
         });
@@ -833,6 +833,7 @@ $(() => {
 
         $('#map').on('click', () => {
             coordinatesChangeFlag = true;
+            $('#checkButton').prop('disabled', false);
         })
     });
 });
@@ -902,7 +903,9 @@ function loadData(newData, firstLoadFlag) {
     $('input, select').each(function () {
         $(this).on('change', () => {
             setTimeout(() => {
-                $('#checkButton').prop('disabled', (JSON.stringify(data)) === (JSON.stringify(unmodifiedData)))
+                $('#checkButton').prop('disabled',
+                    coordinatesChangeFlag ? false : (JSON.stringify(data)) === (JSON.stringify(unmodifiedData))
+                )
             }, 50)
         })
     });
@@ -1712,6 +1715,8 @@ function pkTabFill(table) {
                         const difLen = $('#razlen').prop('checked');
                         const currTf = Number($(`[class~=tf${swId}]`).val());
 
+                        if (cycleTime === 0) return;
+
                         // Минимальная длительность фазы
                         if (value < 4) {
                             $('[class~=duration' + swId + ']').val(4).change();
@@ -1780,6 +1785,7 @@ function pkTabFill(table) {
     if (tableType) pkTableDurationFunctional();
     $('#razlen').change();
     data.state.arrays.SetDK.dk[selected] = setDK[selected];
+    $('#nav-pk .fixed-table-body').height('85vh');
 }
 
 // Считается значение, на которое изменилось поле для ввода

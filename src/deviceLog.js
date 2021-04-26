@@ -199,7 +199,9 @@ $(function () {
 
 
                 if (index < filteredData[dev].length) {
-                    if ((crutchFlag) && (index === (filteredData[dev].length - 1))) date = new Date($('#dateStart')[0].value + 'T' + $('#timeStart')[0].value + ':00.00' + log.time.slice(-6));
+                    if ((crutchFlag) && (index === (filteredData[dev].length - 1))) {
+                        date = new Date($('#dateStart')[0].value + 'T' + $('#timeStart')[0].value + ':00.00' + log.time.slice(-6));
+                    }
                     let prevDate = (index === 0) ? dateSave : new Date(filteredData[dev][index - 1].time);
                     localPrevDate = prevDate.toLocaleString('ru-RU');
                     duration = Math.floor(prevDate.getTime() - date.getTime()) + date.getTimezoneOffset() * 60 * 1000;// 1000);

@@ -318,6 +318,10 @@ $(function () { //                    192.168.115.120  /user/Admin/cross   W    
                 $('#sk option[value=' + data.state.ck + ']').attr('selected', 'selected');
                 $('#nk option[value=' + data.state.nk + ']').attr('selected', 'selected');
 
+                if (!data.sfdk) {
+                    $('#sfdk').remove();
+                    $('#connection').parent().append('<div id="sfdk">Отключена передача фаз</div>');
+                }
                 checkConnection(data.status.control);
                 break;
             case 'stateChange':

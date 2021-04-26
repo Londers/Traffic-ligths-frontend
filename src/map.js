@@ -40,7 +40,7 @@ function getRandomColor() {
 const about = 'Предназначена для упрощения процедур наблюдения, управления ' +
     'и контроля за работой дорожных контроллеров и другого ' +
     'оборудования, работающего в системе управления дорожным движением.\n\n' +
-    'ООО "Автоматика-Д" (г.Омск). \n8-3812-370735, 8-3812-394910';
+    'ООО "Автоматика-Д" (г.Омск). \n8-3812-370735, 8-3812-394910 \n';
 
 function openAbout(closeOnExpiration) {
     // Instantiate new modal
@@ -136,7 +136,8 @@ ymaps.ready(function () {
             // data: JSON.stringify(toSend),
             dataType: 'json',
             success: function (data) {
-                $('#modal')[0].innerText = `АСУДД "Микро"\nЛицензия: ${data.license}\n\n` + about
+                $('#modal')[0].innerText = `АСУДД "Микро"\nЛицензия: ${data.license}\n\n` + about;
+                $('#modal').append('<a href="http://asud55.ru/" target="_blank">http://asud55.ru/</a>');
             },
             error: function (request) {
                 console.log(request.status + ' ' + request.responseText);
@@ -370,7 +371,7 @@ ymaps.ready(function () {
         openPage('/multipleCross');
     });
 
-    $('#multipleCrossCheck').on('change', function(e) {
+    $('#multipleCrossCheck').on('change', function (e) {
         if (!e.target.checked) {
             $('#multipleCrossClear').trigger('click');
         }
@@ -445,7 +446,8 @@ ymaps.ready(function () {
                     IDs.push(trafficLight.region.num + '-' + trafficLight.area.num + '-' + trafficLight.ID);
                     //Создание меток контроллеров на карте
                     let placemark = new ymaps.Placemark([trafficLight.points.Y, trafficLight.points.X], {
-                        hintContent: trafficLight.description + '<br>' + trafficLight.idevice
+                        hintContent: `${trafficLight.description}<br>` +
+                            `[${trafficLight.area.num}, ${trafficLight.subarea}, ${trafficLight.ID}, ${trafficLight.idevice}]`
                     }, {
                         iconLayout: createChipsLayout(function (zoom) {
                             // Размер метки будет определяться функией с оператором switch.
@@ -485,7 +487,8 @@ ymaps.ready(function () {
                         let id = trafficLight.ID;
                         let index = IDs.indexOf(trafficLight.region.num + '-' + trafficLight.area.num + '-' + id);
                         let placemark = new ymaps.Placemark([trafficLight.points.Y, trafficLight.points.X], {
-                            hintContent: trafficLight.description + '<br>' + trafficLight.idevice
+                            hintContent: `${trafficLight.description}<br>` +
+                                `[${trafficLight.area.num}, ${trafficLight.subarea}, ${trafficLight.ID}, ${trafficLight.idevice}]`
                         }, {
                             iconLayout: createChipsLayout(function (zoom) {
                                 // Размер метки будет определяться функией с оператором switch.
@@ -508,7 +511,8 @@ ymaps.ready(function () {
                     IDs.push(trafficLight.region.num + '-' + trafficLight.area.num + '-' + trafficLight.ID);
                     //Создание меток контроллеров на карте
                     let placemark = new ymaps.Placemark([trafficLight.points.Y, trafficLight.points.X], {
-                        hintContent: trafficLight.description + '<br>' + trafficLight.idevice
+                        hintContent: `${trafficLight.description}<br>` +
+                            `[${trafficLight.area.num}, ${trafficLight.subarea}, ${trafficLight.ID}, ${trafficLight.idevice}]`
                     }, {
                         iconLayout: createChipsLayout(function (zoom) {
                             // Размер метки будет определяться функией с оператором switch.
@@ -547,6 +551,7 @@ ymaps.ready(function () {
                             dataType: 'json',
                             success: function (data) {
                                 $('#modal')[0].innerText = `АСУДД "Микро"\nЛицензия: ${data.license}\n\n` + about;
+                                $('#modal').append('<a href="http://asud55.ru/" target="_blank">http://asud55.ru/</a>');
                                 openAbout(true);
                             },
                             error: function (request) {
