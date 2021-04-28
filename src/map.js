@@ -71,7 +71,19 @@ function openAbout(closeOnExpiration) {
 }
 
 ymaps.ready(function () {
-    let antiBruteForceCounter = 0;
+    if (localStorage.getItem('bf') === 'null') localStorage.setItem('bf', '0');
+    let antiBruteForceCounter = Number(localStorage.getItem('bf'));
+    if (antiBruteForceCounter >= 5) {
+        if ((new Date().getTime() - Number(localStorage.getItem('bfts'))) > 15 * 60 * 1000) {
+            antiBruteForceCounter = 0;
+            localStorage.setItem('bf', '0');
+            localStorage.setItem('bfts', null);
+            $('#loginButton')[0].disabled = false;
+        } else {
+            $('#loginButton')[0].disabled = true;
+        }
+    }
+
     // $('#workPlace').hide();
     $('#modal').hide();
     $('#switchLayout').parent().hide();
@@ -128,23 +140,6 @@ ymaps.ready(function () {
         $('#newLicenseKey').val('');
         $('#licenseDialog').dialog('open');
     });
-
-    if ((localStorage.getItem('login') != null) && (localStorage.getItem('login') !== '')) {
-        $.ajax({
-            type: 'POST',
-            url: location.origin + '/user/' + localStorage.getItem('login') + '/license',
-            // data: JSON.stringify(toSend),
-            dataType: 'json',
-            success: function (data) {
-                $('#modal')[0].innerText = `АСУДД "Микро"\nЛицензия: ${data.license}\n\n` + about;
-                $('#modal').append('<a href="http://asud55.ru/" target="_blank">http://asud55.ru/</a>');
-            },
-            error: function (request) {
-                console.log(request.status + ' ' + request.responseText);
-            }
-        });
-    }
-
 
     $('#checkNewLicense').on('click', (e) => {
         e.preventDefault();
@@ -385,7 +380,7 @@ ymaps.ready(function () {
 
     ws = new WebSocket('wss://' + location.host + '/mapW');
     ws.onerror = function (evt) {
-        console.log('WebSocket error:' + evt);
+        console.log('WebSocket error', evt);
     };
 
     ws.onopen = function () {
@@ -417,6 +412,9 @@ ymaps.ready(function () {
                     areaZone = data.areaZone;
                     createAreasLayout(map);
                 }
+
+                $('#modal')[0].innerText = `АСУДД "Микро"\nЛицензия: ${data.license}\n\n` + about;
+                $('#modal').append('<a href="http://asud55.ru/" target="_blank">http://asud55.ru/</a>');
 
                 //Заполнение поля выбора регионов для перемещения
                 for (let reg in regionInfo) {
@@ -536,7 +534,7 @@ ymaps.ready(function () {
                 ]);
                 break;
             case 'login':
-                if (data.status) {
+                if (data.status && (localStorage.getItem('bf') !== '5')) {
                     localStorage.setItem('multipleCross', JSON.stringify([]));
                     userRegion = data.region;
 
@@ -585,10 +583,18 @@ ymaps.ready(function () {
                         + '\n' + ((data.role === 'Viewer') ? 'АРМ наблюдателя' : 'АРМ дежурного - ')
                         + data.description + '\n' + localStorage.getItem('login');
                     antiBruteForceCounter = 0;
+                    localStorage.setItem('bf', '0');
+                    localStorage.setItem('bfts', null);
                 } else {
                     check(false, data.message);
                     $('#password').val('');
-                    antiBruteForceCounter++;
+                    if (++antiBruteForceCounter >= 5) {
+                        $('.ui-dialog-buttonset:visible button:last').trigger('click');
+                        $('#loginButton')[0].disabled = true;
+                        alert('Слишком много попыток, попробуйте позже.');
+                        localStorage.setItem('bf', antiBruteForceCounter);
+                        localStorage.setItem('bfts', JSON.stringify(new Date().getTime()));
+                    }
                 }
                 break;
             case 'logOut':

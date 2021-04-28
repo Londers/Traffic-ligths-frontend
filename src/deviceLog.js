@@ -197,7 +197,6 @@ $(function () {
                 let localPrevDate, duration;
                 let date = new Date(log.time);
 
-
                 if (index < filteredData[dev].length) {
                     if ((crutchFlag) && (index === (filteredData[dev].length - 1))) {
                         date = new Date($('#dateStart')[0].value + 'T' + $('#timeStart')[0].value + ':00.00' + log.time.slice(-6));

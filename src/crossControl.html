@@ -38,63 +38,63 @@
     <div class="container col-sm-1 position-fixed p-0">
         <div class="row ">
             <div class="col-md-12">
-                <a class="btn btn-secondary mt-2 mx-auto border disabled" id="sendButton" data-toggle="tooltip"
+                <button class="btn btn-secondary mt-2 mx-auto border disabled" id="sendButton" data-toggle="tooltip"
                    title="Отправить изменения на ДК" role="button"
                    style="width: 110%; display: flex; min-height: 50px;	min-width: 50px; max-width: 60px;	max-height: 60px;"
                    data-spy="affix">
                     <img src="/file/static/icons/1.svg" class="img-fluid"
                          style="min-height: 25px;	min-width: 25px; max-width: 40px;	max-height: 40px;">
-                </a>
+                </button>
             </div>
         </div>
         <div class="row">
             <div class="col-md-12">
-                <a class="btn btn-secondary mt-2 mx-auto border disabled" id="addButton" data-toggle="tooltip"
+                <button class="btn btn-secondary mt-2 mx-auto border disabled" id="addButton" data-toggle="tooltip"
                    title="Создать новый перекрёсток" role="button"
                    style="width: 110%; display: flex; min-height: 50px;	min-width: 50px; max-width: 60px;	max-height: 60px;">
                     <img src="/file/static/icons/6.svg" class="img-fluid"
                          style="min-height: 25px;	min-width: 25px; max-width: 40px;	max-height: 40px;">
-                </a>
+                </button>
             </div>
         </div>
         <div class="row">
             <div class="col-md-12">
-                <a class="btn btn-secondary mt-2 mx-auto border" id="reloadButton" data-toggle="tooltip"
+                <button class="btn btn-secondary mt-2 mx-auto border" id="reloadButton" data-toggle="tooltip"
                    title="Обновить данные на АРМ" role="button"
                    style="width: 110%; display: flex; min-height: 50px;	min-width: 50px; max-width: 60px;	max-height: 60px;">
                     <img src="/file/static/icons/3.svg" class="img-fluid"
                          style="min-height: 25px;	min-width: 25px; max-width: 40px;	max-height: 40px;">
-                </a>
+                </button>
             </div>
         </div>
         <div class="row">
             <div class="col-md-12 mt-5">
-                <a class="btn btn-secondary mt-2 mx-auto border" id="deleteButton" data-toggle="tooltip"
+                <button class="btn btn-secondary mt-2 mx-auto border" id="deleteButton" data-toggle="tooltip"
                    title="Удалить перекрёсток" role="button"
                    style="width: 110%; display: flex; min-height: 50px;	min-width: 50px; max-width: 60px;	max-height: 60px;">
                     <img src="/file/static/icons/5.svg" class="img-fluid"
                          style="min-height: 25px;	min-width: 25px; max-width: 40px;	max-height: 40px;">
-                </a>
+                </button>
             </div>
         </div>
         <div class="row">
             <div class="col-md-12">
-                <a class="btn btn-secondary mt-2 mx-auto border" id="checkEdit" data-toggle="tooltip"
+                <button class="btn btn-secondary mt-2 mx-auto border" id="checkEdit" data-toggle="tooltip"
                    role="button"
                    style="width: 110%; display: flex; min-height: 50px;	min-width: 50px; max-width: 60px;	max-height: 60px;">
                     <img src="/file/static/icons/7.svg" class="img-fluid"
                          style="min-height: 25px;	min-width: 25px; max-width: 40px;	max-height: 40px;">
-                </a>
+                </button>
             </div>
         </div>
         <div class="row">
             <div class="col-md-12 mt-5 text-center">
-                <a class="btn btn-secondary mt-2 mx-auto border" id="forceSendButton" data-toggle="tooltip"
+                <button class="btn btn-secondary mt-2 mx-auto border" id="forceSendButton" data-toggle="tooltip"
                    title="Принудительно обновить контроллер" role="button"
                    style="width: 100%; display: flex; min-height: 50px;	min-width: 50px; max-width: 60px;	max-height: 60px;">
                     <img src="/file/static/icons/8.svg" class="img-fluid"
                          style="min-height: 25px;	min-width: 25px; max-width: 40px;	max-height: 40px;">
-                </a>
+                </button>
                 <button class="btn btn-secondary border mt-2" id="checkButton" data-toggle="tooltip"
                      title="Проверить корректность массивов" disabled="" role="button" style="max-width: 95px;display: inline-table; transform: scale(1.25);">
                     <span id="openDeviceLog" style="display: contents; font-size: calc(4px + 0.5vw);">Проверка</span>
@@ -103,12 +103,12 @@
         </div>
         <div class="row">
             <div class="col-md-12 mt-5">
-                <a class="btn btn-secondary mt-2 mx-auto border" id="markdown" data-toggle="tooltip"
+                <button class="btn btn-secondary mt-2 mx-auto border" id="markdown" data-toggle="tooltip"
                    title="Получить справку по странице" role="button"
                    style="width: 100%; display: flex; min-height: 50px;	min-width: 50px; max-width: 60px;	max-height: 60px;">
                     <img src="/file/static/icons/1337.svg" class="img-fluid"
                          style="min-height: 25px;	min-width: 25px; max-width: 40px;	max-height: 40px;">
-                </a>
+                </button>
             </div>
         </div>
     </div>
@@ -784,13 +784,13 @@
                 </div>
             </div>
             <div class="tab-pane fade" id="nav-vv" role="tabpanel" aria-labelledby="nav-vv-tab">
-                <div class="container col-sm-11 ml-0" style="min-height: 900px;">
+                <div class="cont ainer col-sm-11 ml-0" style="min-height: 900px;">
                     <div class="row mt-2">
                         <h5>Использование внешних входов</h5>
                     </div>
                     <div class="row" style="position: relative; height:575px; overflow: auto;">
                         <table class="table table-bordered" id="vvTable" data-toggle="table" data-toolbar="#toolbar"
-                               cellspacing="0" data-height="50vh">
+                               cellspacing="0" data-height="55vh">
                             <thead>
                             <tr>
                                 <th data-field="name">№\Назн.</th>

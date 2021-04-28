@@ -123,6 +123,7 @@ $(() => {
                 console.log('controlInfo');
                 validatePkArray(data);
                 loadData(data, firstLoad);
+                makeHistorySelect(data.history.sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime()));
                 document.title = 'АРМ ДК-' + data.state.area + '-' + data.state.id;
                 firstLoad = false;
                 editFlag = data.edit;
@@ -911,7 +912,7 @@ function loadData(newData, firstLoadFlag) {
     });
 
     unmodifiedData = JSON.parse(JSON.stringify(data));
-    checkNew();
+    checkNew(data.edit);
 
     $('input').not('table input').not('#tc').not('[type=checkbox]').each(({}, input) => {
         calcInputWidth(input);
@@ -1101,18 +1102,21 @@ function skTabFill(firstLoadFlag) {
         if (firstLoadFlag) $('#mapNum').append(new Option(daySet.num, daySet.num - 1));
     });
     newTableFill('skTable', skTableFlag);
+    $('#nav-sk .fixed-table-body').height('85vh');
 }
 
 // Заполнение вкладки "Нед. карты"
 function nkTabFill() {
     weekSets = data.state.arrays.WeekSets.wsets;
     tableFill(weekSets, 'nkTable', nkTableFlag);
+    $('#nav-nk .fixed-table-body').height('85vh');
 }
 
 // Заполнение вкладки "Карты года"
 function gkTabFill() {
     monthSets = data.state.arrays.MonthSets.monthset;
     tableFill(monthSets, 'gkTable', gkTableFlag);
+    $('#nav-gk .fixed-table-body').height('85vh');
 }
 
 // Заполнение вкладки "Внеш. входы"
@@ -1135,12 +1139,15 @@ function vvTabFill(firstLoadFlag) {
     }
 
     tableFill([0], 'vv2Table', vv2TableFlag);
+    $('#vvTable input').width('54px');
+    $('#nav-vv .fixed-table-body:first').height('55vh');
 }
 
 // Заполнение вкладки "Контроль входов"
 function kvTabFill() {
     stageSets = data.state.arrays.SetCtrl.Stage;
     newTableFill('kvTable', kvTableFlag);
+    $('#nav-kv .fixed-table-body').height('55vh');
 }
 
 
@@ -2169,6 +2176,7 @@ function checkNew(check) {
         if (buttonClass.indexOf('disabled') === -1) buttonClass = buttonClass.concat(' disabled');
     }
     $('#addButton')[0].className = buttonClass;
+    $('#addButton').prop('disabled', !check);
 }
 
 // Отображение кнопки для выбора координат и разблокирование кнопки создания нового перекрёстка
@@ -2180,6 +2188,7 @@ function disableControl(button, status) {
         if (buttonClass.indexOf('disabled') === -1) buttonClass = buttonClass.concat(' disabled');
     }
     $('#' + button)[0].className = buttonClass;
+    $('#' + button).prop('disabled', !status);
 }
 
 // Открытие карты с выбором координат
@@ -2204,22 +2213,22 @@ function controlSend(id) {
     ws.send(JSON.stringify({type: 'dispatch', id: id, cmd: 1, param: 0}));
 }
 
-function checkButton(buttonClass, rights) {
-    if (rights) {
-        if (buttonClass.indexOf('disabled') !== -1) return buttonClass.substring(0, buttonClass.length - 9);
-    } else {
-        if (buttonClass.indexOf('disabled') === -1) return buttonClass.concat(' disabled');
-    }
-    return buttonClass;
+function checkEdit() {
+    $('#reloadButton').prop('disabled', !editFlag);
+    $('#forceSendButton').prop('disabled', !editFlag);
+    $('#deleteButton').prop('disabled', !editFlag);
 }
 
-function checkEdit() {
-    let counter = 0;
-    $('a').each(function () {
-        if (counter++ < 7) this.className = checkButton($(this)[0].className.toString(), editFlag);
+function makeHistorySelect(history) {
+    $('#historySelect').remove();
+    $('body').append('<select id="historySelect"></select>');
+    history.forEach(rec => {
+        $('#historySelect').append(
+            new Option(new Date(rec.time).toLocaleString('ru-RU') + ' - ' + rec.login, rec.time)
+        );
     });
-    $('#reloadButton')[0].className = checkButton($('#reloadButton')[0].className.toString(), true);
-    $('#sendButton')[0].className = checkButton($('#sendButton')[0].className.toString(), false);
-    $('#forceSendButton')[0].className = checkButton($('#forceSendButton')[0].className.toString(), editFlag);
-    $('#addButton')[0].className = checkButton($('#addButton')[0].className.toString(), false);
+    $('#historySelect').on('change', (e) => {
+        const ts = e.target.value;
+        console.log(`ws.send(${JSON.stringify({type: 'getHistory', data: {time: ts}})});`)
+    })
 }

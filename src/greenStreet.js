@@ -916,11 +916,12 @@ ymaps.ready(function () {
         autoOpen: false,
         buttons: {
             'Ок': function () {
+                $('#updateRouteButton').trigger('click');
+                $(this).dialog('close');
+            },
+            'Отмена': function () {
                 $(this).dialog('close');
             }
-            // 'Отмена': function () {
-            //     $(this).dialog('close');
-            // }
         },
         minWidth: 1000,
         modal: true,
