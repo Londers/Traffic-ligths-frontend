@@ -10,7 +10,7 @@ let control;
 let idevice = undefined;
 let ws;
 
-$(function () { //                    192.168.115.120  /user/Admin/cross   W    ?Region=1&Area=1&ID=1
+$(function () {
     ws = new WebSocket('wss://' + location.host + location.pathname + 'W' + location.search);
     ws.onopen = function () {
         console.log('connected');
@@ -33,7 +33,7 @@ $(function () { //                    192.168.115.120  /user/Admin/cross   W    
         let data = allData.data;
         let counter = 0;
         switch (allData.type) {
-            case 'crossBuild':
+            case 'crossBuild': {
                 let state = data.state;
                 let cross = data.cross;
                 let controlCrossFlag = data.access[4];
@@ -159,6 +159,18 @@ $(function () { //                    192.168.115.120  /user/Admin/cross   W    
                             }
                         }
 
+                        if (typeof hasCam === 'function') {
+                            if (hasCam()) {
+                                $('#crossCameras').show().on('click', () => {
+                                    localStorage.setItem('ID', cross.ID);
+                                    localStorage.setItem('area', cross.area.num);
+                                    localStorage.setItem('region', cross.region.num);
+                                    window.open(window.location.origin + '/user/' +
+                                        localStorage.getItem('login') + '/cameras');
+                                });
+                            }
+                        }
+
                         $('a').each(function () {
                             let id = $(this).attr('id');
                             this.className = checkButton(this.className.toString(), controlCrossFlag);
@@ -212,7 +224,7 @@ $(function () { //                    192.168.115.120  /user/Admin/cross   W    
                     localStorage.setItem('area', cross.area.num);
                     localStorage.setItem('region', cross.region.num);
                     localStorage.setItem('description', cross.description);
-                    window.open(window.location.origin + '/user/' + localStorage.getItem('login') + '/deviceLog', idevice);
+                    window.open(window.location.origin + '/user/' + localStorage.getItem('login') + '/deviceLog');
                 });
 
                 $('#controlButton').on('click', function () {
@@ -222,10 +234,7 @@ $(function () { //                    192.168.115.120  /user/Admin/cross   W    
                 //Проверка существования карт и добавление их выбора
                 counter = 0;
                 data.state.arrays.SetDK.dk.forEach(tab => {
-                    // if (tab.sts[0].stop !== 0) {
-                    $('#pk').append(new Option('ПК ' + (counter + 1), counter + 1));
-                    // }
-                    counter++;
+                    $('#pk').append(new Option('ПК ' + (++counter), counter));
                 });
                 $('#pk option[value=' + data.state.pk + ']').attr('selected', 'selected');
 
@@ -258,6 +267,7 @@ $(function () { //                    192.168.115.120  /user/Admin/cross   W    
                     selectChange('#nk', data.state.idevice);
                 });
                 break;
+            }
             case 'changeEdit':
                 // console.log('edit:' + data.edit);
                 editFlag = data.edit;
@@ -318,10 +328,9 @@ $(function () { //                    192.168.115.120  /user/Admin/cross   W    
                 $('#sk option[value=' + data.state.ck + ']').attr('selected', 'selected');
                 $('#nk option[value=' + data.state.nk + ']').attr('selected', 'selected');
 
-                if (!data.sfdk) {
-                    $('#sfdk').remove();
-                    $('#connection').parent().append('<div id="sfdk">Отключена передача фаз</div>');
-                }
+                $('#sfdk').remove();
+                if (!data.sfdk) $('#connection').parent().append('<div id="sfdk">Отключена передача фаз</div>');
+
                 checkConnection(data.status.control);
                 break;
             case 'stateChange':
@@ -544,6 +553,7 @@ function checkConnection(connectionFlag) {
 
 
         if (typeof setPhase !== "undefined") {
+            if (typeof setVisualMode !== "undefined") setVisualMode(0);
             setPhase(0);
         }
     } else {

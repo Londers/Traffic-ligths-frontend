@@ -77,147 +77,180 @@ function colorizeSelectedRow(table) {
 }
 
 $(() => {
+    $('#main').parent().on('mousewheel', (e) => {
+        if (e.target === document.activeElement) e.preventDefault();
+    })
 
-    if (localStorage.getItem('copyArr') == null) {
+    if (localStorage.getItem('copyArr') === null) {
         localStorage.setItem('copyArr', JSON.stringify({'pk': [], 'sk': [], 'nk': [], 'gk': [], 'kv': []}));
     }
 
-    ws = new WebSocket('wss://' + location.host + location.pathname + 'W' + location.search);
+    if (localStorage.getItem('history') === null) {
 
-    ws.onopen = () => {
-        console.log('connected');
-    };
+        ws = new WebSocket('wss://' + location.host + location.pathname + 'W' + location.search);
 
-    ws.onclose = function (evt) {
-        console.log('disconnected', evt);
-    };
+        ws.onopen = () => {
+            console.log('connected');
+        };
 
-    ws.onmessage = function (evt) {
-        let allData = JSON.parse(evt.data);
-        let data = allData.data;
-        let counter = 0;
-        console.log(data);
-        switch (allData.type) {
-            case 'sendB':
-                console.log('sendB');
-                if (!data.status) {
-                    alert(data.message);
-                    return;
-                }
-                if (localStorage.getItem('login') !== data.user) {
-                    loadData(data, false);
-                } else {
-                    unmodifiedData = JSON.parse(JSON.stringify(data));
-                    disableControl('sendButton', false);
-                }
-                break;
-            case 'createB':
-                console.log('createB');
-                if (!data.status) {
-                    alert(data.result.join('\n'))
-                } else {
-                    location.href = location.pathname + location.search.replace('ID=' + unmodifiedData.state.id, 'ID=' + $('#id').val());
-                }
-                break;
-            case 'controlInfo':
-                console.log('controlInfo');
-                validatePkArray(data);
-                loadData(data, firstLoad);
-                makeHistorySelect(data.history.sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime()));
-                document.title = 'АРМ ДК-' + data.state.area + '-' + data.state.id;
-                firstLoad = false;
-                editFlag = data.edit;
-                checkEdit();
-                break;
-            case 'deleteB':
-                // if (Number(data.pos.area) !== unmodifiedData.state.area) {
-                //     let search = location.search
-                //         .replace('Area=' + unmodifiedData.state.area, 'Area=' + data.pos.area)
-                //         .replace('ID=' + unmodifiedData.state.id, 'ID=' + data.pos.id);
-                //     location.href = location.pathname + search;
-                // } else {
-                (data.status) ? window.close() : alert('Не удалось удалить перекрёсток');
-                // }
-                break;
-            case 'checkB': {
-                console.log('checkB');
-                counter = 0;
-                let flag = false;
-                if (editFlag) disableControl('sendButton', data.status);
-                checkNew(data.status);
-                $('#verification').bootstrapTable('removeAll');
-                data.result.forEach(function () {
-                    if (data.result[counter].includes('Проверка')) {
-                        $('#verification').bootstrapTable('append', {
-                            left: data.result[counter],
-                            right: data.result[counter + 1]
-                        });
-                        flag = true;
-                    } else {
-                        (!flag) ? $('#verification').bootstrapTable('append', {
-                            left: '',
-                            right: data.result[counter]
-                        }) : flag = false;
+        ws.onclose = function (evt) {
+            console.log('disconnected', evt);
+            alert(evt.reason);
+            window.close();
+        };
+
+        ws.onmessage = function (evt) {
+            let allData = JSON.parse(evt.data);
+            let data = allData.data;
+            let counter = 0;
+            console.log(data);
+            switch (allData.type) {
+                case 'sendB':
+                    console.log('sendB');
+                    if (!data.status) {
+                        alert(data.message);
+                        return;
                     }
-                    counter++;
-                });
-                $('#trigger')[0].innerHTML = 'Результат<br>Проверки';
-                $('#trigger').show();
-                if ($('#panel').attr('style') !== 'display: block;') $('#trigger').trigger('click');
-                $('th[data-field="left"]').attr('style', 'min-width: 346px;');
-                $('th[data-field="right"]').attr('style', 'min-width: 276px;');
-                break;
-            }
-            case 'changeEdit':
-                console.log('changeEdit');
-                editFlag = data.edit;
-                checkEdit();
-                break;
-            case 'editInfoB':
-                console.log('editInfoB');
-
-                disableControl('sendButton', data.status);
-                checkNew(data.status);
-                $('#work').bootstrapTable('removeAll');
-                data.users.forEach(user => {
-                    $('#work').bootstrapTable('append', {
-                        wleft: user.user,
-                        wright: user.edit ? 'Редактирует' : 'Просматривает'
+                    if (localStorage.getItem('login') !== data.user) {
+                        loadData(data, false);
+                    } else {
+                        unmodifiedData = JSON.parse(JSON.stringify(data));
+                        disableControl('sendButton', false);
+                    }
+                    break;
+                case 'createB':
+                    console.log('createB');
+                    if (!data.status) {
+                        alert(data.result.join('\n'))
+                    } else {
+                        location.href = location.pathname + location.search.replace('ID=' + unmodifiedData.state.id, 'ID=' + $('#id').val());
+                    }
+                    break;
+                case 'controlInfo':
+                    console.log('controlInfo');
+                    validatePkArray(data);
+                    loadData(data, firstLoad);
+                    makeHistorySelect(data.history.sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime()));
+                    document.title = 'АРМ ДК-' + data.state.area + '-' + data.state.id;
+                    firstLoad = false;
+                    editFlag = data.edit;
+                    checkEdit();
+                    break;
+                case 'deleteB':
+                    // if (Number(data.pos.area) !== unmodifiedData.state.area) {
+                    //     let search = location.search
+                    //         .replace('Area=' + unmodifiedData.state.area, 'Area=' + data.pos.area)
+                    //         .replace('ID=' + unmodifiedData.state.id, 'ID=' + data.pos.id);
+                    //     location.href = location.pathname + search;
+                    // } else {
+                    (data.status) ? window.close() : alert('Не удалось удалить перекрёсток');
+                    // }
+                    break;
+                case 'checkB': {
+                    console.log('checkB');
+                    counter = 0;
+                    let flag = false;
+                    if (editFlag) disableControl('sendButton', data.status);
+                    checkNew(data.status);
+                    $('#verification').bootstrapTable('removeAll');
+                    data.result.forEach(function () {
+                        if (data.result[counter].includes('Проверка')) {
+                            $('#verification').bootstrapTable('append', {
+                                left: data.result[counter],
+                                right: data.result[counter + 1]
+                            });
+                            flag = true;
+                        } else {
+                            (!flag) ? $('#verification').bootstrapTable('append', {
+                                left: '',
+                                right: data.result[counter]
+                            }) : flag = false;
+                        }
+                        counter++;
                     });
-                });
-                // $('#workTrigger')[0].innerHTML = 'Результат<br>Проверки';
-                $('#workTrigger').show();
-                if ($('#workPanel').attr('style') !== 'display: block;') $('#workTrigger').trigger('click');
-                $('th[data-field="wleft"]').attr('style', 'min-width: 346px;');
-                $('th[data-field="wright"]').attr('style', 'min-width: 276px;');
-
-                // $('#trigger')[0].innerHTML = 'Список<br>Пользователей';
-                // $('#trigger').show();
-                break;
-            case 'repaintCheck':
-                if (!data.status) {
-                    alert(data.message);
-                } else {
-                    console.log(data.message);
+                    $('#trigger')[0].innerHTML = 'Результат<br>Проверки';
+                    $('#trigger').show();
+                    if ($('#panel').attr('style') !== 'display: block;') $('#trigger').trigger('click');
+                    $('th[data-field="left"]').attr('style', 'min-width: 346px;');
+                    $('th[data-field="right"]').attr('style', 'min-width: 276px;');
+                    break;
                 }
-                break;
-            case 'close':
-                ws.close();
-                // if (data.message !== '') {
-                //     if (!document.hidden) alert(data.message);
-                // } else {
-                //     if (!document.hidden) alert('Потеряна связь с сервером');
-                // }
-                window.close();
-                break;
-            case 'error':
-                console.log('error', evt);
-                break;
-            default:
-                console.log('unknown command', allData.type);
-                break;
-        }
-    };
+                case 'changeEdit':
+                    console.log('changeEdit');
+                    editFlag = data.edit;
+                    checkEdit();
+                    break;
+                case 'editInfoB':
+                    console.log('editInfoB');
+
+                    disableControl('sendButton', data.status);
+                    checkNew(data.status);
+                    $('#work').bootstrapTable('removeAll');
+                    data.users.forEach(user => {
+                        $('#work').bootstrapTable('append', {
+                            wleft: user.user,
+                            wright: user.edit ? 'Редактирует' : 'Просматривает'
+                        });
+                    });
+                    // $('#workTrigger')[0].innerHTML = 'Результат<br>Проверки';
+                    $('#workTrigger').show();
+                    if ($('#workPanel').attr('style') !== 'display: block;') $('#workTrigger').trigger('click');
+                    $('th[data-field="wleft"]').attr('style', 'min-width: 346px;');
+                    $('th[data-field="wright"]').attr('style', 'min-width: 276px;');
+
+                    // $('#trigger')[0].innerHTML = 'Список<br>Пользователей';
+                    // $('#trigger').show();
+                    break;
+                case 'repaintCheck':
+                    (data.status) ? console.log(data.message) : alert(data.message);
+                    break;
+                case 'sendHistory': {
+                    const tempData = JSON.parse(JSON.stringify(unmodifiedData));
+                    tempData.state = data.sendHistory;
+                    localStorage.setItem('history', JSON.stringify(tempData));
+                    localStorage.setItem('historydiff', JSON.stringify(data.diff));
+                    localStorage.setItem('historyts', $('#historySelect').val());
+                    window.open(location.href);
+                    $('#historySelect').val('-1');
+                    break;
+                }
+                case 'close':
+                    ws.close();
+                    // if (data.message !== '') {
+                    //     if (!document.hidden) alert(data.message);
+                    // } else {
+                    //     if (!document.hidden) alert('Потеряна связь с сервером');
+                    // }
+                    window.close();
+                    break;
+                case 'error':
+                    console.log('error', evt);
+                    break;
+                default:
+                    console.log('unknown command', allData.type);
+                    break;
+            }
+        };
+    } else {
+        $('#armToolbar').hide();
+        const diffs = JSON.parse(localStorage.getItem('historydiff'));
+        $('#trigger').html('Посмотреть<br>изменения').show();
+        $('#panel').html('');
+        diffs.forEach(diff => {
+            $('#panel').append(diff + '<br>')
+        })
+
+        data = JSON.parse(localStorage.getItem('history'));
+        validatePkArray(data);
+        loadData(data, firstLoad);
+        document.title = `АРМ ДК-${data.state.area}-${data.state.id} от 
+                            ${new Date(localStorage.getItem('historyts')).toLocaleString('ru-RU')}`;
+        firstLoad = false;
+        editFlag = false;
+        localStorage.removeItem('history');
+        localStorage.removeItem('historydiff');
+        localStorage.removeItem('historyts');
+    }
 
 // Функционал кнопок управления
     // Кнопка для отпрвления данных на сервер
@@ -722,6 +755,8 @@ $(() => {
         pkTabFill('pkTable');
     });
 
+    $('*[id$="NewButton"]')
+
     function handleCopy(id) {
         const copyArr = JSON.parse(localStorage.getItem('copyArr'));
         switch (id) {
@@ -918,6 +953,7 @@ function loadData(newData, firstLoadFlag) {
         calcInputWidth(input);
         $(input).on('keyup', () => calcInputWidth(input));
     })
+
 }
 
 // Отключает функционал некоторых кнопок, если данные не проверены
@@ -994,8 +1030,6 @@ function mainTabFill(data, firstLoadFlag) {
     $('#phone').val(data.state.phone);
     setChange('phone', 'input');
     $('#ip')[0].innerText = 'IP: ' + data.deviceIP;
-    $('#wifi').val(data.state.wifi).width(calcInputWidth($('#wifi')[0]));
-    setChange('wifi', 'input');
     $('#tz').val(data.state.arrays.timedev.tz);
     setChange('tz', 'input', 'arrays.timedev');
     $('#summer').prop('checked', data.state.arrays.timedev.summer);
@@ -1009,6 +1043,10 @@ function mainTabFill(data, firstLoadFlag) {
         let ver = $('#vpcpd option:selected').val().split('.');
         data.state.Model.vpcpdl = Number(ver[0]);
         data.state.Model.vpcpdr = Number(ver[1]);
+        Number($('#vpcpd').val()) <= 12.3 ?
+            sizeVerification(8, true) :
+            sizeVerification(18, false);
+        anotherTableFill('vvTable', vvTableFlag);
     });
 
     $('#vpbsl').val(data.state.Model.vpbsl);
@@ -1045,8 +1083,7 @@ function sizeVerification(length, oldVersion) {
             while (vvTable.length !== length) {
                 vvTable.push(Object.assign({}, emptyRecord));
             }
-        }
-        if (vvTable.length > length) {
+        } else if (vvTable.length > length) {
             while (vvTable.length !== length) {
                 vvTable.pop();
             }
@@ -1116,7 +1153,7 @@ function nkTabFill() {
 function gkTabFill() {
     monthSets = data.state.arrays.MonthSets.monthset;
     tableFill(monthSets, 'gkTable', gkTableFlag);
-    $('#nav-gk .fixed-table-body').height('85vh');
+    $('#nav-gk .fixed-table-body').height('60vh');
 }
 
 // Заполнение вкладки "Внеш. входы"
@@ -2220,8 +2257,13 @@ function checkEdit() {
 }
 
 function makeHistorySelect(history) {
+    if (history.length === 0) return;
     $('#historySelect').remove();
-    $('body').append('<select id="historySelect"></select>');
+    $('#nav-tab').append(
+        '<select id="historySelect" class="form-control ml-auto" style="width: auto">' +
+        '<option value="-1">Выберите правку</option>' +
+        '</select>'
+    );
     history.forEach(rec => {
         $('#historySelect').append(
             new Option(new Date(rec.time).toLocaleString('ru-RU') + ' - ' + rec.login, rec.time)
@@ -2229,6 +2271,7 @@ function makeHistorySelect(history) {
     });
     $('#historySelect').on('change', (e) => {
         const ts = e.target.value;
-        console.log(`ws.send(${JSON.stringify({type: 'getHistory', data: {time: ts}})});`)
+        if (ts === '-1') return;
+        ws.send(JSON.stringify({type: 'getHistory', data: {time: ts}}));
     })
 }

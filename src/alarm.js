@@ -89,6 +89,13 @@ $(function () {
     };
 
     function playSound() {
-        soundMap[$('#alarmSound').val()].play();
+        let promise = soundMap[$('#alarmSound').val()].play();
+        if (promise !== undefined) {
+            promise.then(_ => {
+                // Autoplay started
+            }).catch(error => {
+                console.log('Play sound error', error.message)
+            })
+        }
     }
 });

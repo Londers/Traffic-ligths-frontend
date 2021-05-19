@@ -7,6 +7,7 @@ let areaInfo;
 let type = 0;
 
 let dateSave;
+const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms))
 
 $(function () {
     $('#table').bootstrapTable('showLoading');
@@ -25,18 +26,15 @@ $(function () {
                 regionInfo = Object.assign({}, data.regionInfo);
                 areaInfo = Object.assign({}, data.areaInfo);
                 devices = data.devices.slice();
-                let counter = 0;
-                data.devices.forEach(device => {
-                    let region, area;
+                data.devices.forEach((device, counter) => {
                     if (device.idevice !== -1) {
-                        region = regionInfo[devices[counter].region];
-                        area = areaInfo[region][devices[counter].area];
+                        let region = regionInfo[devices[counter].region];
+                        let area = areaInfo[region][devices[counter].area];
                         device.region = region;
                         device.area = area;
                         IDs.push({ID: device.ID, description: device.description});
                         devices[counter].ID = '';
                     }
-                    counter++;
                 });
                 console.log(data);
 
@@ -79,6 +77,12 @@ $(function () {
                     type = Number($('#type').val());
                     buildLogTable(undefined, true);
                 });
+
+                if (localStorage.getItem('jump') !== 'undefined') {
+                    $('input[class$="search-input"]:first').val(localStorage.getItem('jump')).trigger('blur');
+                    // sleep(500).then(() => $('#table').bootstrapTable('check', 0));
+                    localStorage.setItem('jump', undefined);
+                }
 
                 if (localStorage.getItem('region') !== 'undefined') {
                     let now = new Date();
@@ -125,7 +129,6 @@ $(function () {
                 localStorage.setItem('ID', undefined);
                 localStorage.setItem('area', undefined);
                 localStorage.setItem('region', undefined);
-                localStorage.setItem('description', undefined);
             } else {
                 $('#toolbar0').append('<div style="color: red;" id="toolbar0Msg"><h5>Выберите устройства</h5></div>');
                 return;
@@ -143,6 +146,11 @@ $(function () {
                 dateSave = new Date();
                 buildLogTable(data, crutchFlag);
                 $('#logsTable').bootstrapTable('hideLoading');
+                if (remoteOpenFlag) {
+                    $('input[class$="search-input"]:first').val(localStorage.getItem('description')).trigger('blur');
+                    sleep(500).then(() => $('#table').bootstrapTable('check', 0));
+                    localStorage.setItem('description', undefined);
+                }
             },
             error: function (request) {
                 console.log(request.status + ' ' + request.responseText);
@@ -203,10 +211,15 @@ $(function () {
                     }
                     let prevDate = (index === 0) ? dateSave : new Date(filteredData[dev][index - 1].time);
                     localPrevDate = prevDate.toLocaleString('ru-RU');
-                    duration = Math.floor(prevDate.getTime() - date.getTime()) + date.getTimezoneOffset() * 60 * 1000;// 1000);
-                    let hours = new Date(duration).getHours();
-                    let minutes = new Date(duration).getMinutes();
-                    let seconds = new Date(duration).getSeconds();
+                    // duration = Math.floor(prevDate.getTime() - date.getTime()) + date.getTimezoneOffset() * 60 * 1000;// 1000);
+                    // let hours = new Date(duration).getHours();
+                    // let minutes = new Date(duration).getMinutes();
+                    // let seconds = new Date(duration).getSeconds();
+                    duration = (prevDate.getTime() - date.getTime());
+                    let hours = Math.floor((duration / (1000 * 60 * 60)));
+                    let minutes = Math.floor((duration / (1000 * 60)) % 60);
+                    let seconds = prevDate.getSeconds() - date.getSeconds();//Math.ceil((duration / 1000) % 60);
+                    if (seconds < 0) seconds += 60
                     duration = hours + 'ч ' + minutes + 'м ' + seconds + 'с';
                 }
 

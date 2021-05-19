@@ -23,6 +23,7 @@ let ws;
 let circlesMap = new Map();
 let zoom = 19;
 
+let jumpWasUsed = false;
 //Функция для открытия вкладки
 function openPage(url) {
     window.open(location.origin + '/user/' + localStorage.getItem('login') + url);
@@ -161,6 +162,7 @@ ymaps.ready(function () {
 
     //Открытие вкладки с логами устройств
     $('#deviceLogButton').on('click', function () {
+        if (jumpWasUsed) localStorage.setItem('jump', $('#region option:selected').text());
         openPage('/deviceLog');
     });
 
@@ -669,6 +671,7 @@ ymaps.ready(function () {
                 //Отправка данных на сервер
                 ws.send(JSON.stringify(toSend));
 
+                jumpWasUsed = true;
                 $(this).dialog('close');
             },
             'Отмена': function () {
