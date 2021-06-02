@@ -39,7 +39,6 @@ function sendGPRS() {
 
 function checkDifference() {
     let devNumInTable = 4;
-    errorRows = [];
     devicesSave.forEach(device => {
         let cross = checkCross(device.idevice);
         if (switchArrayType(cross.arrayType) !== switchArrayTypeFromDevice(device.device.Model)) {
@@ -50,7 +49,6 @@ function checkDifference() {
                     index = i;
                 }
             });
-            if (!errorRows.includes(device.idevice)) errorRows.push(device.idevice);
             $('#table tbody tr').each((i, tr) => {
                 if (i === index) {
                     $(tr).find('td').each((j, td) => {
@@ -167,7 +165,7 @@ function buildTable(firstLoadFlag) {
     let selected = $table.bootstrapTable('getSelections');
     scrollSave = $table.bootstrapTable('getScrollPosition');
 
-    $('#deviceCount').text(devicesSave.length);
+    $('#deviceCount').text(devicesSave.filter(dev => dev.device.scon).length);
     $('#crossCount').text(crossesSave.length);
 
     crossesSave.forEach(cross => {
@@ -206,10 +204,6 @@ function buildTable(firstLoadFlag) {
 
     $table.unbind().on('click', function () {
         buildBottom();
-    });
-
-    $('#top').unbind().on('click', () => {
-        checkDifference();
     });
 
     checkDifference();

@@ -446,7 +446,7 @@ ymaps.ready(function () {
                     IDs.push(trafficLight.region.num + '-' + trafficLight.area.num + '-' + trafficLight.ID);
                     //Создание меток контроллеров на карте
                     let placemark = new ymaps.Placemark([trafficLight.points.Y, trafficLight.points.X], {
-                        hintContent: `${trafficLight.description}<br>` +
+                        hintContent: `${trafficLight.description}<br>` + `${trafficLight.tlsost.description}<br>` +
                             `[${trafficLight.area.num}, ${trafficLight.subarea}, ${trafficLight.ID}, ${trafficLight.idevice}]`
                     }, {
                         iconLayout: createChipsLayout(function (zoom) {
@@ -487,7 +487,7 @@ ymaps.ready(function () {
                         let id = trafficLight.ID;
                         let index = IDs.indexOf(trafficLight.region.num + '-' + trafficLight.area.num + '-' + id);
                         let placemark = new ymaps.Placemark([trafficLight.points.Y, trafficLight.points.X], {
-                            hintContent: `${trafficLight.description}<br>` +
+                            hintContent: `${trafficLight.description}<br>` + `${trafficLight.tlsost.description}<br>` +
                                 `[${trafficLight.area.num}, ${trafficLight.subarea}, ${trafficLight.ID}, ${trafficLight.idevice}]`
                         }, {
                             iconLayout: createChipsLayout(function (zoom) {
@@ -511,7 +511,7 @@ ymaps.ready(function () {
                     IDs.push(trafficLight.region.num + '-' + trafficLight.area.num + '-' + trafficLight.ID);
                     //Создание меток контроллеров на карте
                     let placemark = new ymaps.Placemark([trafficLight.points.Y, trafficLight.points.X], {
-                        hintContent: `${trafficLight.description}<br>` +
+                        hintContent: `${trafficLight.description}<br>` + `${trafficLight.tlsost.description}<br>` +
                             `[${trafficLight.area.num}, ${trafficLight.subarea}, ${trafficLight.ID}, ${trafficLight.idevice}]`
                     }, {
                         iconLayout: createChipsLayout(function (zoom) {

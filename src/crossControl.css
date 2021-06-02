@@ -386,3 +386,7 @@ line-height: 22px;
 .popup .show {
   visibility: visible;
 }
+
+.transfer {
+  border: solid;
+}

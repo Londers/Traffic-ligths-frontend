@@ -13,6 +13,8 @@ let skFlag = true;
 let kvFlag = true;
 let firstLoad = true;
 
+let transferRow = -1;
+
 let map;
 
 let coordinatesChangeFlag = false;
@@ -725,6 +727,20 @@ $(() => {
         $(element).addClass('success');
         colorizeSelectedRow('pkTable');
     });
+    $('#pkTable').on('dblclick', function (e) {
+        if ($('#transfer').prop('checked')) {
+            $('.transfer').removeClass('transfer');
+            if ($(e.target).closest('tr').find('select option:selected').text().includes('Зам') && !($('#razlen').prop('checked'))) {
+                transferRow = -1;
+                return;
+            }
+            $(e.target).closest('tr').addClass('transfer')
+            transferRow = $(e.target).closest('tr')[0].rowIndex - 1;
+        }
+    });
+    $('#transfer').on('change', function () {
+        $('.transfer').removeClass('transfer');
+    })
     $('#skTable').on('click-row.bs.table', function (e, row, element) {
         $('.success').removeClass('success');
         $(element).addClass('success');
@@ -949,7 +965,7 @@ function loadData(newData, firstLoadFlag) {
     unmodifiedData = JSON.parse(JSON.stringify(data));
     checkNew(data.edit);
 
-    $('input').not('table input').not('#tc').not('[type=checkbox]').each(({}, input) => {
+    $('input').not('table input').not('#tc').not('#shift').not('[type=checkbox]').each(({}, input) => {
         calcInputWidth(input);
         $(input).on('keyup', () => calcInputWidth(input));
     })
@@ -1002,7 +1018,7 @@ function handleKeyboard($this, event) {
 }
 
 function calcInputWidth(input) {
-    $(input).width(((($(input).val().length + 1) * 8)) + 'px');
+    $(input).width(((($(input).val().length + 1) * 8.5)) + 'px');
 }
 
 // Заполнение вкладки "Основные"
@@ -1563,13 +1579,6 @@ function pkTabFill(table) {
                 })
             });
 
-            $('#tc').on('click', () => {
-                if ($('#tc').val() !== '') {
-                    $('#tc').val('');
-                    $('#tc').trigger('click');
-                }
-            })
-
             $('#shift').on('change keyup', (event) => {
                 if ((event.type === 'keyup') && (event.originalEvent.code !== 'Enter')) return;
 
@@ -1747,6 +1756,7 @@ function pkTabFill(table) {
                     $(this).find('input').on('keyup change', (event) => {
                         if ((event.type === 'keyup') && (!event.originalEvent.code.includes('Enter'))) return;
 
+
                         const controlType = $('#tpu').val();
                         const cycleTime = Number($('#tc').val());
                         const shift = Number($('#shift').val());
@@ -1758,6 +1768,7 @@ function pkTabFill(table) {
                         let inputDiff = cycleTime;
                         const difLen = $('#razlen').prop('checked');
                         const currTf = Number($(`[class~=tf${swId}]`).val());
+                        const transfer = $('#transfer').prop('checked');
 
                         if (cycleTime === 0) return;
 
@@ -1800,9 +1811,10 @@ function pkTabFill(table) {
                                         // Зам.
                                         index = (((swId + 2) === currSts.length - 1) || (checkLastLine(currSts[swId + 2]))) ? 0 : swId + 2;
                                     } else {
-                                        index = swId + 1;
+                                        index = transfer ? transferRow : swId + 1;
+                                        if (index === -1) index = swId + 1;
                                     }
-                                }
+                                } else if (transfer && (transferRow !== -1)) index = transferRow
                                 let newValue = Number($('[class~=duration' + index + ']').val()) + inputDiff;
                                 $('[class~=duration' + index + ']').val(newValue).change();
                             } else if (controlType === '1') {
@@ -1990,7 +2002,6 @@ function deleteSwitch(index) {
     let emptyRow = {line: 0, start: 0, num: 0, tf: 0, stop: 0, plus: false};
     let currentRow = setDK[selected].sts[index];
     const controlType = $('#tpu').val();
-
     if ((currentRow === undefined) || (currentRow.line === 1)) return;
 
     $('#pkTable tbody tr').each(function (counter) {
@@ -2045,6 +2056,7 @@ function deleteSwitch(index) {
             }
             i = (checkLastLine(setDK[selected].sts[index])) ? 0 : index;
         }
+        if (currentRow.trs || setDK[selected].sts[i].trs) currentRow.stop += Number($('#shift').val())
         setDK[selected].sts[i].stop += (currentRow.stop - currentRow.start);
         $(`[class~=duration${i - replCount}]`)
             .val(Number($(`[class~=duration${i - replCount}]`).val()) + (currentRow.stop - currentRow.start)).change();
