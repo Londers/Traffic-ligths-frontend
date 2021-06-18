@@ -343,12 +343,36 @@ $(function () {
                 $('#connection')[0].innerText = data.scon ? data.eth ? 'LAN' : 'GPRS' : '';
                 break;
             case 'phase':
-                // console.log('phase ', data);
+                console.log('phase ', data);
                 //Обработка таблицы
                 if ($('#expandedTable')[0].style.display === 'none') $('#expandedTable').show();
                 if ($('#phase')[0].style.display === 'none') $('#phase').show();
 
                 buildExpandedTable(data.dk);
+
+                if ($('#ddk').length === 0) $('#phase').append('<br> <label class="mt-3" id="ddk"></label>');
+                if (data.dk.ddk <= 5) {
+                    let ddk = '';
+                    switch (data.dk.ddk) {
+                        case 1:
+                            ddk = 'ДК';
+                            break
+                        case 2:
+                            ddk = 'ВПУ';
+                            break
+                        case 3:
+                            ddk = 'ИП УСДК';
+                            break
+                        case 4:
+                            ddk = 'УСДК/ДКА';
+                            break
+                        case 5:
+                            ddk = 'ИП ДКА';
+                            break
+                    }
+                    $('#ddk').text(ddk);
+                }
+
                 if (data.dk.edk === 1) {
                     $('#transition').show();
                     // $('#status').hide();
@@ -395,11 +419,14 @@ function buildExpandedTable(data) {
     let dataArr = $expandedTable.bootstrapTable('getData').slice();
 
     let toWrite = {
-        column1: ((data.fdk === 9) || (dataArr.length === 0)) ? data.ftudk : dataArr[currentIndex].column1,
-        column2: ((data.fdk === 9) || (dataArr.length === 0)) ? data.tdk : dataArr[currentIndex].column2,
+        column1: ((data.fdk === 9) || (dataArr.length === 0) || (dataArr[currentIndex] === undefined)) ?
+            data.ftudk : dataArr[currentIndex].column1,
+        column2: ((data.fdk === 9) || (dataArr.length === 0) || (dataArr[currentIndex] === undefined)) ?
+            data.tdk : dataArr[currentIndex].column2,
         column3: 0,
         column4: data.fdk,
-        column5: ((data.fdk === 9) || (dataArr.length === 0)) ? 0 : (dataArr[currentIndex].column2 - dataArr[prevIndex].column2),
+        column5: ((data.fdk === 9) || (dataArr.length === 0) || (dataArr[currentIndex] === undefined)) ?
+            0 : (dataArr[currentIndex].column2 - dataArr[prevIndex].column2),
         column6: 0,
         column7: 0
     };
@@ -410,9 +437,27 @@ function buildExpandedTable(data) {
     prevPhase = toWrite.column4;
 
     // if ($expandedTable.bootstrapTable('getData').length !== 0) toWrite.column2 = dataArr[prevIndex].column2;
-    switch (toWrite.column4) {
+    switch (toWrite.column1) {
         case 0:
             toWrite.column1 = 'ЛР';
+            break;
+        case 10:
+        case 14:
+            toWrite.column1 = 'ЖМ';
+            break;
+        case 11:
+        case 15:
+            toWrite.column1 = 'ОС';
+            break;
+        case 12:
+            toWrite.column1 = 'КК';
+            break;
+        default:
+            break;
+    }
+
+    switch (toWrite.column4) {
+        case 0:
             toWrite.column4 = 'ЛР';
             break;
         case 9:
@@ -421,16 +466,13 @@ function buildExpandedTable(data) {
             break;
         case 10:
         case 14:
-            toWrite.column1 = 'ЖМ';
             toWrite.column4 = 'ЖМ';
             break;
         case 11:
         case 15:
-            toWrite.column1 = 'ОС';
             toWrite.column4 = 'ОС';
             break;
         case 12:
-            toWrite.column1 = 'КК';
             toWrite.column4 = 'КК';
             break;
         default:
@@ -490,21 +532,29 @@ function buildExpandedTable(data) {
                 $expandedTable.bootstrapTable('updateRow', {index: currentIndex, row: Object.assign({}, toWrite)});
             }
         } else {
-            if (dataArr[currentIndex].column4 === 'Пром. такт') {
+            if ((dataArr[currentIndex] !== undefined) && (dataArr[currentIndex].column4 === 'Пром. такт')) {
                 $expandedTable.bootstrapTable('updateRow', {index: currentIndex, row: Object.assign({}, toWrite)});
             } else {
                 if ($expandedTable.bootstrapTable('getData').length < maxTableSize) {
                     $expandedTable.bootstrapTable('append', toWrite);
                 } else {
+                    if (data.fdk === data.ftudk) toWrite.column1 = data.ftudk
                     $expandedTable.bootstrapTable('updateRow', {index: currentIndex, row: Object.assign({}, toWrite)});
                 }
+                $expandedTable.bootstrapTable('updateCell', {
+                    index: prevIndex,
+                    field: 'column7',
+                    value: (dataArr[prevIndex].column6 + dataArr[prevIndex].column2) - toWrite.column2
+                });
             }
         }
 
         colorizeRow(currentIndex);
-        toWrite.column5++;
+        // toWrite.column5++;
         toWrite.column6 = toWrite.column3 + toWrite.column5;
         toWrite.column7 = toWrite.column2 + toWrite.column3 + toWrite.column5;
+        $expandedTable.bootstrapTable('updateRow', {index: currentIndex, row: Object.assign({}, toWrite)});
+        colorizeRow(currentIndex);
         fakeTimer = setInterval(() => {
             toWrite.column5++;
             toWrite.column6++;

@@ -282,7 +282,7 @@ function buildBottom() {
         $('#addData').text(((mErrorText[device.Status.elc] === undefined))
             ? ('Неизвестный код неисправности ' + device.Status.elc) : mErrorText[device.Status.elc]);
 
-        $('#technology').innerText = device.techMode;
+        $('#technology').text(deviceInfo.techMode);
 
         $('#pk').text(device.pk);
         $('#sk').text(device.ck);

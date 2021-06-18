@@ -28,10 +28,7 @@ const vv2TableFlag = true;
 const kvTableFlag = false;
 
 // let tempIndex;
-// let copyPk = [];
-// let copySk = [];
-// let copyNk = [];
-// let copyGk = [];
+
 let points = {
     Y: 0,
     X: 0
@@ -1560,7 +1557,7 @@ function pkTableDurationFunctional(table, tableType, currPK) {
             let shiftDiff = shift - prevShift;
 
             currSts.forEach((sw, index) => {
-                if ((!checkLastLine(sw)) || (sw.line === 12)) {
+                if (!checkLastLine(sw)) {
                     sw.start += shiftDiff;
 
                     if (sw.start === cycleTime) sw.start = 0;
@@ -1598,7 +1595,8 @@ function pkTableDurationFunctional(table, tableType, currPK) {
             setDK[$('#pkSelect').val()].sts.forEach(function (row, index) {
                 if (row.plus === '') row.plus = false;
                 if ((row.tf > 4) && (row.tf < 8)) {
-                    $('[class~=duration' + index + ']')[0].disabled = !$('#razlen').prop('checked');
+                    $('[class~=duration' + index + ']')[0].disabled = !(($('#pkTableType').val() === '0') && $('#razlen').prop('checked'));
+                    $('[class~=start' + index + ']')[0].disabled = true;
                 } else if ((row.tf > 1) && (row.tf < 5)) {
                     if (!evt.target.checked) {
                         $('[class~=duration' + index + ']').val(findMaxTvpDuration(setDK[$('#pkSelect').val()].sts, index, row.tf)).change();
@@ -1633,6 +1631,7 @@ function buildPkTable(table, tableType, currPK) {
                     $(this).find('input').on('change', function (evt) {
                         const tf = Number($(`[class~=tf${index}]`).val());
                         let value = evt.target.valueAsNumber;
+                        if (value < 0) value = 0;
 
                         if ((tf === 2) || (tf === 3)) {
                             if (Number($('[class~=tf' + (index + 1) + ']').val()) === 7) {
@@ -1649,33 +1648,55 @@ function buildPkTable(table, tableType, currPK) {
                             const row = $(evt.target).closest('tr')[0].rowIndex - 1;
                             const tc = Number($('#tc').val());
                             const currSts = currPK.sts;
+                            if (value >= tc) value = tc - 1;
 
                             if (row === 0) {
                                 $(evt.target).val($('#shift').val());
                                 $('#shift').val(value).change();
                             } else {
-                                const prevRow = currSts[row - 1];
+                                const replCount = findReplacementCount(currSts, index);
+                                const difLen = $('#razlen').prop('checked');
+                                const prevTf = currSts[row - 1].tf;
                                 const currRow = currSts[row];
-                                const nextRow = currSts[((row === 11) || (checkLastLine(currSts[row + 1]))) ? 0 : row + 1];
+                                const nextRow =
+                                    currSts[(((row + replCount) === 11) || (checkLastLine(currSts[row + replCount + 1])))
+                                        ? 0 : row + replCount + 1];
+
+                                let rCount = 0;
+                                if ((prevTf >= 5) && (prevTf <= 7)) {
+                                    let tempIndex = index;
+                                    while (rCount === 0) {
+                                        rCount = findReplacementCount(currSts, --tempIndex);
+                                        if ((currSts[tempIndex].tf > 4) || (currSts[tempIndex].tf < 2)) rCount = 0;
+                                        if (tempIndex < 0) break;
+                                    }
+                                }
+                                const prevRow = currSts[((prevTf >= 5) && (prevTf <= 7)) ? (row - rCount - 1) : (row - 1)];
 
                                 // Ограничение минимальной длительности фазы
-                                if ((!prevRow.trs) && ((value - prevRow.start) < 4)) {
+                                if ((!prevRow.trs && (prevRow.stop !== tc)) && ((value - prevRow.start) < 4)) {
                                     value = prevRow.start + 4;
                                 }
                                 if (row === 11) {
                                     if (((tc + currSts[0].start) - value) < 4) {
                                         value = (tc + currSts[0].start) - 4;
                                     }
-                                } else if (((currRow.trs ? nextRow.start + tc : nextRow.start) - value) < 4) {
+                                } else if ((((currRow.trs || nextRow.start === 0) ? nextRow.start + tc : nextRow.start) - value) < 4) {
                                     value = (currRow.trs ? nextRow.start + tc : nextRow.start) - 4;
                                     if (value > tc) {
                                         value = tc - 4;
+                                    } else if (value < 0) {
+                                        value += tc;
                                     }
                                 }
 
-                                const oldStart = prevRow.trs ?
+                                let oldStart = prevRow.trs ?
                                     prevRow.dt :
                                     prevRow.stop;
+                                if ((rCount !== 0) && difLen) {
+                                    oldStart = prevRow.start + findMaxTvpDuration(currSts, prevRow.line - 1, prevRow.tf);
+                                }
+                                if (oldStart >= tc) oldStart -= tc;
                                 const diff = value - oldStart;
                                 currRow.start = value;
                                 if (prevRow.trs) {
@@ -1688,12 +1709,92 @@ function buildPkTable(table, tableType, currPK) {
                                         prevRow.trs = false;
                                     }
                                 } else {
-                                    prevRow.stop += diff;
+                                    if ((currRow.tf >= 2) && (currRow.tf <= 4)) {
+                                        // const minDur = findMinTvpDuration(currSts, index, tf);
+                                        const currReplCount = findReplacementCount(currSts, index);
+                                        for (let i = index; i < index + currReplCount + 1; i++) {
+                                            if (currRow.trs) {
+                                                if ((currSts[i].stop - currRow.start + currSts[i].dt) < 4) {
+                                                    currRow.start = currSts[i].stop - 4;
+                                                }
+                                            } else {
+                                                if ((currSts[i].stop - currRow.start) < 4) {
+                                                    currRow.start = currSts[i].stop - 4;
+                                                }
+                                            }
+                                        }
+                                    }
+                                    if ((rCount === 0) || (!difLen)) prevRow.stop += diff;
+                                    // else if ((rCount === 0) || (!difLen)) prevRow.stop += diff;
+                                }
+
+                                if (rCount !== 0) {
+                                    if (!difLen) {
+                                        for (let i = 1; i < (rCount + 1); i++) {
+                                            const sts = currSts[row - i];
+                                            if ((sts.tf >= 5) && (sts.tf <= 7)) sts.stop = prevRow.stop
+                                        }
+                                    } else {
+                                        const maxDur = findMaxTvpDuration(currSts, (prevRow.line - 1), prevRow.tf);
+                                        const newValue = maxDur + diff;
+                                        for (let i = prevRow.line - 1; i < (prevRow.line + rCount); i++) {
+                                            const sts = currSts[i];
+                                            const dur = sts.trs ? (sts.stop - sts.start + sts.dt) : (sts.stop - sts.start);
+                                            if ((dur >= newValue) || dur === maxDur) sts.stop = sts.start + newValue;
+                                        }
+                                    }
+                                }
+
+                                if (replCount !== 0) {
+                                    if (!difLen) {
+                                        for (let i = 1; i < replCount; i++) {
+                                            const sts = currSts[row - i];
+                                            if ((sts.tf >= 5) && (sts.tf <= 7)) sts.stop = currRow.stop
+                                        }
+                                    } else {
+                                        const maxDur = findMaxTvpDuration(currSts, (currRow.line - 1), currRow.tf);
+                                        const newValue = maxDur - diff;
+                                        for (let i = currRow.line - 1; i < (currRow.line + replCount); i++) {
+                                            const sts = currSts[i];
+                                            const dur = sts.trs ? (sts.stop - sts.start + sts.dt + diff) : (sts.stop - sts.start);
+                                            if ((dur >= newValue) || dur === maxDur) sts.stop = sts.start + newValue;
+                                        }
+                                    }
+                                }
+
+                                if ((tf >= 2) && (tf <= 4)) {
+                                    for (let i = index; i < index + replCount + 1; i++) {
+                                        currSts[i].start = currSts[index].start;
+                                    }
+                                } else if ((tf >= 5) && (tf <= 7)) {
+                                    return;
                                 }
 
                                 if (prevRow.stop >= tc) {
+                                    prevRow.dt = prevRow.stop - tc;
+                                    prevRow.trs = prevRow.dt !== 0;
                                     prevRow.stop = tc;
-                                    makeTransition(currSts, row - 1);
+                                    if ((rCount !== 0) && (currRow.start === 0)) {
+                                        for (let i = prevRow.line; i < (prevRow.line + rCount); i++) {
+                                            currSts[i].dt = currSts[i].stop - tc;
+                                            currSts[i].trs = currSts[i].dt !== 0;
+                                            currSts[i].stop = tc;
+                                        }
+                                    }
+                                    // makeTransition(currSts, prevRow.line - 1);
+                                }
+                                if (currRow.stop > tc) {
+                                    currRow.dt = currRow.stop - tc;
+                                    currRow.trs = currRow.dt !== 0;
+                                    currRow.stop = tc;
+                                    if ((replCount !== 0) && (currRow.start === 0)) {
+                                        for (let i = currRow.line; i < (currRow.line + replCount); i++) {
+                                            currSts[i].dt = currSts[i].stop - tc;
+                                            currSts[i].trs = currSts[i].dt !== 0;
+                                            currSts[i].stop = tc;
+                                        }
+                                    }
+                                    // makeTransition(currSts, currRow.line - 1);
                                 }
                                 pkTableValidate();
                             }
@@ -1810,7 +1911,7 @@ function buildPkTable(table, tableType, currPK) {
 
                         currSts[swId].start = (swId === 0) ? shift : currSts[swId - 1].stop;
                         currSts[swId].stop = currSts[swId].start + value;
-                        $('[class~=start' + swId + ']').val(currSts[swId].start).change();
+                        $('[class~=start' + swId + ']').val(currSts[swId].start); // .change();
 
                         if (inputDiff !== 0) {
                             // Если сумма длительностей или цикл поменялись
@@ -1960,6 +2061,24 @@ function findMaxTvpDuration(currSts, index, tf) {
     }
 }
 
+// Возвращается минимальная длительность фазы ТВП и её Зам`ов
+function findMinTvpDuration(currSts, index, tf) {
+    let tvpDuration = Number($(`[class~=duration${index}]`).val());
+    if (tf === 4) {
+        //1,2 ТВП
+        let replacementDurationArray = [];
+        let replacementCount = findReplacementCount(currSts, index);
+        for (let i = index; i < (index + replacementCount); i++) {
+            replacementDurationArray.push(Number($(`[class~=duration${i + 1}`).val()));
+        }
+        return Math.min(...replacementDurationArray, tvpDuration);
+    } else {
+        //Одиночная ТВП
+        let replacementDuration = (Number($(`[class~=tf${index + 1}`).val()) === 7) ? Number($(`[class~=duration${index + 1}`).val()) : 0;
+        return Math.min(tvpDuration, replacementDuration);
+    }
+}
+
 // Приведение данных массивов ПК в соотвествие с таблицей на экране
 function validatePkByDuration(currSts, difLen) {
     currSts.forEach((sw, index) => {
@@ -1996,19 +2115,23 @@ function validatePkByDuration(currSts, difLen) {
 
 // Автоматическое создание простого ПК
 function generateNewPk(currSts) {
-    let cycleTime = Number($('#tc').val());
+    const cycleTime = Number($('#tc').val());
+    const tableType = $('#pkTableType').val() === '0';
+
     currSts[0].start = 0;
     currSts[0].stop = ((cycleTime % 2) === 0) ? cycleTime / 2 : (cycleTime - 1) / 2;
-    currSts[1].num = 1;
+    currSts[0].num = 1;
+    $('[class~=start0]').prop('disabled', tableType);
     $('[class~=num0]').val(1);
-    $('[class~=duration0]').val(currSts[0].stop);
+    $('[class~=duration0]').val(currSts[0].stop).prop('disabled', !tableType);
 
     currSts[1].start = ((cycleTime % 2) === 0) ? cycleTime / 2 : (cycleTime + 1) / 2;
     currSts[1].stop = cycleTime;
     currSts[1].num = 2;
+    $('[class~=start1]').val(currSts[1].start).prop('disabled', tableType);
     $('[class~=tf1]').prop('disabled', false);
     $('[class~=num1]').val(2).prop('disabled', false);
-    $('[class~=duration1]').val(currSts[1].start).prop('disabled', false);
+    $('[class~=duration1]').val(currSts[1].start).prop('disabled', !tableType);
 }
 
 // Добавление переключателя в ПК
@@ -2133,7 +2256,7 @@ function getSwitchCount(currSts) {
 
 // Проверка последней линии
 function checkLastLine(sw) {
-    if (sw.line === 12) return true;
+    // if (sw.line === 12) return true;
     const allowZero = ['1', '8'];
     return (sw.num === 0) && ((sw.tf === 0) || (allowZero.indexOf(sw.tf) !== -1));
 }
@@ -2157,10 +2280,22 @@ function clearTransition(currSts) {
 // Добавление признаков перехода фазы
 function makeTransition(currSts, index) {
     currSts[index].trs = true;
-    if (((currSts[index].tf > 1) && (currSts[index].tf < 8)) && ($('#razlen').prop('checked'))) {
-        currSts[index].dt = Number($(`[class~=start${index}]`).val()) + Number($(`[class~=duration${index}]`).val()) - Number($('#tc').val())
+    if ((currSts[index].tf > 1) && (currSts[index].tf < 8)) {
+        if ($('#razlen').prop('checked')) {
+            currSts[index].dt = Number($(`[class~=start${index}]`).val()) + Number($(`[class~=duration${index}]`).val()) - Number($('#tc').val())
+        } else {
+            const replCount = findReplacementCount(currSts, index);
+            if (replCount !== 0) {
+                currSts[index].dt = currSts[index + replCount + 1].start;
+                currSts[index].trs = currSts[index].dt !== 0;
+                for (let i = (index + 1); i < (index + replCount + 1); i++) {
+                    currSts[i].dt = currSts[index].dt;
+                    currSts[i].trs = currSts[i].dt !== 0;
+                }
+            }
+        }
     } else {
-        currSts[index].dt = currSts[(index === 11) ? 0 : (index + 1)].start
+        currSts[index].dt = currSts[((index === 11) || (checkLastLine(currSts[index + 1]))) ? 0 : (index + 1)].start
     }
 }
 
