@@ -122,14 +122,21 @@ $(function () {
 
     let $table = $('#table');
 
+    let closeReason = '';
     ws = new WebSocket('wss://' + location.host + location.pathname + 'W');
+
     ws.onopen = function () {
         console.log('connected');
     };
 
     ws.onclose = function (evt) {
         console.log('disconnected', evt);
+        alert('Ошибка соединения: ' + closeReason);
     };
+
+    ws.onerror = function (evt) {
+        alert(`Ошибка соединения WebSocket, ${evt.reason}`);
+    }
 
     ws.onmessage = function (evt) {
         let allData = JSON.parse(evt.data);
@@ -195,17 +202,13 @@ $(function () {
                     $('#id').append(new Option(tflight.ID + ' - ' + tflight.description, tflight.ID));
                 });
                 break;
-            case 'close':
-                ws.close();
-                // if (data.message !== '') {
-                //     if (!document.hidden) alert(data.message);
-                // } else {
-                //     if (!document.hidden) alert('Потеряна связь с сервером');
-                // }
-                window.close();
-                break;
             case 'error':
-                console.log('error', evt);
+                closeReason = data.message;
+                ws.close(1000);
+                break;
+            case 'close':
+                closeReason = 'WS Closed by server';
+                ws.close(1000);
                 break;
         }
     };

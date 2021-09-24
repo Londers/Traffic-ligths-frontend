@@ -86,6 +86,7 @@ $(() => {
 
     if (localStorage.getItem('history') === null) {
 
+        let closeReason = '';
         ws = new WebSocket('wss://' + location.host + location.pathname + 'W' + location.search);
 
         ws.onopen = () => {
@@ -94,9 +95,13 @@ $(() => {
 
         ws.onclose = function (evt) {
             console.log('disconnected', evt);
-            alert(evt.reason);
+            alert('Ошибка соединения: ' + closeReason);
             window.close();
         };
+
+        ws.onerror = function (evt) {
+            alert(`Ошибка соединения WebSocket, ${evt.reason}`);
+        }
 
         ws.onmessage = function (evt) {
             let allData = JSON.parse(evt.data);
@@ -129,7 +134,9 @@ $(() => {
                     console.log('controlInfo');
                     validatePkArray(data);
                     loadData(data, firstLoad);
-                    makeHistorySelect(data.history.sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime()));
+                    if (data.history !== undefined) {
+                        makeHistorySelect(data.history.sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime()));
+                    }
                     document.title = 'АРМ ДК-' + data.state.area + '-' + data.state.id;
                     firstLoad = false;
                     editFlag = data.edit;
@@ -214,7 +221,8 @@ $(() => {
                     break;
                 }
                 case 'close':
-                    ws.close();
+                    closeReason = 'WS Closed by server';
+                    ws.close(1000);
                     // if (data.message !== '') {
                     //     if (!document.hidden) alert(data.message);
                     // } else {
@@ -223,7 +231,9 @@ $(() => {
                     window.close();
                     break;
                 case 'error':
-                    console.log('error', evt);
+                    // alert(`error, ${data}`);
+                    closeReason = data.message;
+                    ws.close(1000);
                     break;
                 default:
                     console.log('unknown command', allData.type);
@@ -464,8 +474,9 @@ $(() => {
                 // $('#questionPanel').append(html);
             },
             error: function (request) {
+                // console.log(request.status + ' ' + request.responseText);
                 console.log(request.status + ' ' + request.responseText);
-                alert(request.status + ' ' + request.responseText);
+                alert(JSON.parse(request.responseText).message);
                 window.location.href = window.location.origin;
             }
         });
@@ -1032,7 +1043,7 @@ function mainTabFill(data, firstLoadFlag) {
         if (firstLoadFlag) $('#area').append(new Option(data.areaMap[area], area));
     }
     $('#id').val(data.state.id).on('change', () => {
-        if ($('#id').val() > 255) $('#id').val(255);
+        // if ($('#id').val() > 255) $('#id').val(255);
         checkNew(false);
     });
     setChange('id', 'input');
@@ -1141,9 +1152,11 @@ function pkTabFill2(newData, firstLoadFlag) {
             if (evt.target.value === '1') {
                 $('#shift').val(0).change().prop('disabled', true);
                 $('#tc').prop('disabled', true);
+                $('#transfer').prop('disabled', true);
             } else {
                 $('#shift').prop('disabled', false);
                 $('#tc').prop('disabled', false);
+                $('#transfer').prop('disabled', false);
             }
             $('#razlen').change();
         });
@@ -1992,6 +2005,7 @@ function pkTabFill(table) {
         $(this).removeAttr('selected');
     });
     $('#tpu').val(currPK.tpu);
+    $('#transfer').prop('disabled', currPK.tp === '1');
     $('#razlen').prop('checked', currPK.razlen);
     $('#desc').val(currPK.desc);
 
@@ -2305,7 +2319,6 @@ function resetPkTable() {
     currSts.forEach((sw, index) => {
         sw.start = 0;
         sw.num = 0;
-        sw.phase = 0;
         sw.tf = 0;
         sw.stop = 0;
         sw.plus = false;

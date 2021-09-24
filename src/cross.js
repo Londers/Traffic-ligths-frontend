@@ -11,15 +11,21 @@ let idevice = undefined;
 let ws;
 
 $(function () {
+    let closeReason = '';
     ws = new WebSocket('wss://' + location.host + location.pathname + 'W' + location.search);
+
     ws.onopen = function () {
         console.log('connected');
     };
 
     ws.onclose = function (evt) {
         console.log('disconnected', evt);
-        alert('WebSocket closed')
+        alert('Ошибка соединения: ' + closeReason);
     };
+
+    ws.onerror = function (evt) {
+        alert(`Ошибка соединения WebSocket, ${evt.reason}`);
+    }
 
     let $table = $('#expandedTable');
     $table.bootstrapTable();
@@ -162,11 +168,12 @@ $(function () {
                         if (typeof hasCam === 'function') {
                             if (hasCam()) {
                                 $('#crossCameras').show().on('click', () => {
-                                    localStorage.setItem('ID', cross.ID);
-                                    localStorage.setItem('area', cross.area.num);
-                                    localStorage.setItem('region', cross.region.num);
-                                    window.open(window.location.origin + '/user/' +
-                                        localStorage.getItem('login') + '/cameras');
+                                    // localStorage.setItem('ID', cross.ID);
+                                    // localStorage.setItem('area', cross.area.num);
+                                    // localStorage.setItem('region', cross.region.num);
+                                    // window.open(window.location.origin + '/user/' +
+                                    //     localStorage.getItem('login') + '/cameras');
+                                    window.open(window.location.href.replace('cross', 'cameras'))
                                 });
                             }
                         }
@@ -206,6 +213,7 @@ $(function () {
                     },
                     error: function (request) {
                         console.log(request.status + ' ' + request.responseText);
+                        alert(JSON.parse(request.responseText).message);
                     }
                 });
 
@@ -343,7 +351,8 @@ $(function () {
                 $('#connection')[0].innerText = data.scon ? data.eth ? 'LAN' : 'GPRS' : '';
                 break;
             case 'phase':
-                console.log('phase ', data);
+                // TODO сделать вывод в читаемом формате только для нас
+                // console.log('phase ', data);
                 //Обработка таблицы
                 if ($('#expandedTable')[0].style.display === 'none') $('#expandedTable').show();
                 if ($('#phase')[0].style.display === 'none') $('#phase').show();
@@ -381,27 +390,19 @@ $(function () {
                     // $('#status').show();
                 }
                 break;
-            case 'close':
-                // if (editFlag) controlSend({id: idevice, cmd: 4, param: 0});
-                ws.close();
-                // if (data.message !== '') {
-                //     if (!document.hidden) alert(data.message);
-                // } else {
-                //     if (!document.hidden) alert('Потеряна связь с сервером');
-                // }
-                window.close();
-                break;
             case 'error':
-                console.log('error', evt);
+                closeReason = data.message;
+                ws.close(1000);
+                break;
+            case 'close':
+                closeReason = 'WS Closed by server';
+                ws.close(1000);
+                window.close();
                 break;
             default:
                 console.log('unknown command');
                 break;
         }
-    };
-
-    ws.onerror = function (evt) {
-        console.log('WebSocket error:' + evt);
     };
 
     $('#verification').bootstrapTable('removeAll');
@@ -508,7 +509,7 @@ function buildExpandedTable(data) {
             $expandedTable.bootstrapTable('updateCell', {
                 index: prevIndex,
                 field: 'column7',
-                value: (dataArr[prevIndex].column6 + dataArr[prevIndex].column2) - toWrite.column2
+                value: (dataArr[prevIndex].column1 === 'ЛР') ? 0 : (dataArr[prevIndex].column6 + dataArr[prevIndex].column2) - toWrite.column2
             });
 
             toWrite.column7 = dataArr[prevIndex].column2;

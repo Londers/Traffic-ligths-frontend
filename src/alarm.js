@@ -46,6 +46,7 @@ $(function () {
 
     });
 
+    let closeReason = '';
     const ws = new WebSocket('wss://' + location.host + location.pathname + 'W' + location.search);
 
     ws.onopen = function () {
@@ -54,7 +55,12 @@ $(function () {
 
     ws.onclose = function (evt) {
         console.log('disconnected', evt);
+        alert('Ошибка соединения: ' + closeReason);
     };
+
+    ws.onerror = function (evt) {
+        alert(`Ошибка соединения WebSocket, ${evt.reason}`);
+    }
 
     ws.onmessage = function (evt) {
         let allData = JSON.parse(evt.data);
@@ -80,9 +86,13 @@ $(function () {
 
                 if (data.alarm.ring) playSound();
                 break;
+            case 'error':
+                closeReason = data.message;
+                ws.close(1000);
+                break;
             case 'close':
-                localStorage.removeItem('alarmSound');
-                ws.close();
+                closeReason = 'WS Closed by server';
+                ws.close(1000);
                 window.close();
                 break;
         }

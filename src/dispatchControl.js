@@ -34,16 +34,24 @@ ymaps.ready(function () {
         fixationFlag = false;
         $('#fixationButton')[0].innerText = 'Зафиксировать экран';
     });
-    ws = new WebSocket('wss://' + location.host + location.pathname + 'W');
 
-    ws.onerror = function (evt) {
-        console.log('WebSocket error:', evt);
-    };
+    let closeReason = '';
+    ws = new WebSocket('wss://' + location.host + location.pathname + 'W');
 
     ws.onopen = function () {
         // on connecting, do nothing but log it to the console
         console.log('connected')
     };
+
+    ws.onclose = function (evt) {
+        console.log('disconnected', evt);
+        alert('Ошибка соединения: ' + closeReason);
+    };
+
+    ws.onerror = function (evt) {
+        alert(`Ошибка соединения WebSocket, ${evt.reason}`);
+    }
+
 
     //Функция для обновления статусов контроллеров в реальном времени
     ws.onmessage = function (evt) {
@@ -104,7 +112,7 @@ ymaps.ready(function () {
                         let index = IDs.indexOf(trafficLight.region.num + '-' + trafficLight.area.num + '-' + id);
                         //Создание меток контроллеров на карте
                         let placemark = new ymaps.Placemark([trafficLight.points.Y, trafficLight.points.X], {
-                            balloonContent: 'balloon',
+                            balloonContent: 'Отсутсвует картинка перекрёстка',
                             hintContent: trafficLight.description + '<br>' + trafficLight.idevice
                         }, {
                             iconLayout: createChipsLayout(function (zoom) {
@@ -169,18 +177,14 @@ ymaps.ready(function () {
                     [data.boxPoint.point1.Y, data.boxPoint.point1.X]
                 ]);
                 break;
-            case 'close':
-                // if (editFlag) controlSend({id: idevice, cmd: 4, param: 0});
-                ws.close();
-                // if (data.message !== '') {
-                //     if (!document.hidden) alert(data.message);
-                // } else {
-                //     if (!document.hidden) alert('Потеряна связь с сервером');
-                // }
-                window.close();
-                break;
             case 'error':
-                console.log('Error', allData);
+                closeReason = data.message;
+                ws.close(1000);
+                break;
+            case 'close':
+                closeReason = 'WS Closed by server';
+                ws.close(1000);
+                window.close();
                 break;
             default:
                 break;
@@ -318,6 +322,7 @@ ymaps.ready(function () {
             },
             error: function (request) {
                 console.log(request.status + ' ' + request.responseText);
+                alert(JSON.parse(request.responseText).message);
             }
         });
     }

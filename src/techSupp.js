@@ -16,6 +16,7 @@ $(function () {
             data: JSON.stringify({text: $('#txt').val()}),
             error: function (request) {
                 console.log(request.status + ' ' + request.responseText);
+                alert(JSON.parse(request.responseText).message);
             }
         });
     })

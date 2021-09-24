@@ -79,6 +79,7 @@ $(function () {
                     data: JSON.stringify(toSend),
                     error: function (request) {
                         console.log(request.status + ' ' + request.responseText);
+                        alert(JSON.parse(request.responseText).message);
                     }
                 });
 
@@ -145,6 +146,7 @@ $(function () {
                     data: JSON.stringify(toSend),
                     error: function (request) {
                         console.log(request.status + ' ' + request.responseText);
+                        alert(JSON.parse(request.responseText).message);
                     }
                 });
             },
@@ -231,9 +233,9 @@ $(function () {
         //         $(this).parent().hide();
         //     });
         // } else {
-            $('input[id^="u"]').each(function () {
-                $(this).parent().show();
-            });
+        $('input[id^="u"]').each(function () {
+            $(this).parent().show();
+        });
         // }
 
         $('#updateDialog').dialog('open');
@@ -259,6 +261,7 @@ $(function () {
             data: JSON.stringify(loginToSend),
             error: function (request) {
                 console.log(request.status + ' ' + request.responseText);
+                alert(JSON.parse(request.responseText).message);
             }
         });
     });
@@ -326,6 +329,7 @@ $(function () {
             data: JSON.stringify({login: login[0]}),
             error: function (request) {
                 console.log(request.status + ' ' + request.responseText);
+                alert(JSON.parse(request.responseText).message);
             }
         });
     });
@@ -429,6 +433,7 @@ function getUsers($table) {
         },
         error: function (request) {
             console.log(request.status + ' ' + request.responseText);
+            alert(JSON.parse(request.responseText).message);
         }
     });
 
@@ -494,15 +499,5 @@ function fillPrivileges(type) {
 
 //Функция для открытия новой вкладки
 function openPage(url) {
-    $.ajax({
-        type: 'GET',
-        url: window.location.href + url,
-        success: function (data) {
-            window.open(window.location.href + url);
-        },
-        error: function (request) {
-            console.log(request.status + ' ' + request.responseText);
-//			location.href = window.location.origin;
-        }
-    });
+    window.open(window.location.href + url);
 }

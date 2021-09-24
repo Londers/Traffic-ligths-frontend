@@ -40,8 +40,9 @@ function load($table, firstLoadFlag) {
             makeButtons();
 		},
 		error: function (request) {
-			console.log(request.status + ' ' + request.responseText);
-		}
+            console.log(request.status + ' ' + request.responseText);
+            alert(JSON.parse(request.responseText).message);
+        }
 	});
 	if(firstLoadFlag) {
 	    $('.fixed-table-toolbar').append('<button id="updateButton" class="btn btn-secondary mb-2">Обновить</button>');

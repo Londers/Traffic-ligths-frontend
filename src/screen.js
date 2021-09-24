@@ -1,7 +1,7 @@
 'use strict';
 
-$(document).ready(function() {
-    $('body').on('keyup', function(event) {
+$(document).ready(function () {
+    $('body').on('keyup', function (event) {
         if (event.keyCode === 13) {
             event.preventDefault();
             $('#submit').trigger('click');
@@ -15,39 +15,40 @@ function check() {
     $('#passwordMsg').remove();
 
     if (($('#login').val() === '') || ($('#password').val() === '')) {
-        if (!($('#loginMsg').length) && ($('#login').val() === '')){
+        if (!($('#loginMsg').length) && ($('#login').val() === '')) {
             $('#loginForm').append('<div style="color: red;" id="loginMsg"><h5>Введите логин</h5></div>');
         }
-        if (!($('#passwordMsg').length) && ($('#password').val() === '')){
+        if (!($('#passwordMsg').length) && ($('#password').val() === '')) {
             $('#passwordForm').append('<div style="color: red;" id="passwordMsg"><h5>Введите пароль</h5></div>');
         }
         return;
     }
 
-	let account = {
-		login: $('#login').val(),
-		password: $('#password').val()
-	};
+    let account = {
+        login: $('#login').val(),
+        password: $('#password').val()
+    };
 
-	//Отправка на сервер запроса проверки данных
-	$.ajax({
-		type: 'POST',
-		url: window.location.origin + '/login',
-		data: JSON.stringify(account),
-		dataType: 'json',
-		success: function (data, text, xhr) {
-		    if (xhr.status !== 200) return;
+    //Отправка на сервер запроса проверки данных
+    $.ajax({
+        type: 'POST',
+        url: window.location.origin + '/login',
+        data: JSON.stringify(account),
+        dataType: 'json',
+        success: function (data, text, xhr) {
+            if (xhr.status !== 200) return;
             document.cookie = ('Authorization=Bearer ' + data.token);
             //В случае успешного логина, перенаправление на участок карты данного пользователя
-		    location.href = window.location.origin + '/user/' + $('#login').val() + '/map';
-		},
-		error: function (request) {
-			if (!($('#passwordMsg').length)){
+            location.href = window.location.origin + '/user/' + $('#login').val() + '/map';
+        },
+        error: function (request) {
+            if (!($('#passwordMsg').length)) {
                 $('#passwordForm').append('<div style="color: red;" id="passwordMsg"><h5>Неверный логин и/или пароль</h5></div>');
             }
             console.log(request.status + ' ' + request.responseText);
-		}
-	});
+            alert(JSON.parse(request.responseText).message);
+        }
+    });
 }
 
 //Показать/спрятать пароль
@@ -104,7 +105,7 @@ const sprintf = function (str) {
 }
 
 class Password {
-    constructor (element, options) {
+    constructor(element, options) {
         this.options = options
         this.$element = $(element)
         this.isShown = false
@@ -112,7 +113,7 @@ class Password {
         this.init()
     }
 
-    init () {
+    init() {
         let placementFuc
         let inputClass
 
@@ -160,11 +161,11 @@ class Password {
         }, this))
     }
 
-    toggle (_relatedTarget) {
+    toggle(_relatedTarget) {
         this[!this.isShown ? 'show' : 'hide'](_relatedTarget)
     }
 
-    show (_relatedTarget) {
+    show(_relatedTarget) {
         const e = $.Event('show.bs.password', {relatedTarget: _relatedTarget})
         this.$element.trigger(e)
 
@@ -185,7 +186,7 @@ class Password {
         this.$text[this.options.placement](this.$element)
     }
 
-    hide (_relatedTarget) {
+    hide(_relatedTarget) {
         const e = $.Event('hide.bs.password', {relatedTarget: _relatedTarget})
         this.$element.trigger(e)
 
@@ -206,7 +207,7 @@ class Password {
         this.$element[this.options.placement](this.$text)
     }
 
-    val (value) {
+    val(value) {
         if (typeof value === 'undefined') {
             return this.$element.val()
         }
@@ -215,7 +216,7 @@ class Password {
 
     }
 
-    focus () {
+    focus() {
         this.$element.focus()
     }
 }

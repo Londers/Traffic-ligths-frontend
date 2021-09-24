@@ -11,6 +11,7 @@ let boxPoint = [];
 let description = '';
 let tflights = [];
 let currentRouteTflights = new Map();
+let currListTL = [];
 let routeList = [];
 let allRoutesList = [];
 let lastRoute = {};
@@ -192,11 +193,11 @@ function makeSelects() {
     $('#table tbody tr').each((i, tr) => {
         $(tr).find('td').each((j, td) => {
             if (td.cellIndex === 2) {
-                let phases = getPhases(tr.rowIndex - 1);//$(this)[0].innerText.split(',');
+                let phases = getPhases(tr.rowIndex - 1); // $(this)[0].innerText.split(',');
                 let optionsHtml = '';
                 phases.phases.forEach(phase => {
                     optionsHtml +=
-                        `<option value="${phase}" ${((phase === phases.currPhase) ? ' selected="selected"' : '')}>${phase}</option>>`;
+                        `<option value="${phase}" ${((phase === phases.currPhase) ? ' selected="selected"' : '')}>${phase}</option>`;
                 });
                 $(td)[0].innerHTML = `<select onchange="handleSelectChange(${i})" id="cross${i}">${optionsHtml}</select>`;
                 handleSelectChange(i);
@@ -208,11 +209,13 @@ function makeSelects() {
 function handleSelectChange(rowIndex) {
     const value = $('#cross' + rowIndex).val();
     $('#cross' + rowIndex).closest('td').next('td')[0].innerHTML = '<td>-</td>';
-    if (svg[rowIndex] === undefined) {
+    let currTL = currListTL[rowIndex].pos;
+    let currSvg = svg[currTL.region + '/' + currTL.area + '/' + currTL.id];
+    if (currSvg === undefined) {
         setTimeout(() => handleSelectChange(rowIndex), 1000);
         return;
     }
-    svg[rowIndex].forEach(pic => {
+    currSvg.forEach(pic => {
         if (pic.num === value) $('#cross' + rowIndex).closest('td').next('td')[0].innerHTML =
             `<td>` +
             `<svg width="100%" height="100%"` +
@@ -357,20 +360,21 @@ function setRouteArea(map, box, description, routeId) {
                 // let data = x2js.xml2json(svgData);
                 // svg.push(data.svg.mphase.phase)
 
-                $('body').append('<img id="kostil" class="img-fluid" src="" style="display: none" alt="Перекрёсток">');
+                $('body').append('<div id="kostil" class="img-fluid" style="display: none" />');
                 $('#kostil').prepend(svgData.children[0].outerHTML.replace('let currentPhase', 'var currentPhase'));
 
                 if (typeof getPhasesMass === "function") {
                     let phases = getPhasesMass();
-                    svg.push(phases)
+                    svg[row.region + '/' + row.area + '/' + row.id] = phases
                 } else {
-                    svg.push([]);
+                    svg[row.region + '/' + row.area + '/' + row.id] = [];
                 }
 
                 $('#kostil').remove();
             },
             error: function (request) {
                 console.log(request.status + ' ' + request.responseText);
+                alert(JSON.parse(request.responseText).message);
             }
         });
     });
@@ -383,7 +387,7 @@ function setRouteArea(map, box, description, routeId) {
     })
 }
 
-let svg = [];
+let svg = {};
 
 function findIndex(hintContent) {
     if ($('#tableCol')[0].style.display === 'none') return -1;
@@ -588,8 +592,11 @@ ymaps.ready(function () {
     $('#routes').on('change', function () {
         let place = $('#routes').val().split('---');
         $('#endRouteButton').hide();
+
+        currListTL = allRoutesList.find(el => el.description === $('#routes').val().split('---')[1]).listTL;
+
         sendedPhaseSave = new Map();
-        svg = [];
+        svg = {};
         if ((place[0] === '0') && (place[1] === '0')) {
             $('#tableCol').hide();
             $('#startRouteButton').hide();
@@ -641,16 +648,22 @@ ymaps.ready(function () {
         creatingFlag = false;
     });
 
+    let closeReason = '';
     ws = new WebSocket('wss://' + location.host + location.pathname + 'W');
-
-    ws.onerror = function (evt) {
-        console.log('WebSocket error:', evt);
-    };
 
     ws.onopen = function () {
         // on connecting, do nothing but log it to the console
         console.log('connected')
     };
+
+    ws.onclose = function (evt) {
+        console.log('disconnected', evt);
+        alert('Ошибка соединения: ' + closeReason);
+    };
+
+    ws.onerror = function (evt) {
+        alert(`Ошибка соединения WebSocket, ${evt.reason}`);
+    }
 
     //Функция для обновления статусов контроллеров в реальном времени
     ws.onmessage = function (evt) {
@@ -756,7 +769,7 @@ ymaps.ready(function () {
                     })
                 }
                 break;
-            case 'repaint':
+            case 'repaint': {
                 let execWaiter = setInterval(() => {
                     if (!executionFlag) {
                         map.geoObjects.removeAll();
@@ -790,32 +803,38 @@ ymaps.ready(function () {
                     }
                 }, 5000);
                 break;
+            }
             case 'jump':
                 map.setBounds([
                     [data.boxPoint.point0.Y, data.boxPoint.point0.X],
                     [data.boxPoint.point1.Y, data.boxPoint.point1.X]
                 ]);
                 break;
-            case 'phases':
+            case 'phases': {
                 // let arr = [{idevice: 159519, phase: 2}];
                 const tableData = $('#navTable').bootstrapTable('getData');
                 tableData.forEach((row, rowIndex) => {
                     data.phases.forEach(phaseRow => {
                         if (phaseRow.device === row.idevice) {
+
+                            let currTL = currListTL[rowIndex].pos;
+                            let currSvg = svg[currTL.region + '/' + currTL.area + '/' + currTL.id];
+
                             $('#navTable tbody tr')[rowIndex].cells[2].innerHTML =
                                 (phaseRow.phase === 9) ? 'Пром. такт' :
-                                    ((svg[rowIndex][phaseRow.phase - 1]) === undefined) ? 'Отсуствует картинка фазы' :
+                                    ((currSvg[phaseRow.phase - 1]) === undefined) ? 'Отсуствует картинка фазы' :
                                         `<svg width="100%" height="100%"` +
                                         `style="max-height: 50px; max-width: 50px; min-height: 30px; min-width: 30px;" xmlns="http://www.w3.org/2000/svg"` +
                                         `xmlns:xlink="http://www.w3.org/1999/xlink">` +
                                         `<image x="0" y="0" width="100%" height="100%"` +
                                         `style="max-height: 50px; max-width: 50px; min-height: 30px; min-width: 30px;"` +
-                                        `xlink:href="data:image/png;base64,${svg[rowIndex][phaseRow.phase - 1].phase}"></image>` +
+                                        `xlink:href="data:image/png;base64,${currSvg[phaseRow.phase - 1].phase}"></image>` +
                                         `</svg>`
                         }
                     })
                 });
                 break;
+            }
             case 'createRoute':
                 if (data.error) {
                     alert(data.error);
@@ -856,18 +875,14 @@ ymaps.ready(function () {
                 $('#routes').change();
                 routeList = [];
                 break;
-            case 'close':
-                // if (editFlag) controlSend({id: idevice, cmd: 4, param: 0});
-                ws.close();
-                // if (data.message !== '') {
-                //     if (!document.hidden) alert(data.message);
-                // } else {
-                //     if (!document.hidden) alert('Потеряна связь с сервером');
-                // }
-                window.close();
-                break;
             case 'error':
-                console.log('Error', allData);
+                closeReason = data.message;
+                ws.close(1000);
+                break;
+            case 'close':
+                closeReason = 'WS Closed by server';
+                ws.close(1000);
+                window.close();
                 break;
         }
     };

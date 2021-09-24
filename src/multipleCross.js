@@ -45,6 +45,7 @@ $(function () {
                     setPhase = undefined;
                     setPhases.push({blockId: i + 1, func: setPhaseFunc});
 
+                    let closeReason = '';
                     const ws = new WebSocket(`wss://${location.host}/user/${localStorage.getItem('login')}/crossW?Region=${cross.region}&Area=${cross.area}&ID=${cross.id}`);
                     ws.onopen = function () {
                         console.log('connected', svgId);
@@ -52,7 +53,12 @@ $(function () {
 
                     ws.onclose = function (evt) {
                         console.log('disconnected', evt);
+                        alert('Ошибка соединения: ' + closeReason);
                     };
+
+                    ws.onerror = function (evt) {
+                        alert(`Ошибка соединения WebSocket, ${evt.reason}`);
+                    }
 
                     ws.onmessage = function (evt) {
                         let allData = JSON.parse(evt.data);
@@ -73,8 +79,13 @@ $(function () {
                                     }
                                 });
                                 break;
+                            case 'error':
+                                closeReason = data.message;
+                                ws.close(1000);
+                                break;
                             case 'close':
-                                ws.close();
+                                closeReason = 'WS Closed by server';
+                                ws.close(1000);
                                 window.close();
                                 break;
                         }
@@ -83,6 +94,7 @@ $(function () {
             },
             error: function (request) {
                 console.log(request.status + ' ' + request.responseText);
+                alert(JSON.parse(request.responseText).message);
             }
         });
     });

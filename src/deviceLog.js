@@ -95,15 +95,13 @@ $(function () {
         // data: JSON.stringify(data.state),
         error: function (request) {
             console.log(request.status + ' ' + request.responseText);
+            alert(JSON.parse(request.responseText).message);
         }
     });
     // });
 });
 
 function getLogs(start, end, crutchFlag, remoteOpenFlag) {
-    $('#logsTable').bootstrapTable('showLoading');
-    $('[class~=loading-text]').text('Загрузка. Пожалуйста, подождите');
-
     // {ID: '', area: '', region: ''}
     // console.log('start:' + start + '   end' + end);
     let toSend = {devices: [], timeStart: start, timeEnd: end};
@@ -136,6 +134,10 @@ function getLogs(start, end, crutchFlag, remoteOpenFlag) {
     } else {
         $('#toolbar0Msg').remove();
     }
+
+    $('#logsTable').bootstrapTable('showLoading');
+    $('[class~=loading-text]').text('Загрузка. Пожалуйста, подождите');
+
     // Отправка на сервер запроса проверки данных
     $.ajax({
         type: 'POST',
@@ -154,6 +156,7 @@ function getLogs(start, end, crutchFlag, remoteOpenFlag) {
         },
         error: function (request) {
             console.log(request.status + ' ' + request.responseText);
+            alert(JSON.parse(request.responseText).message);
         }
     });
     console.log(toSend);
@@ -251,7 +254,7 @@ function colorizeCrosses() {
     const tableRows = $('#logsTable tbody tr');
     let switchFlag = true;
     data.forEach((row, index) => {
-        if (row.time === 'undefined') switchFlag = !switchFlag; //
+        if (row.time === undefined) switchFlag = !switchFlag;
         if (switchFlag) {
             $(tableRows[index]).attr('style', 'background-color: lightgray');
         } else {

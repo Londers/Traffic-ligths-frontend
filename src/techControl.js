@@ -37,7 +37,7 @@ function sendGPRS() {
     }
 }
 
-function checkDifference() {
+function checkTypeDifference() {
     let devNumInTable = 4;
     devicesSave.forEach(device => {
         let cross = checkCross(device.idevice);
@@ -61,16 +61,40 @@ function checkDifference() {
         }
     })
 }
+function checkTimeDifference() {
+    let timeNumInTable = 5;
+    devicesSave.forEach(device => {
+        if (Math.abs((new Date(device.ltime) - new Date(device.dtime))) > 60 * 1000) {
+            let list = $('#table').bootstrapTable('getData');
+            let index = -1;
+            list.forEach((item, i) => {
+                if (item.idevice === device.idevice) {
+                    index = i;
+                }
+            });
+            $('#table tbody tr').each((i, tr) => {
+                if (i === index) {
+                    $(tr).find('td').each((j, td) => {
+                        if (j === timeNumInTable) {
+                            $(td).attr('style', 'background-color: red;');
+                        }
+                    })
+                }
+            })
+        }
+    })
+}
 
 $(function () {
     $('.fixed-table-toolbar').hide();
 
+    let closeReason = '';
     ws = new WebSocket('wss://' + location.host + location.pathname + 'W' + location.search);
 
     ws.onerror = function (evt) {
         console.log('WebSocket error:', evt);
-        alert('Произошла ошибка, попробуйте снова');
-        window.close();
+        alert('Произошла ошибка WebSocket: ' + evt);
+        // window.close();
     };
 
     ws.onopen = function () {
@@ -115,16 +139,14 @@ $(function () {
                 buildTable(false);
                 break;
             case 'close':
+                closeReason = 'WS closed by server';
                 ws.close();
-                // if (data.message !== '') {
-                //     if (!document.hidden) alert(data.message);
-                // } else {
-                //     if (!document.hidden) alert('Потеряна связь с сервером');
-                // }
                 window.close();
                 break;
             case 'error':
-                console.log('error', evt);
+                console.log('error', data);
+                closeReason = data.message;
+                ws.close(1000);
                 break;
             default:
                 break;
@@ -133,6 +155,7 @@ $(function () {
 
     ws.onclose = function (evt) {
         console.log('disconnected', evt);
+        alert('Соединение разорвано: ' + closeReason);
     };
 
     //Всплывающее окно для изменения настроек GPRS
@@ -206,7 +229,8 @@ function buildTable(firstLoadFlag) {
         buildBottom();
     });
 
-    checkDifference();
+    checkTypeDifference();
+    checkTimeDifference();
     buildBottom();
 }
 
@@ -303,7 +327,7 @@ function buildBottom() {
 
         $('#lastOpDev').text(timeFormat(device.dtime));
         $('#lastOp').text(timeFormat(device.ltime));
-        if (Math.abs((new Date(device.ltime) - new Date(device.dtime))) > 2 * 60 * 1000) {
+        if (Math.abs((new Date(device.ltime) - new Date(device.dtime))) > 60 * 1000) {
             $('#lastOpDev').attr('style', 'background-color: red;');
         } else {
             $('#lastOpDev').attr('style', '');

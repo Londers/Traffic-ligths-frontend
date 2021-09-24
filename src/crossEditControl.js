@@ -89,6 +89,7 @@ function load($armTable, $crossTable, firstLoadFlag) {
         },
         error: function (request) {
             console.log(request.status + ' ' + request.responseText);
+            alert(JSON.parse(request.responseText).message);
         }
     });
     if (firstLoadFlag) {
@@ -137,6 +138,7 @@ function kick($armTable, $crossTable) {
         data: JSON.stringify(toSend),
         error: function (request) {
             console.log(request.status + ' ' + request.responseText);
+            alert(JSON.parse(request.responseText).message);
         }
     });
 }

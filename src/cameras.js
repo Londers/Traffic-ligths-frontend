@@ -1,7 +1,5 @@
 $(function () {
-    const ID = localStorage.getItem('ID')
-    const area = localStorage.getItem('area')
-    const region = localStorage.getItem('region')
+    const [region, area, ID] = window.location.search.split('&').map(searchItem => searchItem.split('=')[1])
 
     $('title').text('ДТ ДК-' + ID)
 
@@ -15,6 +13,7 @@ $(function () {
         },
         error: function (request) {
             console.log(request.status + ' ' + request.responseText);
+            alert(JSON.parse(request.responseText).message);
         }
     });
 

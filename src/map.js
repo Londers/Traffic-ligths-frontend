@@ -1,77 +1,186 @@
 'use strict';
 
-let IDs = [];
-let areaLayout = [];
-let subareasLayout = [];
-let regionInfo;
-let userRegion;
-let areaInfo;
-let areaZone;
-let boxRemember = {Y: 0, X: 0};
-// let login = '';
-let authorizedFlag = false;
-let logDeviceFlag = false;
-let manageFlag = false;
-let techFlag = false;
-let licenseFlag = false;
-let gsFlag = false;
-let xctrlFlag = false;
-let chatFlag = true;
-let fixationFlag = false;
-let ws;
-
-let circlesMap = new Map();
-let zoom = 19;
-
-let jumpWasUsed = false;
-//Функция для открытия вкладки
-function openPage(url) {
-    window.open(location.origin + '/user/' + localStorage.getItem('login') + url);
-}
-
-function getRandomColor() {
-    let letters = '0123456789A';
-    let color = '#';
-    for (let i = 0; i < 6; i++) {
-        color += letters[Math.floor(Math.random() * 11)];
-    }
-    return color;
-}
-
-const about = 'Предназначена для упрощения процедур наблюдения, управления ' +
-    'и контроля за работой дорожных контроллеров и другого ' +
-    'оборудования, работающего в системе управления дорожным движением.\n\n' +
-    'ООО "Автоматика-Д" (г.Омск). \n8-3812-370735, 8-3812-394910 \n';
-
-function openAbout(closeOnExpiration) {
-    // Instantiate new modal
-    let modal = new Custombox.modal({
-        content: {
-            effect: 'corner',
-            target: '#modal',
-            speedIn: 600,
-            speedOut: 600,
-            onOpen: () => {
-                $('#modal').parent().show();
-            },
-        },
-        overlay: {
-            opacity: 0,
-            // speedIn: 600,
-            // speedOut: 600,
-            onClose: () => {
-                $('#modal').parent().hide();
-            }
-        }
-    });
-    // Open
-    modal.open();
-    if (closeOnExpiration) {
-        setTimeout(() => $('#modal').parent().trigger('click'), 3000);
-    }
-}
-
 ymaps.ready(function () {
+    let map;
+
+    let IDs = new Map();
+    let areaLayout = [];
+    let subareasLayout = [];
+    let regionInfo;
+    let userRegion;
+    let areaInfo;
+    let areaZone;
+    let boxRemember = {Y: 0, X: 0};
+// let login = '';
+    let authorizedFlag = false;
+    let logDeviceFlag = false;
+    let manageFlag = false;
+    let techFlag = false;
+    let licenseFlag = false;
+    let gsFlag = false;
+    let xctrlFlag = false;
+    let chatFlag = true;
+    let fixationFlag = false;
+    let ws;
+
+    let circlesMap = new Map();
+    let zoom = 19;
+
+    let jumpWasUsed = false;
+
+//Функция для открытия вкладки
+    function openPage(url) {
+        window.open(location.origin + '/user/' + localStorage.getItem('login') + url);
+    }
+
+    function getRandomColor() {
+        let letters = '0123456789A';
+        let color = '#';
+        for (let i = 0; i < 6; i++) {
+            color += letters[Math.floor(Math.random() * 11)];
+        }
+        return color;
+    }
+
+    const about = 'Предназначена для упрощения процедур наблюдения, управления ' +
+        'и контроля за работой дорожных контроллеров и другого ' +
+        'оборудования, работающего в системе управления дорожным движением.\n\n' +
+        'ООО "Автоматика-Д" (г.Омск). \n8-3812-370735, 8-3812-394910 \n';
+
+    function openAbout(closeOnExpiration) {
+        // Instantiate new modal
+        let modal = new Custombox.modal({
+            content: {
+                effect: 'corner',
+                target: '#modal',
+                speedIn: 600,
+                speedOut: 600,
+                onOpen: () => {
+                    $('#modal').parent().show();
+                },
+            },
+            overlay: {
+                opacity: 0,
+                // speedIn: 600,
+                // speedOut: 600,
+                onClose: () => {
+                    $('#modal').parent().hide();
+                }
+            }
+        });
+        // Open
+        modal.open();
+        if (closeOnExpiration) {
+            setTimeout(() => $('#modal').parent().trigger('click'), 3000);
+        }
+    }
+
+    // Создание метки СО для Яндекс карт
+    function createPlacemark(trafficLight, layoutSettings) {
+        const placemark = new ymaps.Placemark([trafficLight.points.Y, trafficLight.points.X], {
+            hintContent: `${trafficLight.description}<br>` + `${trafficLight.tlsost.description}<br>` +
+                `[${trafficLight.area.num}, ${trafficLight.subarea}, ${trafficLight.ID}, ${trafficLight.idevice}]`
+        }, {
+            iconLayout: createChipsLayout(function (zoom) {
+                // Размер метки будет определяться функией с оператором switch.
+                return calculate(zoom);
+            }, trafficLight.tlsost.num + layoutSettings),
+        });
+        //Функция для вызова АРМ нажатием на контроллер
+        placemark.events.add('click', function () {
+            if (authorizedFlag) {
+                handlePlacemarkClick(trafficLight);
+            }
+        });
+        placemark.tf = trafficLight;
+
+        return placemark
+    }
+
+    let camerasShown = new Map();
+    $('#camerasLayout').on('change', function(event) {
+        const checked = event.currentTarget.checked;
+        if (!checked) {
+            camerasShown.forEach(el => {
+                // Замена метки контроллера на карте
+                map.geoObjects.set(map.geoObjects.indexOf(el), createPlacemark(el.tf, ''));
+            })
+            camerasShown = new Map();
+        } else {
+            const [[x1, y1], [x2, y2]] = map.getBounds();
+            map.geoObjects.each(function (el) {
+                const [[elx, ely]] = el.geometry.getBounds();
+                if (((elx >= x1) && (elx <= x2)) && ((ely >= y1) && (ely <= y2))) {
+                    const trafficLight = el.tf;
+                    checkCameras(trafficLight).then(hasCam => {
+                        if (!hasCam) return;
+                        const id = getUniqueId(trafficLight)
+                        const placemark = createPlacemark(trafficLight, 'cam')
+
+                        if (camerasShown.get(id) !== undefined) {
+                            if (camerasShown.get(id) && checked) return;
+                        }
+                        // Замена метки контроллера на карте
+                        map.geoObjects.set(map.geoObjects.indexOf(el), placemark);
+                        camerasShown.set(id, placemark)
+                        IDs.set(id, placemark)
+                    });
+                }
+            })
+        }
+    })
+
+// //48.466567, 135.086474
+// function test1(y, x) {
+//     let placemark = new ymaps.Placemark([y, x], {
+//         hintContent: `test`
+//     }, {
+//         iconLayout: createChipsLayout(function (zoom) {
+//             // Размер метки будет определяться функией с оператором switch.
+//             return calculate(zoom);
+//         }, 1),
+//     });
+//     //Функция для вызова АРМ нажатием на контроллер
+//     // placemark.events.add('click', function () {
+//     //     if (authorizedFlag) handlePlacemarkClick(map, trafficLight);
+//     // });
+//
+//     //Добавление метки контроллера на карту
+//     map.geoObjects.add(placemark);
+// }
+
+    function checkCameras(trafficLight) {
+        return new Promise(function (resolve) {
+            let camFlag = false
+            $.ajax({
+                url: window.location.origin + '/file/static/cross/' + trafficLight.region.num + '/' + trafficLight.area.num + '/' + trafficLight.ID + '/cross.svg',
+                type: 'GET',
+                success: function (svgData) {
+                    // todo Жду обновлённые картинки от Андрея
+                    // let x2js = new X2JS();
+                    // let data = x2js.xml2json(svgData);
+                    // svg.push(data.svg.mphase.phase)
+
+                    $('body').append('<div id="kostil" class="img-fluid" style="display: none" />');
+                    $('#kostil').prepend(svgData.children[0].outerHTML.replace('let currentPhase', 'var currentPhase'));
+
+                    if (typeof hasCam === 'function') {
+                        camFlag = hasCam()
+                        hasCam = undefined
+                    }
+
+                    $('#kostil').remove();
+                    resolve(camFlag);
+                    // return hasCamFlag;
+                },
+                error: function (request) {
+                    console.log(request.status + ' ' + request.responseText);
+                    // alert(JSON.parse(request.responseText).message);
+                }
+            });
+        })
+    }
+
     if (localStorage.getItem('bf') === 'null') localStorage.setItem('bf', '0');
     let antiBruteForceCounter = Number(localStorage.getItem('bf'));
     if (antiBruteForceCounter >= 5) {
@@ -135,6 +244,7 @@ ymaps.ready(function () {
             },
             error: function (request) {
                 console.log(request.status + ' ' + request.responseText);
+                alert(JSON.parse(request.responseText).message);
             }
         });
 
@@ -156,6 +266,7 @@ ymaps.ready(function () {
                 $('#newLicenseKey').parent().find('p').remove();
                 $('#newLicenseKey').parent().append('<p style="color: red;">' + request.responseJSON.message + '</p>');
                 console.log(request.status + ' ' + request.responseText);
+                alert(JSON.parse(request.responseText).message);
             }
         });
     });
@@ -299,6 +410,7 @@ ymaps.ready(function () {
                             $('#newPasswordForm').append('<div style="color: red;" id="newPasswordMsg"><h5>Пароль содержит недопустимые символы</h5></div>');
                         }
                         console.log(request.status + ' ' + request.responseText);
+                        alert(JSON.parse(request.responseText).message);
                     }
                 });
             },
@@ -316,14 +428,24 @@ ymaps.ready(function () {
         }
     });
 
+    // Извлечение уникальной связки region-area-id
+    function getUniqueId(trafficLight) {
+        return trafficLight.region.num + '-' + trafficLight.area.num + '-' + trafficLight.ID;
+    }
+
     //Создание и первичная настройка карты
-    let map = new ymaps.Map('map', {
+    // let map = new ymaps.Map('map', {
+    map = new ymaps.Map('map', {
         center: [54.9912, 73.3685],
         zoom: 19,
     });
 
     map.events.add(['wheel', 'mousemove', 'click'], function () {
         if ($('#multipleCrossCheck').prop('checked')) circlesControl(map);
+    });
+
+    map.events.add(['boundschange'], function () {
+        if ($('#camerasLayout')[0].checked) $('#camerasLayout').trigger('change')
     });
 
     $('#fixationButton').on('click', function () {
@@ -380,15 +502,23 @@ ymaps.ready(function () {
         localStorage.setItem('multipleCross', JSON.stringify([]));
     });
 
+    let closeReason = '';
     ws = new WebSocket('wss://' + location.host + '/mapW');
-    ws.onerror = function (evt) {
-        console.log('WebSocket error', evt);
-    };
 
     ws.onopen = function () {
         // on connecting, do nothing but log it to the console
         console.log('connected')
     };
+
+    ws.onclose = function (evt) {
+        console.log('disconnected', evt);
+        alert('Ошибка соединения: ' + closeReason);
+        setTimeout(() => location.reload(), 2000);
+    };
+
+    ws.onerror = function (evt) {
+        alert(`Ошибка соединения WebSocket, ${evt.reason}`);
+    }
 
     //Функция для обновления статусов контроллеров в реальном времени
     ws.onmessage = function (evt) {
@@ -397,7 +527,7 @@ ymaps.ready(function () {
         console.log(data);
         // localStorage.setItem("maintab", "closed");
         switch (allData.type) {
-            case 'mapInfo':
+            case 'mapInfo': {
                 regionInfo = data.regionInfo;
                 areaInfo = data.areaInfo;
                 userRegion = data.region;
@@ -415,7 +545,7 @@ ymaps.ready(function () {
                     createAreasLayout(map);
                 }
 
-                $('#modal')[0].innerText = `АСУДД "Микро"\nЛицензия: ${data.license}\n\n` + about;
+                $('#modal')[0].innerText = `АСУДД "Микро-М"\nЛицензия: ${data.license}\n\n` + about;
                 $('#modal').append('<a href="http://asud55.ru/" target="_blank">http://asud55.ru/</a>');
 
                 //Заполнение поля выбора регионов для перемещения
@@ -443,35 +573,24 @@ ymaps.ready(function () {
 
                 //Разбор полученной от сервера информации
                 data.tflight.forEach(trafficLight => {
-                    IDs.push(trafficLight.region.num + '-' + trafficLight.area.num + '-' + trafficLight.ID);
-                    //Создание меток контроллеров на карте
-                    let placemark = new ymaps.Placemark([trafficLight.points.Y, trafficLight.points.X], {
-                        hintContent: `${trafficLight.description}<br>` + `${trafficLight.tlsost.description}<br>` +
-                            `[${trafficLight.area.num}, ${trafficLight.subarea}, ${trafficLight.ID}, ${trafficLight.idevice}]`
-                    }, {
-                        iconLayout: createChipsLayout(function (zoom) {
-                            // Размер метки будет определяться функией с оператором switch.
-                            return calculate(zoom);
-                        }, trafficLight.tlsost.num),
-                    });
-                    //Функция для вызова АРМ нажатием на контроллер
-                    placemark.events.add('click', function () {
-                        if (authorizedFlag) handlePlacemarkClick(map, trafficLight);
-                    });
+                    //Создание метки контроллера для карты
+                    const placemark = createPlacemark(trafficLight, '')
                     //Добавление метки контроллера на карту
                     map.geoObjects.add(placemark);
+                    IDs.set(getUniqueId(trafficLight), placemark);
                 });
                 authorize();
                 let reg = regionInfo[data.region];
                 let desc = data.description;
                 if (authorizedFlag) {
-                    $('#workPlace')[0].innerText = 'АСУДД "Микро" '
+                    $('#workPlace')[0].innerText = 'АСУДД "Микро-М" '
                         + ((data.region === '*') ? 'Все регионы' : ((reg === undefined) ? '' : reg))
                         + '\n' + ((desc === undefined) ? 'АРМ ' : ((data.role === 'Viewer') ? 'АРМ наблюдателя ' : 'АРМ дежурного - ') + data.description)
                         + '\n' + localStorage.getItem('login');
                     openAbout(true);
                 }
                 break;
+            }
             case 'tflight':
                 if ((data.tflight === null) || (data.tflight === undefined)) {
                     console.log('error: tflight ', data.tflight);
@@ -484,22 +603,23 @@ ymaps.ready(function () {
                     }
                     //Обновление статуса контроллера происходит только при его изменении
                     data.tflight.forEach(trafficLight => {
-                        let id = trafficLight.ID;
-                        let index = IDs.indexOf(trafficLight.region.num + '-' + trafficLight.area.num + '-' + id);
-                        let placemark = new ymaps.Placemark([trafficLight.points.Y, trafficLight.points.X], {
-                            hintContent: `${trafficLight.description}<br>` + `${trafficLight.tlsost.description}<br>` +
-                                `[${trafficLight.area.num}, ${trafficLight.subarea}, ${trafficLight.ID}, ${trafficLight.idevice}]`
-                        }, {
-                            iconLayout: createChipsLayout(function (zoom) {
-                                // Размер метки будет определяться функией с оператором switch.
-                                return calculate(zoom);
-                            }, trafficLight.tlsost.num)
-                        });
-                        placemark.events.add('click', function () {
-                            if (authorizedFlag) handlePlacemarkClick(map, trafficLight);
-                        });
+                        const uniqeuId = getUniqueId(trafficLight)
+                        const cameras = camerasShown.get(uniqeuId) !== undefined
+                        const oldPlacemark = IDs.get(uniqeuId);
+                        const placemark = createPlacemark(trafficLight, cameras ? 'cam' : '')
+                        if (uniqeuId === '1-1-1'){
+                            console.log('SUDA')
+                            console.log(map.geoObjects.indexOf(oldPlacemark))
+                        }
                         //Замена метки контроллера со старым состоянием на метку с новым
-                        map.geoObjects.splice(index, 1, placemark);
+                        map.geoObjects.set(map.geoObjects.indexOf(oldPlacemark), placemark);
+
+                        IDs.set(uniqeuId, placemark)
+                        if (cameras) {
+                            camerasShown.set(uniqeuId, placemark)
+                        } else {
+                            camerasShown.delete(uniqeuId)
+                        }
                     })
                 }
                 authorize();
@@ -508,23 +628,19 @@ ymaps.ready(function () {
                 map.geoObjects.removeAll();
                 //Разбор полученной от сервера информации
                 data.tflight.forEach(trafficLight => {
-                    IDs.push(trafficLight.region.num + '-' + trafficLight.area.num + '-' + trafficLight.ID);
+                    const uniqeuId = getUniqueId(trafficLight)
+                    const cameras = camerasShown.get(uniqeuId) !== undefined
                     //Создание меток контроллеров на карте
-                    let placemark = new ymaps.Placemark([trafficLight.points.Y, trafficLight.points.X], {
-                        hintContent: `${trafficLight.description}<br>` + `${trafficLight.tlsost.description}<br>` +
-                            `[${trafficLight.area.num}, ${trafficLight.subarea}, ${trafficLight.ID}, ${trafficLight.idevice}]`
-                    }, {
-                        iconLayout: createChipsLayout(function (zoom) {
-                            // Размер метки будет определяться функией с оператором switch.
-                            return calculate(zoom);
-                        }, trafficLight.tlsost.num),
-                    });
-                    //Функция для вызова АРМ нажатием на контроллер
-                    placemark.events.add('click', function () {
-                        if (authorizedFlag) handlePlacemarkClick(map, trafficLight);
-                    });
+                    const placemark = createPlacemark(trafficLight, cameras ? 'cam' : '')
                     //Добавление метки контроллера на карту
                     map.geoObjects.add(placemark);
+
+                    IDs.set(uniqeuId, placemark)
+                    if (cameras) {
+                        camerasShown.set(uniqeuId, placemark)
+                    } else {
+                        camerasShown.delete(uniqeuId)
+                    }
                 });
                 areaZone = data.areaZone;
                 createAreasLayout(map);
@@ -550,12 +666,13 @@ ymaps.ready(function () {
                             // data: JSON.stringify(toSend),
                             dataType: 'json',
                             success: function (data) {
-                                $('#modal')[0].innerText = `АСУДД "Микро"\nЛицензия: ${data.license}\n\n` + about;
+                                $('#modal')[0].innerText = `АСУДД "Микро-М"\nЛицензия: ${data.license}\n\n` + about;
                                 $('#modal').append('<a href="http://asud55.ru/" target="_blank">http://asud55.ru/</a>');
                                 openAbout(true);
                             },
                             error: function (request) {
                                 console.log(request.status + ' ' + request.responseText);
+                                alert(JSON.parse(request.responseText).message);
                             }
                         });
                     } else {
@@ -580,7 +697,7 @@ ymaps.ready(function () {
                     $('#loginDialog').dialog('close');
                     chatFlag = true;
                     authorize();
-                    $('#workPlace')[0].innerText = 'АСУДД "Микро" '
+                    $('#workPlace')[0].innerText = 'АСУДД "Микро-М" '
                         + ((data.region === '*') ? 'Все регионы' : regionInfo[data.region])
                         + '\n' + ((data.role === 'Viewer') ? 'АРМ наблюдателя' : 'АРМ дежурного - ')
                         + data.description + '\n' + localStorage.getItem('login');
@@ -615,7 +732,7 @@ ymaps.ready(function () {
                 $('#login').val('');
                 $('#password').val('');
                 deleteAreasLayout(map);
-                $('#workPlace')[0].innerText = 'АСУДД "Микро" ' + '\nАРМ';
+                $('#workPlace')[0].innerText = 'АСУДД "Микро-М" ' + '\nАРМ';
                 if (data.message !== undefined) alert(data.message);
                 // location.href = location.origin;
                 break;
@@ -636,16 +753,12 @@ ymaps.ready(function () {
                     if (!($('#passwordMsg').length)) {
                         $('#passwordForm').append('<div style="color: red;" id="passwordMsg"><h5>Неверный логин и/или пароль</h5></div>');
                     }
+                } else {
+                    closeReason = data.message;
+                    ws.close(1000);
                 }
                 break;
         }
-    };
-
-    ws.onclose = function (evt) {
-        console.log('disconnected', evt);
-        // alert('Связь с сервером была разорвана');
-        setTimeout(() => location.reload(), 2000);
-        // automatically try to reconnect on connection loss
     };
 
     //Всплывающее окно для создания пользователя /locationButton
@@ -785,632 +898,657 @@ ymaps.ready(function () {
         //     $('#areasMsg').remove();
         // }
     });
-});
 
-function authorize() {
-    if (!authorizedFlag) {
-        $('#loginButton').show();
-        $('#logoutButton').hide();
-        $('#leftToolbar').hide();
-        // $('#serverLogButton').hide();
-        // $('#DUJournalButton').hide();
-        // $('#standardZUButton').hide();
-        // $('#arbitraryZUButton').hide();
-        // $('#charPointsButton').hide();
-        // $('#alarmButton').hide();
-        $('#switchLayout').parent().hide();
-        $('button[class*="dropdown"]').each(function () {
-            $(this).hide();
-        })
-    } else {
-        $('#loginButton').hide();
-        $('#logoutButton').show();
-        $('#leftToolbar').show();
-        // $('#serverLogButton').show();
-        // $('#DUJournalButton').show();
-        // $('#standardZUButton').show();
-        // $('#arbitraryZUButton').show();
-        // $('#charPointsButton').show();
-        // $('#alarmButton').show();
-        $('#switchLayout').parent().show();
-        $('button[class*="dropdown"]').each(function () {
-            $(this).show();
-        });
-        if (chatFlag) {
-            $('body')[0].appendChild($('#chat')[0].content.cloneNode(true));
-            chatFlag = false;
-        }
-    }
-    (manageFlag) ? $('#manageButton').show() : $('#manageButton').hide();
-    //licenseFlag
-    (logDeviceFlag) ? $('#deviceLogButton').show() : $('#deviceLogButton').hide();
-    (techFlag) ? $('#techArmButton').show() : $('#techArmButton').hide();
-    if (gsFlag) {
-        $('#DUJournalButton').show();
-        $('#standardZUButton').show();
-        $('#arbitraryZUButton').show();
-    } else {
-        $('#DUJournalButton').hide();
-        $('#standardZUButton').hide();
-        $('#arbitraryZUButton').hide();
-    }
-
-    // todo доделать экран характерных точек
-    // (xctrlFlag) ? $('#charPointsButton').show() : $('#charPointsButton').hide();
-    $('#charPointsButton').hide();
-}
-
-let createChipsLayout = function (calculateSize, currnum) {
-    if (currnum === 0) {
-        console.log('Возвращен несуществующий статус');
-        return null;
-    }
-    // Создадим макет метки.
-    let Chips = ymaps.templateLayoutFactory.createClass(
-        '<div class="placemark"  style="background-image:url(\'' + location.origin + '/free/img/trafficLights/' + currnum + '.svg\'); background-size: 100%"></div>', {
-            build: function () {
-                Chips.superclass.build.call(this);
-                let map = this.getData().geoObject.getMap();
-                if (!this.inited) {
-                    this.inited = true;
-                    // Получим текущий уровень зума.
-                    let zoom = map.getZoom();
-                    // Подпишемся на событие изменения области просмотра карты.
-                    map.events.add('boundschange', function () {
-                        // Запустим перестраивание макета при изменении уровня зума.
-                        let currentZoom = map.getZoom();
-                        if (currentZoom !== zoom) {
-                            zoom = currentZoom;
-                            this.rebuild();
-                        }
-                    }, this);
-                }
-                let options = this.getData().options,
-                    // Получим размер метки в зависимости от уровня зума.
-                    size = calculateSize(map.getZoom()),
-                    element = this.getParentElement().getElementsByClassName('placemark')[0],
-                    // По умолчанию при задании своего HTML макета фигура активной области не задается,
-                    // и её нужно задать самостоятельно.
-                    // Создадим фигуру активной области "Круг".
-                    circleShape = {
-                        type: 'Circle',
-                        coordinates: [0, 0],
-                        radius: size / 2
-                    };
-                // Зададим высоту и ширину метки.
-                element.style.width = element.style.height = size + 'px';
-                // Зададим смещение.
-                element.style.marginLeft = element.style.marginTop = -size / 2 + 'px';
-                // Зададим фигуру активной области.
-                options.set('shape', circleShape);
+    function authorize() {
+        if (!authorizedFlag) {
+            $('#loginButton').show();
+            $('#logoutButton').hide();
+            $('#leftToolbar').hide();
+            // $('#serverLogButton').hide();
+            // $('#DUJournalButton').hide();
+            // $('#standardZUButton').hide();
+            // $('#arbitraryZUButton').hide();
+            // $('#charPointsButton').hide();
+            // $('#alarmButton').hide();
+            $('#switchLayout').parent().hide();
+            $('button[class*="dropdown"]').each(function () {
+                $(this).hide();
+            })
+        } else {
+            $('#loginButton').hide();
+            $('#logoutButton').show();
+            $('#leftToolbar').show();
+            // $('#serverLogButton').show();
+            // $('#DUJournalButton').show();
+            // $('#standardZUButton').show();
+            // $('#arbitraryZUButton').show();
+            // $('#charPointsButton').show();
+            // $('#alarmButton').show();
+            $('#switchLayout').parent().show();
+            $('button[class*="dropdown"]').each(function () {
+                $(this).show();
+            });
+            if (chatFlag) {
+                $('body')[0].appendChild($('#chat')[0].content.cloneNode(true));
+                chatFlag = false;
             }
         }
-    );
-    return Chips;
-};
+        (manageFlag) ? $('#manageButton').show() : $('#manageButton').hide();
+        //licenseFlag
+        (logDeviceFlag) ? $('#deviceLogButton').show() : $('#deviceLogButton').hide();
+        (techFlag) ? $('#techArmButton').show() : $('#techArmButton').hide();
+        if (gsFlag) {
+            $('#DUJournalButton').show();
+            $('#standardZUButton').show();
+            $('#arbitraryZUButton').show();
+        } else {
+            $('#DUJournalButton').hide();
+            $('#standardZUButton').hide();
+            $('#arbitraryZUButton').hide();
+        }
+
+        // todo доделать экран характерных точек
+        // (xctrlFlag) ? $('#charPointsButton').show() : $('#charPointsButton').hide();
+        $('#charPointsButton').hide();
+    }
+
+    let createChipsLayout = function (calculateSize, currnum, rotateDeg) {
+        if (currnum === 0) {
+            console.log('Возвращен несуществующий статус');
+            return null;
+        }
+        // Создадим макет метки.
+        let Chips = ymaps.templateLayoutFactory.createClass(
+            '<div class="placemark"  ' +
+            'style="background-image:url(\'' + location.origin + '/free/img/trafficLights/' + currnum + '.svg\'); ' +
+            `background-size: 100%; transform: rotate(${rotateDeg ? rotateDeg : 0}deg);\n"></div>`, {
+                build: function () {
+                    Chips.superclass.build.call(this);
+                    let map = this.getData().geoObject.getMap();
+                    if (!this.inited) {
+                        this.inited = true;
+                        // Получим текущий уровень зума.
+                        let zoom = map.getZoom();
+                        // Подпишемся на событие изменения области просмотра карты.
+                        map.events.add('boundschange', function () {
+                            // Запустим перестраивание макета при изменении уровня зума.
+                            let currentZoom = map.getZoom();
+                            if (currentZoom !== zoom) {
+                                zoom = currentZoom;
+                                this.rebuild();
+                            }
+                        }, this);
+                    }
+                    let options = this.getData().options,
+                        // Получим размер метки в зависимости от уровня зума.
+                        size = calculateSize(map.getZoom()),
+                        element = this.getParentElement().getElementsByClassName('placemark')[0],
+                        // По умолчанию при задании своего HTML макета фигура активной области не задается,
+                        // и её нужно задать самостоятельно.
+                        // Создадим фигуру активной области "Круг".
+                        circleShape = {
+                            type: 'Circle',
+                            coordinates: [0, 0],
+                            radius: size / 2
+                        };
+                    // Зададим высоту и ширину метки.
+                    element.style.width = element.style.height = size + 'px';
+                    // Зададим смещение.
+                    element.style.marginLeft = element.style.marginTop = -size / 2 + 'px';
+                    // Зададим фигуру активной области.
+                    options.set('shape', circleShape);
+                }
+            }
+        );
+        return Chips;
+    };
 
 //Мастшабирование иконов светофороф на карте
-let calculate = function (zoom) {
-    switch (zoom) {
+    let calculate = function (zoom) {
+        switch (zoom) {
 //		          case 11:
 //		            return 5;
 //		          case 12:
 //		            return 10;
 //		          case 13:
 //		            return 20;
-        case 14:
-            return 30;
-        case 15:
-            return 35;
-        case 16:
-            return 50;
-        case 17:
-            return 60;
-        case 18:
-            return 80;
-        case 19:
-            return 130;
-        default:
-            return 25;
-        // return 80;
-    }
-};
+            case 14:
+                return 30;
+            case 15:
+                return 35;
+            case 16:
+                return 50;
+            case 17:
+                return 60;
+            case 18:
+                return 80;
+            case 19:
+                return 130;
+            default:
+                return 25;
+            // return 80;
+        }
+    };
 
-function createAreasLayout(map) {
-    if (!$('#switchLayout').prop('checked')) return;
-    areaZone.forEach(area => {
-        let polygon = convexHullTry(map, area.zone, 'Регион: ' + area.region + ', Район: ' + area.area);
-        areaLayout.push(polygon);
-    })
-}
-
-function deleteAreasLayout(map) {
-    areaLayout.forEach(layout => {
-        map.geoObjects.remove(layout);
-    });
-    areaLayout = [];
-}
-
-function createSubareasLayout(map) {
-    if (!$('#switchSubLayout').prop('checked')) return;
-    areaZone.forEach(area => {
-        area.sub.forEach(sub => {
-            let polygon = convexHullTry(map, sub.zone, 'Регион: ' + area.region + ', Район: ' + area.area + ', Подрайон:' + sub.subArea);
-            subareasLayout.push(polygon);
+    function createAreasLayout(map) {
+        if (!$('#switchLayout').prop('checked')) return;
+        areaZone.forEach(area => {
+            let polygon = convexHullTry(map, area.zone, 'Регион: ' + area.region + ', Район: ' + area.area);
+            areaLayout.push(polygon);
         })
-    })
-}
+    }
 
-function deleteSubareasLayout(map) {
-    subareasLayout.forEach(layout => {
-        map.geoObjects.remove(layout);
-    });
-    subareasLayout = [];
-}
+    function deleteAreasLayout(map) {
+        areaLayout.forEach(layout => {
+            map.geoObjects.remove(layout);
+        });
+        areaLayout = [];
+    }
 
-function convexHullTry(map, coordinates, description) {
-    let color = getRandomColor();
-    // Создаем многоугольник, используя вспомогательный класс Polygon.
-    let myPolygon = new ymaps.Polygon([
-        // Указываем координаты вершин многоугольника.
-        // Координаты вершин внешнего контура.
-        coordinates.map(point => [point.Y, point.X]),
-        // Координаты вершин внутреннего контура.
-        [
-            [0, 0]
-        ]
-    ], {
-        // Описываем свойства геообъекта.
-        // Содержимое балуна.
-        hintContent: description
-    }, {
-        // Задаем опции геообъекта.
-        // Цвет заливки.
-        fillColor: color,
-        fillOpacity: 0.1,
-        // Ширина обводки.
-        strokeWidth: 5
-    });
+    function createSubareasLayout(map) {
+        if (!$('#switchSubLayout').prop('checked')) return;
+        areaZone.forEach(area => {
+            area.sub.forEach(sub => {
+                let polygon = convexHullTry(map, sub.zone, 'Регион: ' + area.region + ', Район: ' + area.area + ', Подрайон:' + sub.subArea);
+                subareasLayout.push(polygon);
+            })
+        })
+    }
 
-    // Добавляем многоугольник на карту.
-    map.geoObjects.add(myPolygon);
-    return myPolygon;
-}
+    function deleteSubareasLayout(map) {
+        subareasLayout.forEach(layout => {
+            map.geoObjects.remove(layout);
+        });
+        subareasLayout = [];
+    }
+
+    function convexHullTry(map, coordinates, description) {
+        let color = getRandomColor();
+        // Создаем многоугольник, используя вспомогательный класс Polygon.
+        let myPolygon = new ymaps.Polygon([
+            // Указываем координаты вершин многоугольника.
+            // Координаты вершин внешнего контура.
+            coordinates.map(point => [point.Y, point.X]),
+            // Координаты вершин внутреннего контура.
+            [
+                [0, 0]
+            ]
+        ], {
+            // Описываем свойства геообъекта.
+            // Содержимое балуна.
+            hintContent: description
+        }, {
+            // Задаем опции геообъекта.
+            // Цвет заливки.
+            fillColor: color,
+            fillOpacity: 0.1,
+            // Ширина обводки.
+            strokeWidth: 5
+        });
+
+        // Добавляем многоугольник на карту.
+        map.geoObjects.add(myPolygon);
+        return myPolygon;
+    }
 
 //Заполнение поля выбора регионов для АРМ технолога
-function makeTech(data, techAreaInfo) {
-    if (data.region === '*') {
-        $('#techRegion option').remove();
-        $('#alarmRegion option').remove();
-        for (let reg in regionInfo) {
-            $('#techRegion').append(new Option(regionInfo[reg], reg));
-            $('#alarmRegion').append(new Option(regionInfo[reg], reg));
+    function makeTech(data, techAreaInfo) {
+        if (data.region === '*') {
+            $('#techRegion option').remove();
+            $('#alarmRegion option').remove();
+            for (let reg in regionInfo) {
+                $('#techRegion').append(new Option(regionInfo[reg], reg));
+                $('#alarmRegion').append(new Option(regionInfo[reg], reg));
+            }
+            fillTechAreas($('#techArea'), $('#techRegion'), areaInfo);
+        } else {
+            $('#techRegion').append(new Option(regionInfo[data.region], data.region));
+            $('#techRegion').prop('disabled', true);
+            fillTechAreas($('#techArea'), $('#techRegion'), techAreaInfo);
         }
-        fillTechAreas($('#techArea'), $('#techRegion'), areaInfo);
-    } else {
-        $('#techRegion').append(new Option(regionInfo[data.region], data.region));
-        $('#techRegion').prop('disabled', true);
-        fillTechAreas($('#techArea'), $('#techRegion'), techAreaInfo);
-    }
 
-    $('#techRegionForm').on('change', function () {
-        fillTechAreas($('#techArea'), $('#techRegion'), areaInfo);
-    });
-}
+        $('#techRegionForm').on('change', function () {
+            fillTechAreas($('#techArea'), $('#techRegion'), areaInfo);
+        });
+    }
 
 //Заполнение поля выбора районов для создания или изменения пользователя
-function fillAreas($area, $region, areaInfo) {
-    $area.empty();
-    for (let regAreaJson in areaInfo) {
-        for (let areaJson in areaInfo[regAreaJson]) {
-            if (regAreaJson === $region.find(':selected').text()) {
-                $area.append(new Option(areaInfo[regAreaJson][areaJson], areaJson));
+    function fillAreas($area, $region, areaInfo) {
+        $area.empty();
+        for (let regAreaJson in areaInfo) {
+            for (let areaJson in areaInfo[regAreaJson]) {
+                if (regAreaJson === $region.find(':selected').text()) {
+                    $area.append(new Option(areaInfo[regAreaJson][areaJson], areaJson));
+                }
             }
         }
     }
-}
 
-function fillTechAreas($area, $region, areaInfo) {
-    $area.empty();
-    let num;
-    for (let regAreaJson in areaInfo) {
-        for (let areaJson in areaInfo[regAreaJson]) {
-            if (regAreaJson === $region.find(':selected').text()) {
-                $area.append(new Option(areaInfo[regAreaJson][areaJson], areaJson));
+    function fillTechAreas($area, $region, areaInfo) {
+        $area.empty();
+        let num;
+        for (let regAreaJson in areaInfo) {
+            for (let areaJson in areaInfo[regAreaJson]) {
+                if (regAreaJson === $region.find(':selected').text()) {
+                    $area.append(new Option(areaInfo[regAreaJson][areaJson], areaJson));
+                }
+            }
+            num = regAreaJson;
+        }
+        if (areaInfo === undefined) return;
+        if (Object.keys(areaInfo).length === 1) {
+            $("#techArea option[value='" + num + "']").prop("selected", true);
+            // $area.prop('disabled', true);
+        }
+    }
+
+    function check(sendFlag, msg) {
+
+        $('#loginMsg').remove();
+        $('#passwordMsg').remove();
+
+        if (($('#login').val() === '') || ($('#password').val() === '')) {
+            if (!($('#loginMsg').length) && ($('#login').val() === '')) {
+                $('#loginForm').append('<div style="color: red;" id="loginMsg"><h5>Введите логин</h5></div>');
+            }
+            if (!($('#passwordMsg').length) && ($('#password').val() === '')) {
+                $('#passwordForm').append('<div style="color: red;" id="passwordMsg"><h5>Введите пароль</h5></div>');
+            }
+            return;
+        }
+
+        if (sendFlag) {
+            ws.send(JSON.stringify({
+                type: (authorizedFlag ? 'changeAcc' : 'login'),
+                login: $('#login').val(),
+                password: $('#password').val()
+            }));
+        } else {
+            if (!($('#passwordMsg').length)) {
+                $('#passwordForm').append('<div style="color: red;" id="passwordMsg"><h5>' + msg + '</h5></div>');
             }
         }
-        num = regAreaJson;
-    }
-    if (areaInfo === undefined) return;
-    if (Object.keys(areaInfo).length === 1) {
-        $("#techArea option[value='" + num + "']").prop("selected", true);
-        // $area.prop('disabled', true);
-    }
-}
-
-function check(sendFlag, msg) {
-
-    $('#loginMsg').remove();
-    $('#passwordMsg').remove();
-
-    if (($('#login').val() === '') || ($('#password').val() === '')) {
-        if (!($('#loginMsg').length) && ($('#login').val() === '')) {
-            $('#loginForm').append('<div style="color: red;" id="loginMsg"><h5>Введите логин</h5></div>');
-        }
-        if (!($('#passwordMsg').length) && ($('#password').val() === '')) {
-            $('#passwordForm').append('<div style="color: red;" id="passwordMsg"><h5>Введите пароль</h5></div>');
-        }
-        return;
     }
 
-    if (sendFlag) {
-        ws.send(JSON.stringify({
-            type: (authorizedFlag ? 'changeAcc' : 'login'),
-            login: $('#login').val(),
-            password: $('#password').val()
-        }));
-    } else {
-        if (!($('#passwordMsg').length)) {
-            $('#passwordForm').append('<div style="color: red;" id="passwordMsg"><h5>' + msg + '</h5></div>');
+    function handlePlacemarkClick(trafficLight) {
+        const multipleCrossCheck = $('#multipleCrossCheck').prop('checked');
+        const camerasFlag = $('#camerasLayout').prop('checked');
+        const searchStr = 'Region=' + trafficLight.region.num + '&Area=' + trafficLight.area.num + '&ID=' + trafficLight.ID
+        if (multipleCrossCheck) {
+            let crossArr = (localStorage.getItem('multipleCross') === null) ? [] : JSON.parse(localStorage.getItem('multipleCross'));
+            if (crossArr.length > 5) return;
+            if (crossArr.some(cross => ((cross.region === trafficLight.region.num) && (cross.area === trafficLight.area.num) && (cross.id === trafficLight.ID)))) return;
+            crossArr.push({region: trafficLight.region.num, area: trafficLight.area.num, id: trafficLight.ID});
+            localStorage.setItem('multipleCross', JSON.stringify(crossArr));
+            handleClick(map, trafficLight);
+            $('#crossesCount').parent().show();
+            $('#crossesCount').text(crossArr.length);
+        } else if (camerasFlag) {
+            checkCameras(trafficLight).then(hasCam => {
+                openPage(`/${hasCam ? 'cameras' : 'cross'}?` + searchStr)
+            })
+        } else {
+            openPage('/cross?' + searchStr);
         }
     }
-}
 
-function handlePlacemarkClick(map, trafficLight) {
-    let multipleCrossCheck = $('#multipleCrossCheck').prop('checked');
-    if (multipleCrossCheck) {
-        let crossArr = (localStorage.getItem('multipleCross') === null) ? [] : JSON.parse(localStorage.getItem('multipleCross'));
-        if (crossArr.length > 5) return;
-        if (crossArr.some(cross => ((cross.region === trafficLight.region.num) && (cross.area === trafficLight.area.num) && (cross.id === trafficLight.ID)))) return;
-        crossArr.push({region: trafficLight.region.num, area: trafficLight.area.num, id: trafficLight.ID});
-        localStorage.setItem('multipleCross', JSON.stringify(crossArr));
-        handleClick(map, trafficLight);
-        $('#crossesCount').parent().show();
-        $('#crossesCount').text(crossArr.length);
-    } else {
-        window.open(location.origin + '/user/' + localStorage.getItem('login') + '/cross?Region=' + trafficLight.region.num + '&Area=' + trafficLight.area.num + '&ID=' + trafficLight.ID);
-    }
-}
-
-function createEye() {
+    function createEye() {
 //Показать/спрятать пароль
-    let bootstrapVersion = 4
-    try {
-        const rawVersion = $.fn.dropdown.Constructor.VERSION
+        let bootstrapVersion = 4
+        try {
+            const rawVersion = $.fn.dropdown.Constructor.VERSION
 
-        // Only try to parse VERSION if is is defined.
-        // It is undefined in older versions of Bootstrap (tested with 3.1.1).
-        if (rawVersion !== undefined) {
-            bootstrapVersion = parseInt(rawVersion, 10)
+            // Only try to parse VERSION if is is defined.
+            // It is undefined in older versions of Bootstrap (tested with 3.1.1).
+            if (rawVersion !== undefined) {
+                bootstrapVersion = parseInt(rawVersion, 10)
+            }
+        } catch (e) {
+            // ignore
         }
-    } catch (e) {
-        // ignore
-    }
 
-    const Constants = {
-        html: {
-            inputGroups: {
-                3: [
-                    '<span tabindex="100" class="add-on input-group-addon %s" title="%s">',
-                    '</span>'
-                ],
-                4: [
-                    '<div class="%s"><button tabindex="100" title="%s" class="btn btn-outline-secondary" type="button">',
-                    '</button></div>'
-                ]
-            }[bootstrapVersion]
+        const Constants = {
+            html: {
+                inputGroups: {
+                    3: [
+                        '<span tabindex="100" class="add-on input-group-addon %s" title="%s">',
+                        '</span>'
+                    ],
+                    4: [
+                        '<div class="%s"><button tabindex="100" title="%s" class="btn btn-outline-secondary" type="button">',
+                        '</button></div>'
+                    ]
+                }[bootstrapVersion]
+            }
         }
-    }
 
 // TOOLS DEFINITION
 // ======================
 
 // it only does '%s', and return '' when arguments are undefined
-    const sprintf = function (str) {
-        const args = arguments
-        let flag = true
-        let i = 1
+        const sprintf = function (str) {
+            const args = arguments
+            let flag = true
+            let i = 1
 
-        str = str.replace(/%s/g, () => {
-            const arg = args[i++]
+            str = str.replace(/%s/g, () => {
+                const arg = args[i++]
 
-            if (typeof arg === 'undefined') {
-                flag = false
-                return ''
+                if (typeof arg === 'undefined') {
+                    flag = false
+                    return ''
+                }
+                return arg
+            })
+            if (flag) {
+                return str
             }
-            return arg
-        })
-        if (flag) {
-            return str
-        }
-        return ''
-    }
-
-    class Password {
-        constructor(element, options) {
-            this.options = options
-            this.$element = $(element)
-            this.isShown = false
-
-            this.init()
+            return ''
         }
 
-        init() {
-            let placementFuc
-            let inputClass
+        class Password {
+            constructor(element, options) {
+                this.options = options
+                this.$element = $(element)
+                this.isShown = false
 
-            if (this.options.placement === 'before') {
-                placementFuc = 'insertBefore'
-                inputClass = 'input-group-prepend'
-            } else {
-                this.options.placement = 'after' // default to after
-                placementFuc = 'insertAfter'
-                inputClass = 'input-group-append'
+                this.init()
             }
 
-            // Create the text, icon and assign
-            this.$element.wrap(`<div class="input-group${sprintf(' input-group-%s', this.options.size)}" />`)
+            init() {
+                let placementFuc
+                let inputClass
 
-            this.$text = $('<input type="text" />')[placementFuc](this.$element)
-                .attr('class', this.$element.attr('class'))
-                .attr('style', this.$element.attr('style'))
-                .attr('placeholder', this.$element.attr('placeholder'))
-                .attr('maxlength', this.$element.attr('maxlength'))
-                .attr('disabled', this.$element.attr('disabled'))
-                .css('display', this.$element.css('display'))
-                .val(this.$element.val()).hide()
+                if (this.options.placement === 'before') {
+                    placementFuc = 'insertBefore'
+                    inputClass = 'input-group-prepend'
+                } else {
+                    this.options.placement = 'after' // default to after
+                    placementFuc = 'insertAfter'
+                    inputClass = 'input-group-append'
+                }
 
-            // Copy readonly attribute if it's set
-            if (this.$element.prop('readonly'))
-                this.$text.prop('readonly', true)
-            this.$icon = $([
-                `${sprintf(Constants.html.inputGroups[0], inputClass, this.options.message)}
+                // Create the text, icon and assign
+                this.$element.wrap(`<div class="input-group${sprintf(' input-group-%s', this.options.size)}" />`)
+
+                this.$text = $('<input type="text" />')[placementFuc](this.$element)
+                    .attr('class', this.$element.attr('class'))
+                    .attr('style', this.$element.attr('style'))
+                    .attr('placeholder', this.$element.attr('placeholder'))
+                    .attr('maxlength', this.$element.attr('maxlength'))
+                    .attr('disabled', this.$element.attr('disabled'))
+                    .css('display', this.$element.css('display'))
+                    .val(this.$element.val()).hide()
+
+                // Copy readonly attribute if it's set
+                if (this.$element.prop('readonly'))
+                    this.$text.prop('readonly', true)
+                this.$icon = $([
+                    `${sprintf(Constants.html.inputGroups[0], inputClass, this.options.message)}
       <i class="icon-eye-open ${this.options.eyeClass} ${this.options.eyeClassPositionInside ? '' : this.options.eyeOpenClass}">
       ${this.options.eyeClassPositionInside ? this.options.eyeOpenClass : ''}
       </i>`,
-                Constants.html.inputGroups[1]
-            ].join(''))[placementFuc](this.$text).css('cursor', 'pointer')
+                    Constants.html.inputGroups[1]
+                ].join(''))[placementFuc](this.$text).css('cursor', 'pointer')
 
-            // events
-            this.$text.off('keyup').on('keyup', $.proxy(function () {
-                if (!this.isShown) return
-                this.$element.val(this.$text.val()).trigger('change')
-            }, this))
+                // events
+                this.$text.off('keyup').on('keyup', $.proxy(function () {
+                    if (!this.isShown) return
+                    this.$element.val(this.$text.val()).trigger('change')
+                }, this))
 
-            this.$icon.off('click').on('click', $.proxy(function () {
-                this.$text.val(this.$element.val()).trigger('change')
-                this.toggle()
-            }, this))
-        }
-
-        toggle(_relatedTarget) {
-            this[!this.isShown ? 'show' : 'hide'](_relatedTarget)
-        }
-
-        show(_relatedTarget) {
-            const e = $.Event('show.bs.password', {relatedTarget: _relatedTarget})
-            this.$element.trigger(e)
-
-            this.isShown = true
-            this.$element.hide()
-            this.$text.show()
-            if (this.options.eyeClassPositionInside) {
-                this.$icon.find('i,svg')
-                    .removeClass('icon-eye-open')
-                    .addClass('icon-eye-close')
-                    .html(this.options.eyeCloseClass)
-            } else {
-                this.$icon.find('i,svg')
-                    .removeClass(`icon-eye-open ${this.options.eyeOpenClass}`)
-                    .addClass(`icon-eye-close ${this.options.eyeCloseClass}`)
+                this.$icon.off('click').on('click', $.proxy(function () {
+                    this.$text.val(this.$element.val()).trigger('change')
+                    this.toggle()
+                }, this))
             }
 
-            this.$text[this.options.placement](this.$element)
-        }
-
-        hide(_relatedTarget) {
-            const e = $.Event('hide.bs.password', {relatedTarget: _relatedTarget})
-            this.$element.trigger(e)
-
-            this.isShown = false
-            this.$element.show()
-            this.$text.hide()
-            if (this.options.eyeClassPositionInside) {
-                this.$icon.find('i,svg')
-                    .removeClass('icon-eye-close')
-                    .addClass('icon-eye-open')
-                    .html(this.options.eyeOpenClass)
-            } else {
-                this.$icon.find('i,svg')
-                    .removeClass(`icon-eye-close ${this.options.eyeCloseClass}`)
-                    .addClass(`icon-eye-open ${this.options.eyeOpenClass}`)
+            toggle(_relatedTarget) {
+                this[!this.isShown ? 'show' : 'hide'](_relatedTarget)
             }
 
-            this.$element[this.options.placement](this.$text)
-        }
+            show(_relatedTarget) {
+                const e = $.Event('show.bs.password', {relatedTarget: _relatedTarget})
+                this.$element.trigger(e)
 
-        val(value) {
-            if (typeof value === 'undefined') {
-                return this.$element.val()
+                this.isShown = true
+                this.$element.hide()
+                this.$text.show()
+                if (this.options.eyeClassPositionInside) {
+                    this.$icon.find('i,svg')
+                        .removeClass('icon-eye-open')
+                        .addClass('icon-eye-close')
+                        .html(this.options.eyeCloseClass)
+                } else {
+                    this.$icon.find('i,svg')
+                        .removeClass(`icon-eye-open ${this.options.eyeOpenClass}`)
+                        .addClass(`icon-eye-close ${this.options.eyeCloseClass}`)
+                }
+
+                this.$text[this.options.placement](this.$element)
             }
-            this.$element.val(value).trigger('change')
-            this.$text.val(value)
 
+            hide(_relatedTarget) {
+                const e = $.Event('hide.bs.password', {relatedTarget: _relatedTarget})
+                this.$element.trigger(e)
+
+                this.isShown = false
+                this.$element.show()
+                this.$text.hide()
+                if (this.options.eyeClassPositionInside) {
+                    this.$icon.find('i,svg')
+                        .removeClass('icon-eye-close')
+                        .addClass('icon-eye-open')
+                        .html(this.options.eyeOpenClass)
+                } else {
+                    this.$icon.find('i,svg')
+                        .removeClass(`icon-eye-close ${this.options.eyeCloseClass}`)
+                        .addClass(`icon-eye-open ${this.options.eyeOpenClass}`)
+                }
+
+                this.$element[this.options.placement](this.$text)
+            }
+
+            val(value) {
+                if (typeof value === 'undefined') {
+                    return this.$element.val()
+                }
+                this.$element.val(value).trigger('change')
+                this.$text.val(value)
+
+            }
+
+            focus() {
+                this.$element.focus()
+            }
         }
 
-        focus() {
-            this.$element.focus()
+        Password.DEFAULTS = {
+            placement: 'after', // 'before' or 'after'
+            message: 'Click here to show/hide password',
+            size: undefined, // '', 'sm', 'large'
+            eyeClass: 'fa', // 'glyphicon',
+            eyeOpenClass: 'fa-eye', // 'glyphicon-eye-open',
+            eyeCloseClass: 'fa-eye-slash', // 'glyphicon-eye-close',
+            eyeClassPositionInside: false
         }
-    }
-
-    Password.DEFAULTS = {
-        placement: 'after', // 'before' or 'after'
-        message: 'Click here to show/hide password',
-        size: undefined, // '', 'sm', 'large'
-        eyeClass: 'fa', // 'glyphicon',
-        eyeOpenClass: 'fa-eye', // 'glyphicon-eye-open',
-        eyeCloseClass: 'fa-eye-slash', // 'glyphicon-eye-close',
-        eyeClassPositionInside: false
-    }
 
 // PASSWORD PLUGIN DEFINITION
 // =======================
 
-    const old = $.fn.password
+        const old = $.fn.password
 
-    $.fn.password = function () {
-        const option = arguments[0] // public function
-        const args = arguments
-        let value
+        $.fn.password = function () {
+            const option = arguments[0] // public function
+            const args = arguments
+            let value
 
-        const allowedMethods = [
-            'show', 'hide', 'toggle', 'val', 'focus'
-        ]
+            const allowedMethods = [
+                'show', 'hide', 'toggle', 'val', 'focus'
+            ]
 
-        this.each(function () {
-            const $this = $(this)
-            let data = $this.data('bs.password')
-            const options = $.extend({}, Password.DEFAULTS, $this.data(), typeof option === 'object' && option)
+            this.each(function () {
+                const $this = $(this)
+                let data = $this.data('bs.password')
+                const options = $.extend({}, Password.DEFAULTS, $this.data(), typeof option === 'object' && option)
 
-            if (typeof option === 'string') {
-                if ($.inArray(option, allowedMethods) < 0) {
-                    throw new Error(`Unknown method: ${option}`)
-                }
-                value = data[option](args[1])
-            } else {
-                if (!data) {
-                    data = new Password($this, options)
-                    $this.data('bs.password', data)
+                if (typeof option === 'string') {
+                    if ($.inArray(option, allowedMethods) < 0) {
+                        throw new Error(`Unknown method: ${option}`)
+                    }
+                    value = data[option](args[1])
                 } else {
-                    data.init(options)
+                    if (!data) {
+                        data = new Password($this, options)
+                        $this.data('bs.password', data)
+                    } else {
+                        data.init(options)
+                    }
                 }
-            }
-        })
+            })
 
-        return value ? value : this
-    }
+            return value ? value : this
+        }
 
-    $.fn.password.Constructor = Password
+        $.fn.password.Constructor = Password
 
 // PASSWORD NO CONFLICT
 // =================
 
-    $.fn.password.noConflict = function () {
-        $.fn.password = old
-        return this
-    }
-
-    $(() => {
-        $('[data-toggle="password"]').password()
-    })
-}
-
-function radiusCalculate(zoom) {
-    switch (zoom) {
-        case 3:
-            return 32000;
-        case 4:
-            return 16000;
-        case 5:
-            return 8000;
-        case 6:
-            return 4000;
-        case 7:
-            return 2000;
-        case 8:
-            return 1000;
-        case 9:
-            return 750;
-        case 10:
-            return 500;
-        case 11:
-            return 400;
-        case 12:
-            return 300;
-        case 13:
-            return 250;
-        case 14:
-            return 200;
-        case 15:
-            return 150;
-        case 16:
-            return 100;
-        case 17:
-            return 75;
-        case 18:
-            return 50;
-        case 19:
-            return 40;
-        default:
-            return 30;
-    }
-}
-
-function circlesControl(map) {
-    if (zoom !== map.getZoom()) {
-        circlesMap.forEach(circle => {
-            map.geoObjects.remove(circle);
-        });
-        circlesMap.forEach(circle => {
-            circle.geometry.setRadius(radiusCalculate(map.getZoom()));
-            map.geoObjects.add(circle);
-        });
-        zoom = map.getZoom();
-    }
-}
-
-function deleteCircle(map, circle, pos) {
-    map.geoObjects.remove(circle);
-    circlesMap.delete(pos);
-}
-
-function handleClick(map, trafficLight) {
-    let coordinates = [trafficLight.points.Y, trafficLight.points.X];
-    let region = trafficLight.region.num;
-    let area = trafficLight.area.num;
-    let id = trafficLight.ID;
-    let description = trafficLight.description;
-    let returnFlag = false;
-
-    circlesMap.forEach((value, key) => {
-        if ((key.region === region) && (key.area === area) && (key.id === id)) {
-            deleteCircle(map, value, key);
-            returnFlag = true;
+        $.fn.password.noConflict = function () {
+            $.fn.password = old
+            return this
         }
-    });
 
-    if (returnFlag) return;
+        $(() => {
+            $('[data-toggle="password"]').password()
+        })
+    }
 
-    // Создаем круг.
-    let myCircle = new ymaps.Circle([
-        // Координаты центра круга.
-        coordinates,
-        // Радиус круга в метрах.
-        radiusCalculate(map.getZoom())
-    ], {
-        // Описываем свойства круга.
-        // Содержимое балуна.
-        // balloonContent: "Радиус круга - 10 км",
-        // Содержимое хинта.
-        // hintContent: "Подвинь меня"
-    }, {
-        // Задаем опции круга.
-        // Включаем возможность перетаскивания круга.
-        draggable: false,
-        // Цвет заливки.
-        // Последний байт (77) определяет прозрачность.
-        // Прозрачность заливки также можно задать используя опцию "fillOpacity".
-        fillColor: "#DB709377",
-        // Цвет обводки.
-        strokeColor: "#990066",
-        // Прозрачность обводки.
-        strokeOpacity: 0.8,
-        // Ширина обводки в пикселях.
-        strokeWidth: 5
-    });
+    function radiusCalculate(zoom) {
+        switch (zoom) {
+            case 3:
+                return 32000;
+            case 4:
+                return 16000;
+            case 5:
+                return 8000;
+            case 6:
+                return 4000;
+            case 7:
+                return 2000;
+            case 8:
+                return 1000;
+            case 9:
+                return 750;
+            case 10:
+                return 500;
+            case 11:
+                return 400;
+            case 12:
+                return 300;
+            case 13:
+                return 250;
+            case 14:
+                return 200;
+            case 15:
+                return 150;
+            case 16:
+                return 100;
+            case 17:
+                return 75;
+            case 18:
+                return 50;
+            case 19:
+                return 40;
+            default:
+                return 30;
+        }
+    }
 
-    circlesMap.set({region: region, area: area, id: id, description: description}, myCircle);
+    function circlesControl(map) {
+        if (zoom !== map.getZoom()) {
+            circlesMap.forEach(circle => {
+                map.geoObjects.remove(circle);
+            });
+            circlesMap.forEach(circle => {
+                circle.geometry.setRadius(radiusCalculate(map.getZoom()));
+                map.geoObjects.add(circle);
+            });
+            zoom = map.getZoom();
+        }
+    }
 
-    // Добавляем круг на карту.
-    map.geoObjects.add(myCircle);
-}
+    function deleteCircle(map, circle, pos) {
+        map.geoObjects.remove(circle);
+        circlesMap.delete(pos);
+    }
+
+    function handleClick(map, trafficLight) {
+        let coordinates = [trafficLight.points.Y, trafficLight.points.X];
+        let region = trafficLight.region.num;
+        let area = trafficLight.area.num;
+        let id = trafficLight.ID;
+        let description = trafficLight.description;
+        let returnFlag = false;
+
+        circlesMap.forEach((value, key) => {
+            if ((key.region === region) && (key.area === area) && (key.id === id)) {
+                deleteCircle(map, value, key);
+                returnFlag = true;
+            }
+        });
+
+        if (returnFlag) return;
+
+        // Создаем круг.
+        let myCircle = new ymaps.Circle([
+            // Координаты центра круга.
+            coordinates,
+            // Радиус круга в метрах.
+            radiusCalculate(map.getZoom())
+        ], {
+            // Описываем свойства круга.
+            // Содержимое балуна.
+            // balloonContent: "Радиус круга - 10 км",
+            // Содержимое хинта.
+            // hintContent: "Подвинь меня"
+        }, {
+            // Задаем опции круга.
+            // Включаем возможность перетаскивания круга.
+            draggable: false,
+            // Цвет заливки.
+            // Последний байт (77) определяет прозрачность.
+            // Прозрачность заливки также можно задать используя опцию "fillOpacity".
+            fillColor: "#DB709377",
+            // Цвет обводки.
+            strokeColor: "#990066",
+            // Прозрачность обводки.
+            strokeOpacity: 0.8,
+            // Ширина обводки в пикселях.
+            strokeWidth: 5
+        });
+
+        circlesMap.set({region: region, area: area, id: id, description: description}, myCircle);
+
+        // Добавляем круг на карту.
+        map.geoObjects.add(myCircle);
+    }
+
+
+    //
+    function test123() {
+        // const camerasFlag = $('#camerasLayout').prop('checked');
+        const [[x1, y1], [x2, y2]] = map.getBounds();
+        map.geoObjects.each(function (el) {
+            const [[elx, ely]] = el.geometry.getBounds();
+            if (((elx >= x1) && (elx <= x2)) && ((ely >= y1) && (ely <= y2))) {
+                console.log(map.geoObjects.indexOf(el))
+                console.log(el)
+            }
+        })
+    }
+    $('#dropdownConnectionButton').on('click', test123)
+    //
+
+});
