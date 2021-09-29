@@ -11,7 +11,6 @@ ymaps.ready(function () {
     let areaInfo;
     let areaZone;
     let boxRemember = {Y: 0, X: 0};
-// let login = '';
     let authorizedFlag = false;
     let logDeviceFlag = false;
     let manageFlag = false;
@@ -76,14 +75,14 @@ ymaps.ready(function () {
     }
 
     // Создание метки СО для Яндекс карт
-    function createPlacemark(trafficLight, layoutSettings) {
+    function createPlacemark(trafficLight, layoutCalcFunc, layoutSettings) {
         const placemark = new ymaps.Placemark([trafficLight.points.Y, trafficLight.points.X], {
             hintContent: `${trafficLight.description}<br>` + `${trafficLight.tlsost.description}<br>` +
                 `[${trafficLight.area.num}, ${trafficLight.subarea}, ${trafficLight.ID}, ${trafficLight.idevice}]`
         }, {
             iconLayout: createChipsLayout(function (zoom) {
                 // Размер метки будет определяться функией с оператором switch.
-                return calculate(zoom);
+                return layoutCalcFunc(zoom);
             }, trafficLight.tlsost.num + layoutSettings),
         });
         //Функция для вызова АРМ нажатием на контроллер
@@ -98,12 +97,12 @@ ymaps.ready(function () {
     }
 
     let camerasShown = new Map();
-    $('#camerasLayout').on('change', function(event) {
+    $('#camerasLayout').on('change', function (event) {
         const checked = event.currentTarget.checked;
         if (!checked) {
             camerasShown.forEach(el => {
                 // Замена метки контроллера на карте
-                map.geoObjects.set(map.geoObjects.indexOf(el), createPlacemark(el.tf, ''));
+                map.geoObjects.set(map.geoObjects.indexOf(el), createPlacemark(el.tf, calculate, ''));
             })
             camerasShown = new Map();
         } else {
@@ -115,7 +114,7 @@ ymaps.ready(function () {
                     checkCameras(trafficLight).then(hasCam => {
                         if (!hasCam) return;
                         const id = getUniqueId(trafficLight)
-                        const placemark = createPlacemark(trafficLight, 'cam')
+                        const placemark = createPlacemark(trafficLight, (zoom => (zoom < 17) ? 50 : 10), 'cam')
 
                         if (camerasShown.get(id) !== undefined) {
                             if (camerasShown.get(id) && checked) return;
@@ -127,6 +126,7 @@ ymaps.ready(function () {
                     });
                 }
             })
+            // test123();
         }
     })
 
@@ -167,6 +167,11 @@ ymaps.ready(function () {
                     if (typeof hasCam === 'function') {
                         camFlag = hasCam()
                         hasCam = undefined
+
+                        if (typeof getAnglesCamera === 'function') {
+                            camerasShown.set(getUniqueId(trafficLight) + 'cam', getAnglesCamera())
+                            getAnglesCamera = undefined
+                        }
                     }
 
                     $('#kostil').remove();
@@ -574,7 +579,7 @@ ymaps.ready(function () {
                 //Разбор полученной от сервера информации
                 data.tflight.forEach(trafficLight => {
                     //Создание метки контроллера для карты
-                    const placemark = createPlacemark(trafficLight, '')
+                    const placemark = createPlacemark(trafficLight, calculate, '')
                     //Добавление метки контроллера на карту
                     map.geoObjects.add(placemark);
                     IDs.set(getUniqueId(trafficLight), placemark);
@@ -606,8 +611,8 @@ ymaps.ready(function () {
                         const uniqeuId = getUniqueId(trafficLight)
                         const cameras = camerasShown.get(uniqeuId) !== undefined
                         const oldPlacemark = IDs.get(uniqeuId);
-                        const placemark = createPlacemark(trafficLight, cameras ? 'cam' : '')
-                        if (uniqeuId === '1-1-1'){
+                        const placemark = createPlacemark(trafficLight, cameras ? (zoom => (zoom < 17) ? 50 : 10) : calculate, cameras ? 'cam' : '')
+                        if (uniqeuId === '1-1-1') {
                             console.log('SUDA')
                             console.log(map.geoObjects.indexOf(oldPlacemark))
                         }
@@ -631,7 +636,7 @@ ymaps.ready(function () {
                     const uniqeuId = getUniqueId(trafficLight)
                     const cameras = camerasShown.get(uniqeuId) !== undefined
                     //Создание меток контроллеров на карте
-                    const placemark = createPlacemark(trafficLight, cameras ? 'cam' : '')
+                    const placemark = createPlacemark(trafficLight, cameras ? (zoom => (zoom < 17) ? 50 : 10) : calculate, cameras ? 'cam' : '')
                     //Добавление метки контроллера на карту
                     map.geoObjects.add(placemark);
 
@@ -1535,20 +1540,91 @@ ymaps.ready(function () {
         map.geoObjects.add(myCircle);
     }
 
-
     //
+    const lengthVar = 0.00015;
+    const viewAngle = 30;
+
     function test123() {
         // const camerasFlag = $('#camerasLayout').prop('checked');
         const [[x1, y1], [x2, y2]] = map.getBounds();
         map.geoObjects.each(function (el) {
             const [[elx, ely]] = el.geometry.getBounds();
             if (((elx >= x1) && (elx <= x2)) && ((ely >= y1) && (ely <= y2))) {
+                if (camerasShown.get(getUniqueId(el.tf)) === undefined) return;
+                const angles = camerasShown.get(getUniqueId(el.tf) + 'cam');
+                angles.forEach(a => console.log(a))
+
+                angles.forEach(angle => {
+                    const camAngleRadians = (angle.cam + 90) * (Math.PI / 180);
+                    const camDirectionAngle = angle.area;
+                    const camX = elx + lengthVar * Math.cos(camAngleRadians)
+                    const camY = ely + lengthVar * Math.sin(camAngleRadians)
+                    const searchStr = 'Region=' + el.tf.region.num + '&Area=' + el.tf.area.num + '&ID=' + el.tf.ID
+
+                    const placemark = new ymaps.Placemark([camX, camY], {
+                        hintContent: angle.name,
+                    }, {
+                        iconLayout: createChipsLayout(function (zoom) {
+                            return (zoom >= 17) ? 50 : 0;
+                        }, 'cam', camDirectionAngle)
+                    })
+                    placemark.events.add('click', function () {
+                        if (authorizedFlag) {
+                            openPage(`/cameras?` + searchStr)
+                        }
+                    });
+                    map.geoObjects.add(placemark)
+
+                    buildCamZone(camX, camY, lengthVar * 3, camDirectionAngle - 90, viewAngle)
+                })
+
                 console.log(map.geoObjects.indexOf(el))
-                console.log(el)
+                // console.log(el)
             }
         })
     }
+
     $('#dropdownConnectionButton').on('click', test123)
+
     //
+
+    function buildCamZone(camX, camY, length, directionAngle, viewingAngle) {
+        const viewingTriangle = new ymaps.Polygon([
+            /**
+             * Specifying the coordinates of the vertices of the polygon.
+             *  The coordinates of the vertices of the external contour.
+             */
+            [
+                [camX, camY],
+                // calculatePointCoords(camX, camY, length, (360 - directionAngle)),
+                calculatePointCoords(camX, camY, length, (360 - directionAngle) - (viewingAngle / 2)),
+                calculatePointCoords(camX, camY, length, (360 - directionAngle) + (viewingAngle / 2)),
+            ],
+            // The coordinates of the vertices of the inner contour.
+        ], {
+            /**
+             * Describing the properties of the geo object.
+             *  The contents of the balloon.
+             */
+            hintContent: ''
+        }, {
+            /**
+             * Setting geo object options.
+             *  Fill color.
+             */
+            fillColor: 'rgba(0,255,0,0.35)',
+            // The stroke width.
+            strokeWidth: 1
+        });
+
+        // Adding the polygon to the map.
+        map.geoObjects.add(viewingTriangle);
+    }
+
+    function calculatePointCoords(startX, startY, length, angle) {
+        const endX = startX - length * Math.cos(angle * (Math.PI / 180));
+        const endY = startY + length * Math.sin(angle * (Math.PI / 180));
+        return [endX, endY];
+    }
 
 });
