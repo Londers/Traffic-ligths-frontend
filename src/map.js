@@ -723,11 +723,7 @@ ymaps.ready(function () {
                         const uniqeuId = getUniqueId(trafficLight)
                         const cameras = camerasShown.get(uniqeuId) !== undefined
                         const oldPlacemark = IDs.get(uniqeuId);
-                        const placemark = createPlacemark(trafficLight, cameras ? (zoom => (zoom < 17) ? 50 : 10) : calculate, cameras ? 'cam' : '')
-                        if (uniqeuId === '1-1-1') {
-                            console.log('SUDA')
-                            console.log(map.geoObjects.indexOf(oldPlacemark))
-                        }
+                        const placemark = createPlacemark(trafficLight, cameras ? (zoom => (zoom < 17) ? 50 : 0) : calculate, cameras ? 'cam' : '')
                         //Замена метки контроллера со старым состоянием на метку с новым
                         map.geoObjects.set(map.geoObjects.indexOf(oldPlacemark), placemark);
 
@@ -748,7 +744,7 @@ ymaps.ready(function () {
                     const uniqeuId = getUniqueId(trafficLight)
                     const cameras = camerasShown.get(uniqeuId) !== undefined
                     //Создание меток контроллеров на карте
-                    const placemark = createPlacemark(trafficLight, cameras ? (zoom => (zoom < 17) ? 50 : 10) : calculate, cameras ? 'cam' : '')
+                    const placemark = createPlacemark(trafficLight, cameras ? (zoom => (zoom < 17) ? 50 : 0) : calculate, cameras ? 'cam' : '')
                     //Добавление метки контроллера на карту
                     map.geoObjects.add(placemark);
 

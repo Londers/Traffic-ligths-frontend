@@ -103,73 +103,110 @@ $(() => {
             alert(`Ошибка соединения WebSocket, ${evt.reason}`);
         }
 
+        let changeId = false;
         ws.onmessage = function (evt) {
             let allData = JSON.parse(evt.data);
-            let data = allData.data;
+            let messageData = allData.data;
             let counter = 0;
-            console.log(data);
+            console.log(messageData);
             switch (allData.type) {
                 case 'sendB':
                     console.log('sendB');
-                    if (!data.status) {
-                        alert(data.message);
+                    if (!messageData.status) {
+                        alert(messageData.message);
                         return;
                     }
-                    if (localStorage.getItem('login') !== data.user) {
-                        loadData(data, false);
+                    // if (messageData.state.id !== unmodifiedData.state.id) {
+                    // if (localStorage.getItem('login') !== messageData.user) {
+                    //     ws.send(JSON.stringify({
+                    //         type: 'deleteB',
+                    //         state: unmodifiedData.state
+                    //     }));
+                    // }
+                    // location.href = location.pathname +
+                    //     location.search.replace('ID=' + unmodifiedData.state.id, 'ID=' + messageData.state.id);
+                    // }
+                    if (localStorage.getItem('login') !== messageData.user) {
+                        if (messageData.state.id !== unmodifiedData.state.id) {
+                            alert('Другой оператор изменил № перекрёстка');
+                            location.href = location.pathname + location.search.replace('ID=' + unmodifiedData.state.id, 'ID=' + messageData.state.id);
+                        } else {
+                            loadData(messageData, false);
+                        }
+
                     } else {
-                        unmodifiedData = JSON.parse(JSON.stringify(data));
-                        disableControl('sendButton', false);
+                        if (messageData.state.id !== unmodifiedData.state.id) {
+                            changeId = true;
+                            ws.send(JSON.stringify({
+                                type: 'deleteB',
+                                state: unmodifiedData.state
+                            }));
+                        } else {
+                            unmodifiedData = JSON.parse(JSON.stringify(messageData));
+                            disableControl('sendButton', false);
+                        }
                     }
                     break;
                 case 'createB':
                     console.log('createB');
-                    if (!data.status) {
-                        alert(data.result.join('\n'))
+                    if (!messageData.status) {
+                        alert(messageData.result.join('\n'))
                     } else {
                         location.href = location.pathname + location.search.replace('ID=' + unmodifiedData.state.id, 'ID=' + $('#id').val());
                     }
                     break;
                 case 'controlInfo':
                     console.log('controlInfo');
-                    validatePkArray(data);
-                    loadData(data, firstLoad);
-                    if (data.history !== undefined) {
-                        makeHistorySelect(data.history.sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime()));
+                    validatePkArray(messageData);
+                    loadData(messageData, firstLoad);
+                    if (messageData.history !== undefined) {
+                        makeHistorySelect(messageData.history.sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime()));
                     }
-                    document.title = 'АРМ ДК-' + data.state.area + '-' + data.state.id;
+                    document.title = 'АРМ ДК-' + messageData.state.area + '-' + messageData.state.id;
                     firstLoad = false;
-                    editFlag = data.edit;
+                    editFlag = messageData.edit;
                     checkEdit();
                     break;
                 case 'deleteB':
-                    // if (Number(data.pos.area) !== unmodifiedData.state.area) {
+                    // if (Number(messageData.pos.area) !== unmodifiedData.state.area) {
                     //     let search = location.search
-                    //         .replace('Area=' + unmodifiedData.state.area, 'Area=' + data.pos.area)
-                    //         .replace('ID=' + unmodifiedData.state.id, 'ID=' + data.pos.id);
+                    //         .replace('Area=' + unmodifiedData.state.area, 'Area=' + messageData.pos.area)
+                    //         .replace('ID=' + unmodifiedData.state.id, 'ID=' + messageData.pos.id);
                     //     location.href = location.pathname + search;
                     // } else {
-                    (data.status) ? window.close() : alert('Не удалось удалить перекрёсток');
+                    if (messageData.status) {
+                        if (changeId) {
+                            location.href = location.pathname + location.search.replace('ID=' + unmodifiedData.state.id, 'ID=' + data.state.id);
+                        } else {
+                            window.close();
+                        }
+                    } else {
+                        alert('Не удалось удалить перекрёсток');
+                    }
                     // }
                     break;
                 case 'checkB': {
                     console.log('checkB');
                     counter = 0;
                     let flag = false;
-                    if (editFlag) disableControl('sendButton', data.status);
-                    checkNew(data.status);
+                    if (editFlag) {
+                        disableControl('sendButton', messageData.status);
+                    } else {
+                        alert('Перекрёсток редактируется другим пользователем');
+                    }
+                    checkNew(messageData.status);
                     $('#verification').bootstrapTable('removeAll');
-                    data.result.forEach(function () {
-                        if (data.result[counter].includes('Проверка')) {
+                    messageData.result.forEach(function () {
+                        if (messageData.result[counter].includes('Проверка')) {
                             $('#verification').bootstrapTable('append', {
-                                left: data.result[counter],
-                                right: data.result[counter + 1]
+                                left: messageData.result[counter],
+                                right: messageData.result[counter + 1]
                             });
                             flag = true;
                         } else {
                             (!flag) ? $('#verification').bootstrapTable('append', {
                                 left: '',
-                                right: data.result[counter]
+                                right: messageData.result[counter]
                             }) : flag = false;
                         }
                         counter++;
@@ -177,22 +214,22 @@ $(() => {
                     $('#trigger')[0].innerHTML = 'Результат<br>Проверки';
                     $('#trigger').show();
                     if ($('#panel').attr('style') !== 'display: block;') $('#trigger').trigger('click');
-                    $('th[data-field="left"]').attr('style', 'min-width: 346px;');
-                    $('th[data-field="right"]').attr('style', 'min-width: 276px;');
+                    $('th[messageData-field="left"]').attr('style', 'min-width: 346px;');
+                    $('th[messageData-field="right"]').attr('style', 'min-width: 276px;');
                     break;
                 }
                 case 'changeEdit':
                     console.log('changeEdit');
-                    editFlag = data.edit;
+                    editFlag = messageData.edit;
                     checkEdit();
                     break;
                 case 'editInfoB':
                     console.log('editInfoB');
 
-                    disableControl('sendButton', data.status);
-                    checkNew(data.status);
+                    disableControl('sendButton', messageData.status);
+                    checkNew(messageData.status);
                     $('#work').bootstrapTable('removeAll');
-                    data.users.forEach(user => {
+                    messageData.users.forEach(user => {
                         $('#work').bootstrapTable('append', {
                             wleft: user.user,
                             wright: user.edit ? 'Редактирует' : 'Просматривает'
@@ -201,20 +238,20 @@ $(() => {
                     // $('#workTrigger')[0].innerHTML = 'Результат<br>Проверки';
                     $('#workTrigger').show();
                     if ($('#workPanel').attr('style') !== 'display: block;') $('#workTrigger').trigger('click');
-                    $('th[data-field="wleft"]').attr('style', 'min-width: 346px;');
-                    $('th[data-field="wright"]').attr('style', 'min-width: 276px;');
+                    $('th[messageData-field="wleft"]').attr('style', 'min-width: 346px;');
+                    $('th[messageData-field="wright"]').attr('style', 'min-width: 276px;');
 
                     // $('#trigger')[0].innerHTML = 'Список<br>Пользователей';
                     // $('#trigger').show();
                     break;
                 case 'repaintCheck':
-                    (data.status) ? console.log(data.message) : alert(data.message);
+                    (messageData.status) ? console.log(messageData.message) : alert(messageData.message);
                     break;
                 case 'sendHistory': {
                     const tempData = JSON.parse(JSON.stringify(unmodifiedData));
-                    tempData.state = data.sendHistory;
+                    tempData.state = messageData.sendHistory;
                     localStorage.setItem('history', JSON.stringify(tempData));
-                    localStorage.setItem('historydiff', JSON.stringify(data.diff));
+                    localStorage.setItem('historydiff', JSON.stringify(messageData.diff));
                     localStorage.setItem('historyts', $('#historySelect').val());
                     window.open(location.href);
                     $('#historySelect').val('-1');
@@ -223,16 +260,16 @@ $(() => {
                 case 'close':
                     closeReason = 'WS Closed by server';
                     ws.close(1000);
-                    // if (data.message !== '') {
-                    //     if (!document.hidden) alert(data.message);
+                    // if (messageData.message !== '') {
+                    //     if (!document.hidden) alert(messageData.message);
                     // } else {
                     //     if (!document.hidden) alert('Потеряна связь с сервером');
                     // }
                     window.close();
                     break;
                 case 'error':
-                    // alert(`error, ${data}`);
-                    closeReason = data.message;
+                    // alert(`error, ${messageData}`);
+                    closeReason = messageData.message;
                     ws.close(1000);
                     break;
                 default:
