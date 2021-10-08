@@ -431,6 +431,7 @@ function findClosestTFLight(coords) {
     return closestTFLight;
 }
 
+
 ymaps.ready(function () {
 
     $('#tableCol').hide();

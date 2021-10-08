@@ -101,7 +101,7 @@ $(function () {
     // });
 });
 
-function getLogs(start, end, crutchFlag, remoteOpenFlag) {
+function getLogs(start, end, chosenTimeFlag, remoteOpenFlag) {
     // {ID: '', area: '', region: ''}
     // console.log('start:' + start + '   end' + end);
     let toSend = {devices: [], timeStart: start, timeEnd: end};
@@ -146,7 +146,7 @@ function getLogs(start, end, crutchFlag, remoteOpenFlag) {
         dataType: 'json',
         success: function (data) {
             dateSave = new Date();
-            buildLogTable(data, crutchFlag);
+            buildLogTable(data, chosenTimeFlag);
             $('#logsTable').bootstrapTable('hideLoading');
             if (remoteOpenFlag) {
                 $('input[class$="search-input"]:first').val(localStorage.getItem('description')).trigger('blur');
@@ -191,7 +191,7 @@ function collapseDuplicates(data) {
     return collapsedData;
 }
 
-function buildLogTable(data, crutchFlag) {
+function buildLogTable(data, chosenTimeFlag) {
     (data === undefined) ? data = dataSave : dataSave = data;
 
     let filteredData = collapseDuplicates(filterByType(data));
@@ -209,10 +209,19 @@ function buildLogTable(data, crutchFlag) {
             let date = new Date(log.time);
 
             if (index < filteredData[dev].length) {
-                if ((crutchFlag) && (index === (filteredData[dev].length - 1))) {
+                if ((chosenTimeFlag) && (index === (filteredData[dev].length - 1))) {
                     date = new Date($('#dateStart')[0].value + 'T' + $('#timeStart')[0].value + ':00.00' + log.time.slice(-6));
                 }
-                let prevDate = (index === 0) ? dateSave : new Date(filteredData[dev][index - 1].time);
+                let prevDate;
+                if (index === 0) {
+                    if (chosenTimeFlag) {
+                        prevDate = dateSave;
+                    } else {
+                        prevDate = new Date($('#dateEnd')[0].value + 'T' + $('#timeEnd')[0].value + ':00.00' + log.time.slice(-6));
+                    }
+                } else {
+                    prevDate = new Date(filteredData[dev][index - 1].time);
+                }
                 localPrevDate = prevDate.toLocaleString('ru-RU');
                 // duration = Math.floor(prevDate.getTime() - date.getTime()) + date.getTimezoneOffset() * 60 * 1000;// 1000);
                 // let hours = new Date(duration).getHours();
