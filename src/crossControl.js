@@ -27,6 +27,8 @@ const vvTableFlag = false;
 const vv2TableFlag = true;
 const kvTableFlag = false;
 
+const minPhaseDuration = 4;
+
 // let tempIndex;
 
 let points = {
@@ -1555,9 +1557,9 @@ function pkTableDurationFunctional(table, tableType, currPK) {
                 cycleTime = 254;
                 $('#tc').val(cycleTime).change();
                 // setDK[selected].tc = cycleTime;
-            } else if ((cycleTime < (4 * switchCount)) && (prevCycleTime > 3)) { // каждая фаза минимум 4 секунд
-                cycleTime = 4 * switchCount;
-                $('#tc').val(4 * switchCount);
+            } else if ((cycleTime < (minPhaseDuration * switchCount)) && (prevCycleTime > 3)) { // каждая фаза минимум minPhaseDuration секунд
+                cycleTime = minPhaseDuration * switchCount;
+                $('#tc').val(minPhaseDuration * switchCount);
             }
 
             if (shift >= cycleTime) {
@@ -1724,17 +1726,17 @@ function buildPkTable(table, tableType, currPK) {
                                 const prevRow = currSts[((prevTf >= 5) && (prevTf <= 7)) ? (row - rCount - 1) : (row - 1)];
 
                                 // Ограничение минимальной длительности фазы
-                                if ((!prevRow.trs && (prevRow.stop !== tc)) && ((value - prevRow.start) < 4)) {
-                                    value = prevRow.start + 4;
+                                if ((!prevRow.trs && (prevRow.stop !== tc)) && ((value - prevRow.start) < minPhaseDuration)) {
+                                    value = prevRow.start + minPhaseDuration;
                                 }
                                 if (row === 11) {
-                                    if (((tc + currSts[0].start) - value) < 4) {
-                                        value = (tc + currSts[0].start) - 4;
+                                    if (((tc + currSts[0].start) - value) < minPhaseDuration) {
+                                        value = (tc + currSts[0].start) - minPhaseDuration;
                                     }
-                                } else if ((((currRow.trs || nextRow.start === 0) ? nextRow.start + tc : nextRow.start) - value) < 4) {
-                                    value = (currRow.trs ? nextRow.start + tc : nextRow.start) - 4;
+                                } else if ((((currRow.trs || nextRow.start === 0) ? nextRow.start + tc : nextRow.start) - value) < minPhaseDuration) {
+                                    value = (currRow.trs ? nextRow.start + tc : nextRow.start) - minPhaseDuration;
                                     if (value > tc) {
-                                        value = tc - 4;
+                                        value = tc - minPhaseDuration;
                                     } else if (value < 0) {
                                         value += tc;
                                     }
@@ -1764,12 +1766,12 @@ function buildPkTable(table, tableType, currPK) {
                                         const currReplCount = findReplacementCount(currSts, index);
                                         for (let i = index; i < index + currReplCount + 1; i++) {
                                             if (currRow.trs) {
-                                                if ((currSts[i].stop - currRow.start + currSts[i].dt) < 4) {
-                                                    currRow.start = currSts[i].stop - 4;
+                                                if ((currSts[i].stop - currRow.start + currSts[i].dt) < minPhaseDuration) {
+                                                    currRow.start = currSts[i].stop - minPhaseDuration;
                                                 }
                                             } else {
-                                                if ((currSts[i].stop - currRow.start) < 4) {
-                                                    currRow.start = currSts[i].stop - 4;
+                                                if ((currSts[i].stop - currRow.start) < minPhaseDuration) {
+                                                    currRow.start = currSts[i].stop - minPhaseDuration;
                                                 }
                                             }
                                         }
@@ -1940,8 +1942,8 @@ function buildPkTable(table, tableType, currPK) {
                         if (cycleTime === 0) return;
 
                         // Минимальная длительность фазы
-                        if (value < 4) {
-                            $('[class~=duration' + swId + ']').val(4).change();
+                        if (value < minPhaseDuration) {
+                            $('[class~=duration' + swId + ']').val(minPhaseDuration).change();
                             return;
                         }
 
@@ -2112,23 +2114,23 @@ function findMaxTvpDuration(currSts, index, tf) {
     }
 }
 
-// Возвращается минимальная длительность фазы ТВП и её Зам`ов
-function findMinTvpDuration(currSts, index, tf) {
-    let tvpDuration = Number($(`[class~=duration${index}]`).val());
-    if (tf === 4) {
-        //1,2 ТВП
-        let replacementDurationArray = [];
-        let replacementCount = findReplacementCount(currSts, index);
-        for (let i = index; i < (index + replacementCount); i++) {
-            replacementDurationArray.push(Number($(`[class~=duration${i + 1}`).val()));
-        }
-        return Math.min(...replacementDurationArray, tvpDuration);
-    } else {
-        //Одиночная ТВП
-        let replacementDuration = (Number($(`[class~=tf${index + 1}`).val()) === 7) ? Number($(`[class~=duration${index + 1}`).val()) : 0;
-        return Math.min(tvpDuration, replacementDuration);
-    }
-}
+// // Возвращается минимальная длительность фазы ТВП и её Зам`ов
+// function findMinTvpDuration(currSts, index, tf) {
+//     let tvpDuration = Number($(`[class~=duration${index}]`).val());
+//     if (tf === 4) {
+//         //1,2 ТВП
+//         let replacementDurationArray = [];
+//         let replacementCount = findReplacementCount(currSts, index);
+//         for (let i = index; i < (index + replacementCount); i++) {
+//             replacementDurationArray.push(Number($(`[class~=duration${i + 1}`).val()));
+//         }
+//         return Math.min(...replacementDurationArray, tvpDuration);
+//     } else {
+//         //Одиночная ТВП
+//         let replacementDuration = (Number($(`[class~=tf${index + 1}`).val()) === 7) ? Number($(`[class~=duration${index + 1}`).val()) : 0;
+//         return Math.min(tvpDuration, replacementDuration);
+//     }
+// }
 
 // Приведение данных массивов ПК в соотвествие с таблицей на экране
 function validatePkByDuration(currSts, difLen) {
@@ -2190,7 +2192,7 @@ function addPkSwitch(index, tf, num, start, stop) {
     function sortFunc(a, b) {
         return a[0] - b[0];
     }
-
+    
     let selected = $('#pkSelect').val();
     if (index === undefined) return;
     let currSts = setDK[selected].sts;
@@ -2199,7 +2201,7 @@ function addPkSwitch(index, tf, num, start, stop) {
         start: (start === undefined) ? (currSts[(index === 0) ? 11 : (index)].stop) : start,
         num: ((tf === 1) || (tf === 8)) ? 0 : (((tf > 1) && (tf < 8)) ? num : 1),
         tf: tf,
-        stop: (stop === undefined) ? (currSts[(index === 0) ? 11 : (index)].stop + 4) : stop,
+        stop: (stop === undefined) ? (currSts[(index === 0) ? 11 : (index)].stop + minPhaseDuration) : stop,
         plus: currSts[(index === 0) ? 11 : (index)].plus,
         dt: 0
     };
@@ -2223,7 +2225,7 @@ function addPkSwitch(index, tf, num, start, stop) {
     setDK[selected].sts = currSts;
     pkTabFill('pkTable');
 
-    $(`[class~=duration${index + 1}]`).val((start === undefined) ? 4 : (stop - start)).change();
+    $(`[class~=duration${index + 1}]`).val((start === undefined) ? minPhaseDuration : (stop - start)).change();
 }
 
 // Удаление переключателя из ПК

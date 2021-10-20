@@ -88,11 +88,12 @@
     </form>
 </div>
 <div id="phaseTableDialog" title="Таблица фаз">
-    <button id="deleteButton" class="btn btn-secondary">Удалить</button>
+    <button id="deleteButton" class="btn btn-secondary ml-auto">Удалить</button>
     <table class="table table-bordered"
            id="table"
            data-toggle="table"
            data-toolbar="#toolbar"
+           data-height="80vh"
            data-single-select="true"
            data-click-to-select="true">
         <thead>
@@ -136,28 +137,12 @@
                 <input type="checkbox" class="form-check-input" id="switchSubLayout">Подрайоны
             </label>
         </div>
-        <div class="dropdown-item">
-            <label class="form-check-label">
-                <input type="checkbox" class="form-check-input" id="camerasLayout">Камеры
-            </label>
-        </div>
-        <div class="dropdown-item">
-            <label class="form-check-label">
-                <input type="checkbox" class="form-check-input" id="directionLayout">Направления
-            </label>
-        </div>
-        <div class="dropdown-item">
-            <label class="form-check-label">
-                <input type="checkbox" class="form-check-input" id="trackerLayout">Трекер
-            </label>
-        </div>
-        <button class="dropdown-item" type="button" id="addLayoutButton">Добавить слой</button>
     </div>
 </div>
 <div class="row">
     <div class="col-md-6 text-center">
         <div class="row">
-            <div class="col-md-3 text-center mt-2">
+            <div class="col-md-4 text-center my-2">
                 <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownControlButton"
                         data-toggle="dropdown"
                         aria-haspopup="true" aria-expanded="false">Управление картой
@@ -169,31 +154,32 @@
                     <button class="dropdown-item" type="button" id="fixationReset">Снять фиксацию</button>
                 </div>
             </div>
-            <div class="col-md-3 text-center mt-2">
+            <div class="col-md-2 text-center mt-3" style="">
+                <select id="routes" style="max-width: 100px">
+                    <option value="0---0">Маршрут</option>
+                </select>
+            </div>
+            <div class="col-md-3 text-center my-2">
+                <button id="creatingModeButton" class="btn btn-secondary">Режим создания</button>
+                <button id="createRouteButton" class="btn btn-secondary">Создать режим</button>
+            </div>
+            <div class="col-md-3 text-center my-2">
                 <button id="phaseTableButton" class="btn btn-secondary">Назначить фазы</button>
-            </div>
-            <div class="col-md-3 text-center mt-2">
-                <button id="sendRouteButton" class="btn btn-secondary">Создать режим</button>
-            </div>
-            <div class="col-md-3 text-center mt-2">
-                <button id="updateRouteButton" class="btn btn-secondary">Сохранить режим</button>
             </div>
         </div>
     </div>
     <div class="col-md-6 text-center">
         <div class="row">
-            <div class="col-md-3 text-center mt-2">
+            <div class="col-md-3 text-center my-2">
+                <button id="updateRouteButton" class="btn btn-secondary">Сохранить режим</button>
+            </div>
+            <div class="col-md-3 text-center my-2">
                 <button id="deleteRouteButton" class="btn btn-secondary">Удалить режим</button>
             </div>
-            <div class="col-md-5 text-center mt-3">
-                <select id="routes">
-                    <option value="0---0">Создание</option>
-                </select>
-            </div>
-            <div class="col-md-2 text-center">
+            <div class="col-md-3 text-center my-2">
                 <button id="startRouteButton" class="btn btn-secondary">Начать исполнение</button>
             </div>
-            <div class="col-md-2 text-center">
+            <div class="col-md-3 text-center my-2">
                 <button id="endRouteButton" class="btn btn-secondary">Закончить исполнение</button>
             </div>
         </div>
@@ -201,14 +187,12 @@
 </div>
 <div class="container-fluid">
     <div class="row">
-        <div class="col-md-9 border border-dark" id="map"
-             style="max-height: 920px; min-height: 920px; position: relative; z-index: 1"></div>
         <div class="col-md-3" id="tableCol">
             <table class="table table-bordered"
                    id="navTable"
                    data-toggle="table"
                    data-toolbar="#toolbar"
-                   data-height="800"
+                   data-height="80vh"
                    data-single-select="true"
                    data-click-to-select="true">
                 <thead>

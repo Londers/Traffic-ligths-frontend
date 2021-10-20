@@ -1,449 +1,495 @@
 'use strict';
 
-let IDs = [];
-let areaLayout = [];
-let subareasLayout = [];
-let regionInfo;
-let areaInfo;
-let areaZone;
-let boxRemember = {Y: 0, X: 0};
-let boxPoint = [];
-let description = '';
-let tflights = [];
-let currentRouteTflights = new Map();
-let currListTL = [];
-let routeList = [];
-let allRoutesList = [];
-let lastRoute = {};
-let circlesMap = new Map();
-let zoom = 19;
-let fixationFlag = false;
-let creatingFlag = true;
-let executionFlag = false;
-let loopFuncMap = new Map();
-let sendedPhaseSave = new Map();
-let ws;
-
-function getRandomColor() {
-    let letters = '0123456789A';
-    let color = '#';
-    for (let i = 0; i < 6; i++) {
-        color += letters[Math.floor(Math.random() * 11)];
-    }
-    return color;
-}
-
-function deleteCircle(map, circle, pos, description) {
-    map.geoObjects.remove(circle);
-    circlesMap.delete(pos);
-    routeList.forEach((route, index) => {
-        if ((route.pos.region === pos.region) && (route.pos.area === pos.area) && (route.pos.id === pos.id)) routeList.splice(index, 1);
-    });
-    $('#table').bootstrapTable('remove', {field: 'desc', values: [description]});
-    $('#navTable').bootstrapTable('remove', {field: 'tflight', values: [description]});
-
-    makeSelects();
-}
-
-function createIdeviceArray() {
-    let tflist = [];
-    let idevices = [];
-    let place = $('#routes').val().split('---');
-
-    allRoutesList.forEach(route => {
-        if ((route.region === place[0]) && (route.description === place[1])) {
-            tflist = route.listTL;
-        }
-    });
-
-    tflist.forEach(tf => {
-        tflights.forEach(element => {
-            if ((element.region.num === tf.pos.region) && (element.area.num === tf.pos.area) && (element.ID === tf.pos.id)) idevices.push(element.idevice);
-        });
-    });
-
-    return idevices;
-}
-
-function handlePhaseCommand(map, idevice) {
-    let phase = -1;
-    let dataArr = $('#table').bootstrapTable('getData');
-    dataArr.forEach((tf, index) => {
-        if (tf.idevice === idevice) phase = Number($('#cross' + index).val())
-    });
-
-    let navTable = $('#navTable').bootstrapTable('getData');
-    let index = -1;
-    navTable.forEach((row, rowIndex) => {
-        if (row.idevice === idevice) index = rowIndex;
-    });
-    if (navTable.length > (index + 1)) $($('#navTable tbody tr')[index + 1]).trigger('click');
-
-    if (executionFlag && (phase !== -1)) {
-        if (!sendedPhaseSave.get(idevice)) {
-            sendedPhaseSave.set(idevice, true);
-            modifiedControlSend({id: idevice, cmd: 9, param: phase});
-        }
-    }
-}
-
-function handleClick(map, trafficLight, diffCoords) {
-    let coordinates = (diffCoords === undefined) ? [trafficLight.points.Y, trafficLight.points.X] : diffCoords;
-    let region = trafficLight.region.num;
-    let area = trafficLight.area.num;
-    let id = trafficLight.ID;
-    let idevice = trafficLight.idevice;
-    let description = trafficLight.description;
-    let phases = trafficLight.phases;
-    let returnFlag = false;
-
-    if (!creatingFlag) {
-        // map.setCenter(coordinates, 17);
-        handlePhaseCommand(map, trafficLight.idevice);
-        return;
-    }
-
-    circlesMap.forEach((value, key) => {
-        if ((key.region === region) && (key.area === area) && (key.id === id)) {
-            deleteCircle(map, value, key, description);
-            returnFlag = true;
-        }
-    });
-
-    if (returnFlag) return;
-
-    if (routeList.length > 0) {
-        if (routeList[routeList.length - 1].pos.region !== region) return;
-    }
-
-    routeList.push({
-        num: routeList.length,
-        phase: -1,
-        point: {Y: coordinates[0], X: coordinates[1]},
-        pos: {region: region, area: area, id: id}
-    });
-
-    // Создаем круг.
-    let myCircle = new ymaps.Circle([
-        // Координаты центра круга.
-        coordinates,
-        // Радиус круга в метрах.
-        radiusCalculate(map.getZoom())
-    ], {
-        // Описываем свойства круга.
-        // Содержимое балуна.
-        // balloonContent: "Радиус круга - 10 км",
-        // Содержимое хинта.
-        // hintContent: "Подвинь меня"
-    }, {
-        // Задаем опции круга.
-        // Включаем возможность перетаскивания круга.
-        draggable: false,
-        // Цвет заливки.
-        // Последний байт (77) определяет прозрачность.
-        // Прозрачность заливки также можно задать используя опцию "fillOpacity".
-        fillColor: "#DB709377",
-        // Цвет обводки.
-        strokeColor: "#990066",
-        // Прозрачность обводки.
-        strokeOpacity: 0.8,
-        // Ширина обводки в пикселях.
-        strokeWidth: 5
-    });
-
-    circlesMap.set({region: region, area: area, id: id, description: description}, myCircle);
-
-    // Добавляем круг на карту.
-    map.geoObjects.add(myCircle);
-
-    //Заполнение структуры для дальнейшей записи в таблицу
-    let tflight = [{
-        desc: description,
-        phase: phases,
-        region: region,
-        area: area,
-        id: id,
-        idevice: idevice
-    }];
-
-    $('#table').bootstrapTable('append', tflight).bootstrapTable('scrollTo', 'top');
-    $('#navTable').bootstrapTable('append', {
-        id: $('#navTable').bootstrapTable('getData').length + 1,
-        tflight: description
-    }).bootstrapTable('scrollTo', 'top');
-
-    makeSelects();
-}
-
-function getPhases(index) {
-    let rowData = $('#table').bootstrapTable('getData')[index];
-    let returnData = {currPhase: -1, phases: []};
-
-    tflights.some(trafficLight => {
-        if ((trafficLight.region.num === rowData.region) && (trafficLight.area.num === rowData.area) && (trafficLight.ID === rowData.id)) {
-            returnData.currPhase = (rowData.phase.length === 1) ? rowData.phase[0] : 1;
-            returnData.phases = trafficLight.phases;
-        }
-    });
-
-    return returnData;
-}
-
-function makeSelects() {
-    $('#table tbody tr').each((i, tr) => {
-        $(tr).find('td').each((j, td) => {
-            if (td.cellIndex === 2) {
-                let phases = getPhases(tr.rowIndex - 1); // $(this)[0].innerText.split(',');
-                let optionsHtml = '';
-                phases.phases.forEach(phase => {
-                    optionsHtml +=
-                        `<option value="${phase}" ${((phase === phases.currPhase) ? ' selected="selected"' : '')}>${phase}</option>`;
-                });
-                $(td)[0].innerHTML = `<select onchange="handleSelectChange(${i})" id="cross${i}">${optionsHtml}</select>`;
-                handleSelectChange(i);
-            }
-        })
-    })
-}
-
-function handleSelectChange(rowIndex) {
-    const value = $('#cross' + rowIndex).val();
-    $('#cross' + rowIndex).closest('td').next('td')[0].innerHTML = '<td>-</td>';
-    let currTL = currListTL[rowIndex].pos;
-    let currSvg = svg[currTL.region + '/' + currTL.area + '/' + currTL.id];
-    if (currSvg === undefined) {
-        setTimeout(() => handleSelectChange(rowIndex), 1000);
-        return;
-    }
-    currSvg.forEach(pic => {
-        if (pic.num === value) $('#cross' + rowIndex).closest('td').next('td')[0].innerHTML =
-            `<td>` +
-            `<svg width="100%" height="100%"` +
-            `style="max-height: 50px; max-width: 50px; min-height: 30px; min-width: 30px;" xmlns="http://www.w3.org/2000/svg"` +
-            `xmlns:xlink="http://www.w3.org/1999/xlink">` +
-            `<image x="0" y="0" width="100%" height="100%"` +
-            `style="max-height: 50px; max-width: 50px; min-height: 30px; min-width: 30px;"` +
-            `xlink:href="data:image/png;base64,${pic.phase}"></image>` +
-            `</svg>` +
-            `</td>`
-    })
-
-    // todo Жду обновлённые картинки от Андрея
-    // const value = $('#cross' + rowIndex).val();
-    // $('#cross' + rowIndex).closest('td').next('td')[0].innerHTML = '<td>-</td>';
-    // svg[rowIndex].forEach(pic => {
-    //     if (pic._num === value) $('#cross' + rowIndex).closest('td').next('td')[0].innerHTML =
-    //         `<td>` +
-    //             `<svg width="100%" height="100%"` +
-    //             `style="max-height: 50px; max-width: 50px; min-height: 30px; min-width: 30px;" xmlns="http://www.w3.org/2000/svg"` +
-    //             `xmlns:xlink="http://www.w3.org/1999/xlink">` +
-    //                 `<image x="0" y="0" width="100%" height="100%"` +
-    //                 `style="max-height: 50px; max-width: 50px; min-height: 30px; min-width: 30px;"` +
-    //                 `xlink:href="data:image/png;base64,${pic.__text}"></image>` +
-    //             `</svg>` +
-    //         `</td>`
-    // })
-}
-
-function fillPhases() {
-    if (routeList.length === 0) return;
-    let selects = $('#table').find('select');
-
-    routeList.map((route, index) => route.phase = Number(selects[index].selectedOptions[0].innerText));
-
-    ws.send(JSON.stringify({
-        type: 'createRoute',
-        region: routeList[0].pos.region,
-        description: description,
-        listTL: routeList
-    }))
-}
-
-function radiusCalculate(zoom) {
-    switch (zoom) {
-        case 3:
-            return 32000;
-        case 4:
-            return 16000;
-        case 5:
-            return 8000;
-        case 6:
-            return 4000;
-        case 7:
-            return 2000;
-        case 8:
-            return 1000;
-        case 9:
-            return 750;
-        case 10:
-            return 500;
-        case 11:
-            return 400;
-        case 12:
-            return 300;
-        case 13:
-            return 250;
-        case 14:
-            return 200;
-        case 15:
-            return 150;
-        case 16:
-            return 100;
-        case 17:
-            return 75;
-        case 18:
-            return 50;
-        case 19:
-            return 40;
-        default:
-            return 30;
-    }
-}
-
-function circlesControl(map) {
-    if (zoom !== map.getZoom()) {
-        circlesMap.forEach(circle => {
-            map.geoObjects.remove(circle);
-        });
-        circlesMap.forEach(circle => {
-            circle.geometry.setRadius(radiusCalculate(map.getZoom()));
-            map.geoObjects.add(circle);
-        });
-        zoom = map.getZoom();
-    }
-}
-
-function setRouteArea(map, box, description, routeId) {
-    map.geoObjects.remove(lastRoute);
-    let coordinates = [];
-    let tableData = [];
-    let navTableData = [];
-    allRoutesList[routeId].listTL.forEach((tf, index) => {
-        coordinates.push([tf.point.Y, tf.point.X]);
-        tableData.push({
-            desc: tf.description,
-            phase: [tf.phase],
-            region: tf.pos.region,
-            area: tf.pos.area,
-            id: tf.pos.id,
-            idevice: findIdevice(tf.pos.region, tf.pos.area, tf.pos.id)
-        });
-        navTableData.push({
-            id: index + 1,
-            tflight: tf.description,
-            idevice: findIdevice(tf.pos.region, tf.pos.area, tf.pos.id)
-        });
-    });
-
-    // Построение маршрута.
-    // По умолчанию строится автомобильный маршрут.
-    let multiRoute = new ymaps.multiRouter.MultiRoute({
-        // Точки маршрута. Точки могут быть заданы как координатами, так и адресом.
-        referencePoints: coordinates
-    }, {
-        // Автоматически устанавливать границы карты так,
-        // чтобы маршрут был виден целиком.
-        boundsAutoApply: true
-    });
-
-    lastRoute = multiRoute;
-    map.geoObjects.add(multiRoute);
-
-
-    tableData.forEach(row => {
-        $.ajax({
-            url: window.location.origin + '/file/static/cross/' + row.region + '/' + row.area + '/' + row.id + '/cross.svg',
-            type: 'GET',
-            success: function (svgData) {
-                // todo Жду обновлённые картинки от Андрея
-                // let x2js = new X2JS();
-                // let data = x2js.xml2json(svgData);
-                // svg.push(data.svg.mphase.phase)
-
-                $('body').append('<div id="kostil" class="img-fluid" style="display: none" />');
-                $('#kostil').prepend(svgData.children[0].outerHTML.replace('let currentPhase', 'var currentPhase'));
-
-                if (typeof getPhasesMass === "function") {
-                    let phases = getPhasesMass();
-                    svg[row.region + '/' + row.area + '/' + row.id] = phases
-                } else {
-                    svg[row.region + '/' + row.area + '/' + row.id] = [];
-                }
-
-                $('#kostil').remove();
-            },
-            error: function (request) {
-                console.log(request.status + ' ' + request.responseText);
-                alert(JSON.parse(request.responseText).message);
-            }
-        });
-    });
-
-    $('#table').bootstrapTable('load', tableData);
-    $('#navTable').bootstrapTable('load', navTableData);
-    makeSelects();
-    $('#table tbody tr td').each((i, td) => {
-        $(td).find('select option[selected=selected]').trigger('click');
-    })
-}
-
-let svg = {};
-
-function findIndex(hintContent) {
-    if ($('#tableCol')[0].style.display === 'none') return -1;
-
-    let id = -1;
-    $('#navTable tbody tr').each((i, tr) => {
-        if (tr.cells[3].innerText.replace(/\s/g, "") === hintContent.replace(/\s/g, "")) id = i;
-    });
-    return id;
-}
-
-function getStatus(position) {
-    let currPhase = -1;
-    tflights.forEach(element => {
-        if ((element.region.num === position.region) && (element.area.num === position.area) && (element.ID === position.id)) {
-            currPhase = element.tlsost.num;
-        }
-    });
-    return currPhase;
-}
-
-function distanceBetweenPoints(x1, y1, x2, y2) {
-    return Math.sqrt((Math.pow((x2 - x1), 2) + (Math.pow((y2 - y1), 2))));
-}
-
-function findClosestTFLight(coords) {
-    let closestTFLight = undefined;
-    let x1 = coords[1];
-    let y1 = coords[0];
-    let minDistance = 0;
-    tflights.forEach(tflight => {
-        let x2 = tflight.points.X;
-        let y2 = tflight.points.Y;
-        let distance = distanceBetweenPoints(x1, y1, x2, y2);
-        if ((minDistance === 0) || minDistance > distance) {
-            minDistance = distance;
-            closestTFLight = tflight;
-        }
-    });
-    console.log(minDistance);
-    return closestTFLight;
-}
-
-
 ymaps.ready(function () {
 
+    let IDs = [];
+    let areaLayout = [];
+    let subareasLayout = [];
+    let regionInfo;
+    let areaInfo;
+    let areaZone;
+    let boxRemember = {Y: 0, X: 0};
+    let boxPoint = [];
+    let description = '';
+    let tflights = [];
+    let currentRouteTflights = new Map();
+    let currListTL = [];
+    let routeList = [];
+    let allRoutesList = [];
+    let lastRoute = {};
+    let circlesMap = new Map();
+    let zoom = 19;
+    let fixationFlag = false;
+    let creatingFlag = false;
+    let executionFlag = false;
+    let loopFuncMap = new Map();
+    let sendedPhaseSave = new Map();
+    let ws;
+
+    function getRandomColor() {
+        let letters = '0123456789A';
+        let color = '#';
+        for (let i = 0; i < 6; i++) {
+            color += letters[Math.floor(Math.random() * 11)];
+        }
+        return color;
+    }
+
+    function deleteCircle(map, circle, pos, description) {
+        map.geoObjects.remove(circle);
+        circlesMap.delete(JSON.stringify(pos));
+        routeList.forEach((route, index) => {
+            if ((route.pos.region === pos.region) && (route.pos.area === pos.area) && (route.pos.id === pos.id)) routeList.splice(index, 1);
+        });
+        $('#table').bootstrapTable('remove', {field: 'desc', values: [description]});
+        $('#navTable').bootstrapTable('remove', {field: 'tflight', values: [description]});
+
+        makeSelects();
+    }
+
+    function deleteAllCircles() {
+        circlesMap.forEach((value, key) => {
+            map.geoObjects.remove(value);
+            circlesMap.delete(key);
+        });
+    }
+
+    function createIdeviceArray() {
+        let tflist = [];
+        let idevices = [];
+        let [region, desc] = $('#routes').val().split('---');
+
+        allRoutesList.forEach(route => {
+            if ((route.region === region) && (route.description === desc)) {
+                tflist = route.listTL;
+            }
+        });
+
+        tflist.forEach(tf => {
+            tflights.forEach(element => {
+                if ((element.region.num === tf.pos.region) && (element.area.num === tf.pos.area) && (element.ID === tf.pos.id)) idevices.push(element.idevice);
+            });
+        });
+
+        return idevices;
+    }
+
+    function handlePhaseCommand(map, idevice) {
+        let phase = -1;
+        let dataArr = $('#table').bootstrapTable('getData');
+        dataArr.forEach((tf, index) => {
+            if (tf.idevice === idevice) phase = Number($('#cross' + index).val())
+        });
+
+        let navTable = $('#navTable').bootstrapTable('getData');
+        let index = -1;
+        navTable.forEach((row, rowIndex) => {
+            if (row.idevice === idevice) index = rowIndex;
+        });
+        if (navTable.length > (index + 1)) $($('#navTable tbody tr')[index + 1]).trigger('click');
+
+        if (executionFlag && (phase !== -1)) {
+            if (!sendedPhaseSave.get(idevice)) {
+                sendedPhaseSave.set(idevice, true);
+                modifiedControlSend({id: idevice, cmd: 9, param: phase});
+            }
+        }
+    }
+
+    function handleClick(map, trafficLight, diffCoords) {
+        let coordinates = (diffCoords === undefined) ? [trafficLight.points.Y, trafficLight.points.X] : diffCoords;
+        let region = trafficLight.region.num;
+        let area = trafficLight.area.num;
+        let id = trafficLight.ID;
+        let idevice = trafficLight.idevice;
+        let description = trafficLight.description;
+        let phases = trafficLight.phases;
+        let returnFlag = false;
+
+        if (!creatingFlag) {
+            // map.setCenter(coordinates, 17);
+            handlePhaseCommand(map, trafficLight.idevice);
+            return;
+        }
+
+        circlesMap.forEach((value, keyJson) => {
+            const key = JSON.parse(keyJson);
+            if ((key.region === region) && (key.area === area) && (key.id === id)) {
+                deleteCircle(map, value, key, description);
+                returnFlag = true;
+                if (circlesMap.size === 0) $('#phaseTableButton').hide();
+            }
+        });
+
+        if (returnFlag) return;
+
+        if (routeList.length > 0) {
+            if (routeList[routeList.length - 1].pos.region !== region) return;
+        }
+
+        routeList.push({
+            num: routeList.length,
+            phase: 1,
+            point: {Y: coordinates[0], X: coordinates[1]},
+            pos: {region: region, area: area, id: id}
+        });
+
+        // Создаем круг.
+        let myCircle = new ymaps.Circle([
+            // Координаты центра круга.
+            coordinates,
+            // Радиус круга в метрах.
+            radiusCalculate(map.getZoom())
+        ], {
+            // Описываем свойства круга.
+            // Содержимое балуна.
+            // balloonContent: "Радиус круга - 10 км",
+            // Содержимое хинта.
+            hintContent: description
+        }, {
+            // Задаем опции круга.
+            // Включаем возможность перетаскивания круга.
+            draggable: false,
+            // Цвет заливки.
+            // Последний байт (77) определяет прозрачность.
+            // Прозрачность заливки также можно задать используя опцию "fillOpacity".
+            fillColor: "#DB709377",
+            // Цвет обводки.
+            strokeColor: "#990066",
+            // Прозрачность обводки.
+            strokeOpacity: 0.8,
+            // Ширина обводки в пикселях.
+            strokeWidth: 5
+        });
+
+        circlesMap.set(JSON.stringify({region: region, area: area, id: id, description: description}), myCircle);
+        if (circlesMap.size === 1) $('#phaseTableButton').show();
+
+        // Добавляем круг на карту.
+        map.geoObjects.add(myCircle);
+
+        //Заполнение структуры для дальнейшей записи в таблицу
+        let tflight = [{
+            state: false,
+            desc: description,
+            phase: phases,
+            region: region,
+            area: area,
+            id: id,
+            idevice: idevice
+        }];
+
+        $('#table').bootstrapTable('append', tflight).bootstrapTable('scrollTo', 'top');
+        $('#navTable').bootstrapTable('append', {
+            id: $('#navTable').bootstrapTable('getData').length + 1,
+            tflight: description
+        }).bootstrapTable('scrollTo', 'top');
+
+        currListTL.push({pos: {region, area, id}});
+        makeSelects();
+    }
+
+    function getPhases(index) {
+        let rowData = $('#table').bootstrapTable('getData')[index];
+        let returnData = {currPhase: -1, phases: []};
+
+        tflights.some(trafficLight => {
+            if ((trafficLight.region.num === rowData.region) && (trafficLight.area.num === rowData.area) && (trafficLight.ID === rowData.id)) {
+                returnData.currPhase = (rowData.phase.length === 1) ? rowData.phase[0] : 1;
+                returnData.phases = trafficLight.phases;
+            }
+        });
+
+        return returnData;
+    }
+
+    function makeSelects() {
+        $('#table tbody tr').each((i, tr) => {
+            $(tr).find('td').each((j, td) => {
+                if (td.cellIndex === 2) {
+                    let phases = getPhases(tr.rowIndex - 1); // $(this)[0].innerText.split(',');
+                    let optionsHtml = '';
+                    phases.phases.forEach(phase => {
+                        optionsHtml +=
+                            `<option value="${phase}" ${((phase === phases.currPhase) ? ' selected="selected"' : '')}>${phase}</option>`;
+                    });
+                    $(td)[0].innerHTML = `<select id="cross${i}">${optionsHtml}</select>`;
+                    $(`#cross${i}`).on('change', () => handleSelectChange(i));
+                    handleSelectChange(i);
+                }
+            })
+        })
+    }
+
+    function handleSelectChange(rowIndex, preventCycle) {
+        const value = $('#cross' + rowIndex).val();
+        let currTL = currListTL[rowIndex].pos;
+        let currSvg = svg[currTL.region + '/' + currTL.area + '/' + currTL.id];
+        if (routeList.length !== 0) {
+            const index = routeList.findIndex(tf => JSON.stringify(tf.pos) === JSON.stringify(currTL));
+            if (index !== -1) routeList[index].phase = Number(value);
+        }
+        if (currSvg === undefined) {
+            if (preventCycle ?? false) return;
+            setTimeout(() => handleSelectChange(rowIndex, true), 1000);
+            return;
+        }
+        if (currSvg[value - 1] === undefined) $('#cross' + rowIndex).closest('td').next('td')[0].innerHTML = '<td>-</td>';
+
+        currSvg.forEach(pic => {
+            if (pic.num === value) $('#cross' + rowIndex).closest('td').next('td')[0].innerHTML =
+                `<td>` +
+                `<svg width="100%" height="100%"` +
+                `style="max-height: 50px; max-width: 50px; min-height: 30px; min-width: 30px;" xmlns="http://www.w3.org/2000/svg"` +
+                `xmlns:xlink="http://www.w3.org/1999/xlink">` +
+                `<image x="0" y="0" width="100%" height="100%"` +
+                `style="max-height: 50px; max-width: 50px; min-height: 30px; min-width: 30px;"` +
+                `xlink:href="data:image/png;base64,${pic.phase}"></image>` +
+                `</svg>` +
+                `</td>`
+        })
+
+        // todo Жду обновлённые картинки от Андрея
+        // const value = $('#cross' + rowIndex).val();
+        // $('#cross' + rowIndex).closest('td').next('td')[0].innerHTML = '<td>-</td>';
+        // svg[rowIndex].forEach(pic => {
+        //     if (pic._num === value) $('#cross' + rowIndex).closest('td').next('td')[0].innerHTML =
+        //         `<td>` +
+        //             `<svg width="100%" height="100%"` +
+        //             `style="max-height: 50px; max-width: 50px; min-height: 30px; min-width: 30px;" xmlns="http://www.w3.org/2000/svg"` +
+        //             `xmlns:xlink="http://www.w3.org/1999/xlink">` +
+        //                 `<image x="0" y="0" width="100%" height="100%"` +
+        //                 `style="max-height: 50px; max-width: 50px; min-height: 30px; min-width: 30px;"` +
+        //                 `xlink:href="data:image/png;base64,${pic.__text}"></image>` +
+        //             `</svg>` +
+        //         `</td>`
+        // })
+    }
+
+    function createRoute() {
+        if (routeList.length === 0) return;
+        // let selects = $('#table').find('select');
+        //
+        // routeList.map((route, index) => route.phase = Number(selects[index].selectedOptions[0].innerText));
+
+        ws.send(JSON.stringify({
+            type: 'createRoute',
+            region: routeList[0].pos.region,
+            description: description,
+            listTL: routeList
+        }))
+    }
+
+    function radiusCalculate(zoom) {
+        switch (zoom) {
+            case 3:
+                return 32000;
+            case 4:
+                return 16000;
+            case 5:
+                return 8000;
+            case 6:
+                return 4000;
+            case 7:
+                return 2000;
+            case 8:
+                return 1000;
+            case 9:
+                return 750;
+            case 10:
+                return 500;
+            case 11:
+                return 400;
+            case 12:
+                return 300;
+            case 13:
+                return 250;
+            case 14:
+                return 200;
+            case 15:
+                return 150;
+            case 16:
+                return 100;
+            case 17:
+                return 75;
+            case 18:
+                return 50;
+            case 19:
+                return 40;
+            default:
+                return 30;
+        }
+    }
+
+    function circlesControl(map) {
+        if (zoom !== map.getZoom()) {
+            circlesMap.forEach(circle => {
+                map.geoObjects.remove(circle);
+            });
+            circlesMap.forEach(circle => {
+                circle.geometry.setRadius(radiusCalculate(map.getZoom()));
+                map.geoObjects.add(circle);
+            });
+            zoom = map.getZoom();
+        }
+    }
+
+    function getPhasesSvg(trafficLights) {
+        trafficLights.forEach((trafficLight, index) => {
+            $.ajax({
+                url: window.location.origin + '/file/static/cross/' + trafficLight.region + '/' + trafficLight.area + '/' + trafficLight.id + '/cross.svg',
+                type: 'GET',
+                success: function (svgData) {
+                    // todo Жду обновлённые картинки от Андрея
+                    // let x2js = new X2JS();
+                    // let data = x2js.xml2json(svgData);
+                    // svg.push(data.svg.mphase.phase)
+
+                    $('body').append('<div id="kostil" class="img-fluid" style="display: none" />');
+                    $('#kostil').prepend(svgData.children[0].outerHTML.replace('let currentPhase', 'var currentPhase'));
+
+                    const uniqueId = trafficLight.region + '/' + trafficLight.area + '/' + trafficLight.id;
+                    if (typeof getPhasesMass === "function") {
+                        svg[uniqueId] = getPhasesMass()
+                    } else {
+                        svg[uniqueId] = [];
+                    }
+
+                    if ((creatingFlag) && (svg[uniqueId] ?? true)) handleSelectChange(index);
+                    $('#kostil').remove();
+                },
+                error: function (request) {
+                    console.log(request.status + ' ' + request.responseText);
+                    alert(JSON.parse(request.responseText).message);
+                }
+            });
+        });
+    }
+
+    function setRouteArea(map, box, description, routeId) {
+        map.geoObjects.remove(lastRoute);
+        let coordinates = [];
+        let tableData = [];
+        let navTableData = [];
+        allRoutesList[routeId].listTL.forEach((tf, index) => {
+            coordinates.push([tf.point.Y, tf.point.X]);
+            tableData.push({
+                desc: tf.description,
+                phase: [tf.phase],
+                region: tf.pos.region,
+                area: tf.pos.area,
+                id: tf.pos.id,
+                idevice: findIdevice(tf.pos.region, tf.pos.area, tf.pos.id)
+            });
+            navTableData.push({
+                id: index + 1,
+                tflight: tf.description,
+                idevice: findIdevice(tf.pos.region, tf.pos.area, tf.pos.id)
+            });
+        });
+
+        // Построение маршрута.
+        // По умолчанию строится автомобильный маршрут.
+        let multiRoute = new ymaps.multiRouter.MultiRoute({
+            // Точки маршрута. Точки могут быть заданы как координатами, так и адресом.
+            referencePoints: coordinates
+        }, {
+            // Автоматически устанавливать границы карты так,
+            // чтобы маршрут был виден целиком.
+            boundsAutoApply: true,
+            // Убрать видимость точек маршрута
+            wayPointVisible: false,
+        });
+
+        lastRoute = multiRoute;
+        map.geoObjects.add(multiRoute);
+
+        getPhasesSvg(tableData)
+
+        $('#table').bootstrapTable('load', tableData);
+        $('#navTable').bootstrapTable('load', navTableData);
+        makeSelects();
+        $('#table tbody tr td').each((i, td) => {
+            $(td).find('select option[selected=selected]').trigger('click');
+        })
+    }
+
+    let svg = {};
+
+    function findIndex(idevice) {
+        if ($('#tableCol')[0].style.display === 'none') return -1;
+        return $('#navTable').bootstrapTable('getData').findIndex(row => row.idevice === idevice);
+    }
+
+    function getStatus(position) {
+        return tflights.find(element => (
+            (element.region.num === position.region) && (element.area.num === position.area) && (element.ID === position.id)
+        )).tlsost.num;
+    }
+
+    function distanceBetweenPoints(x1, y1, x2, y2) {
+        return Math.sqrt((Math.pow((x2 - x1), 2) + (Math.pow((y2 - y1), 2))));
+    }
+
+    function findClosestTFLight(coords) {
+        let closestTFLight = undefined;
+        let x1 = coords[1];
+        let y1 = coords[0];
+        let minDistance = 0;
+        tflights.forEach(tflight => {
+            let x2 = tflight.points.X;
+            let y2 = tflight.points.Y;
+            let distance = distanceBetweenPoints(x1, y1, x2, y2);
+            if ((minDistance === 0) || minDistance > distance) {
+                minDistance = distance;
+                closestTFLight = tflight;
+            }
+        });
+        // console.log(minDistance);
+        return closestTFLight;
+    }
+
+    function startCreating(flag) {
+        flag ? $('#creatingModeButton').hide() : $('#creatingModeButton').show();
+        flag ? $('#createRouteButton').show() : $('#createRouteButton').hide();
+        $('#phaseTableButton').hide();
+        $('#updateRouteButton').hide();
+        $('#deleteRouteButton').hide();
+        $('#startRouteButton').hide();
+        $('#tableCol').hide();
+        map.geoObjects.remove(lastRoute);
+        if (!flag) {
+            map.setBounds(boxPoint);
+            // map.setBounds([
+            //     [boxPoint.point0.Y, boxPoint.point0.X],
+            //     [boxPoint.point1.Y, boxPoint.point1.X]
+            // ]);
+        }
+        $('#table').bootstrapTable('removeAll');
+        $('#navTable').bootstrapTable('removeAll');
+        currListTL = [];
+        creatingFlag = flag;
+    }
+
     $('#tableCol').hide();
+    $('#createRouteButton').hide();
+    $('#phaseTableButton').hide();
     $('#deleteRouteButton').hide();
     $('#updateRouteButton').hide();
     $('#startRouteButton').hide();
     $('#endRouteButton').hide();
 
+    $('#tableCol').parent().prepend('<div class="col-md-9 border border-dark" id="map" ' +
+        `style="max-height: ${window.innerHeight * 0.85}px; min-height: ${window.innerHeight * 0.85}px;` +
+        'position: relative; z-index: 1"></div>'
+    )
+
+    const mapSettings = JSON.parse(localStorage.getItem('mapSettings'));
+    boxPoint = mapSettings.bounds;
     //Создание и первичная настройка карты
-    let map = new ymaps.Map('map', {
-        center: [54.9912, 73.3685],
-        zoom: 19
+    const map = new ymaps.Map('map', {
+        bounds: mapSettings.bounds,
+        zoom: mapSettings.zoom,
     });
 
     map.events.add(['click'], function (evt) {
@@ -468,6 +514,9 @@ ymaps.ready(function () {
         }
     });
 
+    $('#tableCol').find('div.fixed-table-body').css('max-height', window.innerHeight * 0.75)
+    $('#phaseTableDialog').find('div.fixed-table-body').css('max-height', window.innerHeight * 0.6)
+
     $('#dropdownLayersButton').trigger('click');
     $('#dropdownControlButton').trigger('click');
 
@@ -477,24 +526,28 @@ ymaps.ready(function () {
     });
 
     $('#phaseTableButton').on('click', function () {
+        if (creatingFlag) getPhasesSvg($('#table').bootstrapTable('getData'))
         $('#phaseTableDialog').dialog('open');
     });
 
     $('#deleteButton').on('click', function () {
-        if (confirm('Вы уверены? Маршрут будет безвозвратно удалён.')) {
-            let selected = $('#table').bootstrapTable('getSelections')[0];
-            let place = $('#routes').val().split('---');
-            allRoutesList.forEach((route, index) => {
-                if ((route.region === place[0]) && (route.description === place[1])) {
-                    route.listTL.forEach((tf, index) => {
-                        if ((tf.pos.region === selected.region) && (tf.pos.area === selected.area) && (tf.pos.id === selected.id)) route.listTL.splice(index, 1);
-                    })
-                }
-                setRouteArea(map, route.box, route.description, index);
-            });
-            $('#table').bootstrapTable('remove', {field: 'state', values: [true]});
+        const selectedRow = $('#table').bootstrapTable('getData').filter(row => row.state)[0];
+        const pos = {region: selectedRow.region, area: selectedRow.area, id: selectedRow.id};
+        const fullPos = {...pos, description: selectedRow.desc};
+        map.geoObjects.remove(circlesMap.get(
+            JSON.stringify(fullPos)
+        ));
+        circlesMap.delete(fullPos)
+        if (circlesMap.size === 0) {
+            $('#phaseTableButton').hide();
+            $('#phaseTableDialog').dialog('close');
         }
-    });
+        delete svg[(pos.region + '/' + pos.area + '/' + pos.id)];
+        currListTL = currListTL.filter(tl => JSON.stringify(tl.pos) !== JSON.stringify(pos))
+        routeList = routeList.filter(tl => JSON.stringify(tl.pos) !== JSON.stringify(pos))
+        $('#table').bootstrapTable('remove', {field: 'state', values: [true]});
+        makeSelects();
+    })
 
     $('#fixationButton').on('click', function () {
         if (fixationFlag) {
@@ -527,19 +580,18 @@ ymaps.ready(function () {
         }
     });
 
-    $('#sendRouteButton').on('click', function () {
+    $('#creatingModeButton').on('click', function () {
         $('#routeDesc').val('');
-        $('#newRouteDialog').dialog('open');
+        startCreating(true);
     });
 
+    $('#createRouteButton').on('click', function () {
+        $('#newRouteDialog').dialog('open');
+    })
+
     $('#updateRouteButton').on('click', function () {
-        let place = $('#routes').val().split('---');
-        let currRoute = {};
-        allRoutesList.forEach(route => {
-            if ((route.region === place[0]) && (route.description === place[1])) {
-                currRoute = route;
-            }
-        });
+        const [region, desc] = $('#routes').val().split('---');
+        const currRoute = allRoutesList.find(route => (route.region === region) && (route.description === desc));
 
         currRoute.listTL.map((tl, index) => tl.phase = Number($('#cross' + index).val()));
 
@@ -552,14 +604,15 @@ ymaps.ready(function () {
     });
 
     $('#deleteRouteButton').on('click', function () {
-        let place = $('#routes').val().split('---');
+        let [region, desc] = $('#routes').val().split('---');
         allRoutesList.forEach(route => {
-            if ((route.region === place[0]) && (route.description === place[1])) {
+            if ((route.region === region) && (route.description === desc)) {
                 ws.send(JSON.stringify({type: 'deleteRoute', region: route.region, description: route.description}));
             }
         })
     });
 
+    // Начало исполнения маршрута
     $('#startRouteButton').on('click', function () {
         $(this).hide();
         $('#routes')[0].disabled = true;
@@ -571,6 +624,7 @@ ymaps.ready(function () {
         ws.send(JSON.stringify({type: 'route', devices: createIdeviceArray(), turnOn: true}));
     });
 
+    // Конец исполнения маршрута
     $('#endRouteButton').on('click', function () {
         $(this).hide();
         $('#routes')[0].disabled = false;
@@ -586,45 +640,36 @@ ymaps.ready(function () {
 
         for (let [key] of sendedPhaseSave) modifiedControlSend({id: key, cmd: 9, param: 9});
 
+        $('[id^=asterisk]').each((i, ast) => $(ast).css('color', 'black'))
+
         sendedPhaseSave = new Map();
         ws.send(JSON.stringify({type: 'route', devices: [], turnOn: false}));
     });
 
     $('#routes').on('change', function () {
-        let place = $('#routes').val().split('---');
-        $('#endRouteButton').hide();
 
-        currListTL = allRoutesList.find(el => el.description === $('#routes').val().split('---')[1]).listTL;
+        let [region, desc] = $('#routes').val().split('---');
+        $('#endRouteButton').hide();
 
         sendedPhaseSave = new Map();
         svg = {};
-        if ((place[0] === '0') && (place[1] === '0')) {
-            $('#tableCol').hide();
-            $('#startRouteButton').hide();
-            $('#deleteRouteButton').hide();
-            $('#updateRouteButton').hide();
-            $('#sendRouteButton').show();
-            map.geoObjects.remove(lastRoute);
-            map.setBounds([
-                [boxPoint.point0.Y, boxPoint.point0.X],
-                [boxPoint.point1.Y, boxPoint.point1.X]
-            ]);
-            $('#table').bootstrapTable('removeAll');
-            $('#navTable').bootstrapTable('removeAll');
-            creatingFlag = true;
+        if ((region === '0') && (desc === '0')) {
+            startCreating(false)
             return;
         }
+
+        currListTL = allRoutesList.find(el => el.description === $('#routes').val().split('---')[1]).listTL;
 
         $('#tableCol').show();
 
         allRoutesList.forEach((route, index) => {
-            if ((route.region === place[0]) && (route.description === place[1])) {
+            if ((route.region === region) && (route.description === desc)) {
                 currentRouteTflights = new Map();
                 setRouteArea(map, route.box, route.description, index);
                 map.geoObjects.each(object => {
                     if (object.geometry) {
                         if (route.listTL.some(tl => (JSON.stringify(tl.pos) === JSON.stringify(object.pos)))) {
-                            currentRouteTflights.set(findIndex(object.properties._data.hintContent), object);
+                            currentRouteTflights.set(findIndex(object.idevice), object);
                         }
                     }
                 });
@@ -635,13 +680,14 @@ ymaps.ready(function () {
                     });
                     tr.cells[1].innerHTML = '<div class="placemark"  style="background-image:url(\'' + location.origin +
                         '/free/img/trafficLights/' + getStatus(route.listTL[i].pos) + '.svg\');' +
-                        'background-repeat: no-repeat; background-size: 50%; min-height: 50px;"></div>';
+                        'background-repeat: no-repeat; background-size: 50%; min-height: 50px;"><h2 id="asterisk' + i + '">*</h2></div>';
                 });
             }
         });
-
-
-        $('#sendRouteButton').hide();
+        deleteAllCircles();
+        $('#creatingModeButton').hide();
+        $('#createRouteButton').hide();
+        $('#phaseTableButton').show();
         $('#updateRouteButton').show();
         $('#deleteRouteButton').show();
         $('#startRouteButton').show();
@@ -670,7 +716,7 @@ ymaps.ready(function () {
     ws.onmessage = function (evt) {
         let allData = JSON.parse(evt.data);
         let data = allData.data;
-        console.log(data);
+        // console.log(data);
         // localStorage.setItem("maintab", "closed");
         switch (allData.type) {
             case 'mapInfo':
@@ -695,11 +741,11 @@ ymaps.ready(function () {
                     fillAreas($('#area'), $('#region'), areaInfo);
                 });
 
-                boxPoint = data.boxPoint;
-                map.setBounds([
-                    [data.boxPoint.point0.Y, data.boxPoint.point0.X],
-                    [data.boxPoint.point1.Y, data.boxPoint.point1.X]
-                ]);
+                // boxPoint = data.boxPoint;
+                // map.setBounds([
+                //     [data.boxPoint.point0.Y, data.boxPoint.point0.X],
+                //     [data.boxPoint.point1.Y, data.boxPoint.point1.X]
+                // ]);
 
                 //Разбор полученной от сервера информации
                 data.tflight.forEach(trafficLight => {
@@ -714,6 +760,7 @@ ymaps.ready(function () {
                         }, trafficLight.tlsost.num),
                     });
                     placemark.pos = {region: trafficLight.region.num, area: trafficLight.area.num, id: trafficLight.ID};
+                    placemark.idevice = trafficLight.idevice;
                     //Функция для вызова АРМ нажатием на контроллер
                     placemark.events.add('click', function () {
                         handleClick(map, trafficLight);
@@ -722,16 +769,32 @@ ymaps.ready(function () {
                     map.geoObjects.add(placemark);
                 });
 
-                data.routes.forEach(route => {
-                    $('#routes').append(new Option(route.description, route.region + '---' + route.description));
-                });
-                // .append(new Option(regionInfo[reg], reg));
+                if ((data.routes.filter(route => route.region === data.routes[0].region)).length === data.routes.length) {
+                    // Если только один регион
+                    data.routes.forEach(route => {
+                        $('#routes').append(new Option(route.description, route.region + '---' + route.description));
+                    });
+                } else {
+                    // Больше одного региона
+                    const optGroups = [];
+                    Object.keys(data.regionInfo).forEach(region => {
+                        optGroups.push(data.routes.filter(route => route.region === region))
+                    });
+                    optGroups.forEach(optGroup => {
+                        if (optGroup.length === 0) return;
+                        const label = data.regionInfo[Number(optGroup[0].region)];
+                        $('#routes').append(`<optgroup label="${label}"></optgroup>`)
+                        optGroup.forEach(opt => {
+                            $(`optgroup[label~=${label}]`).append(new Option(opt.description, opt.region + '---' + opt.description))
+                        })
+                    })
+                }
                 break;
             case 'tflight':
-                if (data.tflight === null) {
-                    console.log('null');
+                if ((data.tflight === null) || (regionInfo === undefined)) {
+                    console.log((data.tflight === null) ? 'null' : 'mapInfo is not received at this moment');
                 } else {
-                    console.log('Обновление');
+                    // console.log('Обновление');
                     //Обновление статуса контроллера происходит только при его изменении
                     data.tflight.forEach(trafficLight => {
                         let id = trafficLight.ID;
@@ -757,13 +820,16 @@ ymaps.ready(function () {
                             }
                         });
 
-                        let tableIndex = findIndex(trafficLight.description);
+                        let tableIndex = findIndex(trafficLight.idevice);
                         if (tableIndex !== -1) {
                             $('#navTable tbody tr').each((i, tr) => {
                                 if (i === tableIndex) {
-                                    tr.cells[1].innerHTML = '<div class="placemark"  style="background-image:url(\'' + location.origin +
-                                        '/free/img/trafficLights/' + trafficLight.tlsost.num + '.svg\');' +
-                                        'background-repeat: no-repeat; background-size: 50%; min-height: 50px;"></div>';
+                                    // tr.cells[1].innerHTML = '<div class="placemark"  style="background-image:url(\'' + location.origin +
+                                    //     '/free/img/trafficLights/' + trafficLight.tlsost.num + '.svg\');' +
+                                    //     'background-repeat: no-repeat; background-size: 50%; min-height: 50px;"></div>';
+                                    $(tr.cells[1]).children().closest('div').css('background-image',
+                                        `url('${location.origin}/free/img/trafficLights/${trafficLight.tlsost.num}.svg')`)
+                                    asteriskControl($('#navTable').bootstrapTable('getData')[i].idevice, true)
                                 }
                             });
                         }
@@ -842,20 +908,23 @@ ymaps.ready(function () {
                     return;
                 }
                 allRoutesList.push(data.route);
-                $('#routes').append(new Option(data.route.description, data.route.region + '---' + data.route.description));
+
+                $(`optgroup[label~="${regionInfo[Number(data.route.region)]}"]`).append(
+                    new Option(data.route.description, data.route.region + '---' + data.route.description)
+                )
 
                 if (data.login === localStorage.getItem('login')) {
                     $('#routes option[value=' + data.route.region + '---' + data.route.description + ']').attr('selected', 'selected');
                     $('#routes').change();
 
-                    circlesMap.forEach((value, key) => {
-                        map.geoObjects.remove(value);
-                        circlesMap.delete(key);
-                    });
-
+                    deleteAllCircles()
+                    // map.setBounds([
+                    //     [data.route.box.point0.Y, data.route.box.point0.X],
+                    //     [data.route.box.point1.Y, data.route.box.point1.X]
+                    // ]);
                     // setRouteArea(map, data.route.box, data.route.description, allRoutesList.length - 1);
                     //
-                    // $('#sendRouteButton').hide();
+                    // $('#creatingModeButton').hide();
                     // $('#tableCol').show();
                     // $('#updateRouteButton').show();
                     // $('#deleteRouteButton').show();
@@ -866,10 +935,11 @@ ymaps.ready(function () {
             case 'deleteRoute':
                 $("#routes option[value='" + data.route.region + '---' + data.route.description + "']").remove();
                 map.geoObjects.remove(lastRoute);
-                map.setBounds([
-                    [boxPoint.point0.Y, boxPoint.point0.X],
-                    [boxPoint.point1.Y, boxPoint.point1.X]
-                ]);
+                map.setBounds(boxPoint);
+                // map.setBounds([
+                //     [boxPoint.point0.Y, boxPoint.point0.X],
+                //     [boxPoint.point1.Y, boxPoint.point1.X]
+                // ]);
                 $('#table').bootstrapTable('removeAll');
                 $('#navTable').bootstrapTable('removeAll');
                 $('#tableCol').hide();
@@ -932,14 +1002,22 @@ ymaps.ready(function () {
         autoOpen: false,
         buttons: {
             'Ок': function () {
-                $('#updateRouteButton').trigger('click');
+                // if (!creatingFlag) $('#updateRouteButton').trigger('click');
                 $(this).dialog('close');
             },
             'Отмена': function () {
+                if (creatingFlag) {
+                    $(this).dialog('close');
+                    return;
+                }
+                const [region, desc] = $('#routes').val().split('---');
+                const currRoute = allRoutesList.find(route => (route.region === region) && (route.description === desc));
+                currRoute.listTL.map((tl, index) => $('#cross' + index).val(tl.phase));
                 $(this).dialog('close');
             }
         },
         minWidth: 1000,
+        height: window.innerHeight * 0.9,
         modal: true,
         resizable: false
     });
@@ -949,7 +1027,7 @@ ymaps.ready(function () {
         buttons: {
             'Подтвердить': function () {
                 description = $('#routeDesc').val();
-                fillPhases();
+                createRoute();
                 $(this).dialog('close');
             },
             'Отмена': function () {
@@ -962,182 +1040,188 @@ ymaps.ready(function () {
             $('#areasMsg').remove();
         }
     });
-});
 
-function findIdevice(region, area, id) {
-    let idevice = -1;
-    tflights.forEach(tf => {
-        if ((tf.region.num === region) && (tf.area.num === area) && (tf.ID === id)) idevice = tf.idevice
-    });
-    return idevice;
-}
-
-let createChipsLayout = function (calculateSize, currnum) {
-    if (currnum === 0) {
-        console.log('Возвращен несуществующий статус');
-        return null;
+    function findIdevice(region, area, id) {
+        let idevice = -1;
+        tflights.forEach(tf => {
+            if ((tf.region.num === region) && (tf.area.num === area) && (tf.ID === id)) idevice = tf.idevice
+        });
+        return idevice;
     }
-    // Создадим макет метки.
-    let Chips = ymaps.templateLayoutFactory.createClass(
-        '<div class="placemark"  style="background-image:url(\'' + location.origin + '/free/img/trafficLights/' + currnum + '.svg\'); background-size: 100%"></div>', {
-            build: function () {
-                Chips.superclass.build.call(this);
-                let map = this.getData().geoObject.getMap();
-                if (!this.inited) {
-                    this.inited = true;
-                    // Получим текущий уровень зума.
-                    let zoom = map.getZoom();
-                    // Подпишемся на событие изменения области просмотра карты.
-                    map.events.add('boundschange', function () {
-                        // Запустим перестраивание макета при изменении уровня зума.
-                        let currentZoom = map.getZoom();
-                        if (currentZoom !== zoom) {
-                            zoom = currentZoom;
-                            this.rebuild();
-                        }
-                    }, this);
-                }
-                let options = this.getData().options,
-                    // Получим размер метки в зависимости от уровня зума.
-                    size = calculateSize(map.getZoom()),
-                    element = this.getParentElement().getElementsByClassName('placemark')[0],
-                    // По умолчанию при задании своего HTML макета фигура активной области не задается,
-                    // и её нужно задать самостоятельно.
-                    // Создадим фигуру активной области "Круг".
-                    circleShape = {
-                        type: 'Circle',
-                        coordinates: [0, 0],
-                        radius: size / 2
-                    };
-                // Зададим высоту и ширину метки.
-                element.style.width = element.style.height = size + 'px';
-                // Зададим смещение.
-                element.style.marginLeft = element.style.marginTop = -size / 2 + 'px';
-                // Зададим фигуру активной области.
-                options.set('shape', circleShape);
-            }
+
+    let createChipsLayout = function (calculateSize, currnum) {
+        if (currnum === 0) {
+            console.log('Возвращен несуществующий статус');
+            return null;
         }
-    );
-    return Chips;
-};
+        // Создадим макет метки.
+        let Chips = ymaps.templateLayoutFactory.createClass(
+            '<div class="placemark"  style="background-image:url(\'' + location.origin + '/free/img/trafficLights/' + currnum + '.svg\'); background-size: 100%"></div>', {
+                build: function () {
+                    Chips.superclass.build.call(this);
+                    let map = this.getData().geoObject.getMap();
+                    if (!this.inited) {
+                        this.inited = true;
+                        // Получим текущий уровень зума.
+                        let zoom = map.getZoom();
+                        // Подпишемся на событие изменения области просмотра карты.
+                        map.events.add('boundschange', function () {
+                            // Запустим перестраивание макета при изменении уровня зума.
+                            let currentZoom = map.getZoom();
+                            if (currentZoom !== zoom) {
+                                zoom = currentZoom;
+                                this.rebuild();
+                            }
+                        }, this);
+                    }
+                    let options = this.getData().options,
+                        // Получим размер метки в зависимости от уровня зума.
+                        size = calculateSize(map.getZoom()),
+                        element = this.getParentElement().getElementsByClassName('placemark')[0],
+                        // По умолчанию при задании своего HTML макета фигура активной области не задается,
+                        // и её нужно задать самостоятельно.
+                        // Создадим фигуру активной области "Круг".
+                        circleShape = {
+                            type: 'Circle',
+                            coordinates: [0, 0],
+                            radius: size / 2
+                        };
+                    // Зададим высоту и ширину метки.
+                    element.style.width = element.style.height = size + 'px';
+                    // Зададим смещение.
+                    element.style.marginLeft = element.style.marginTop = -size / 2 + 'px';
+                    // Зададим фигуру активной области.
+                    options.set('shape', circleShape);
+                }
+            }
+        );
+        return Chips;
+    };
 
 //Мастшабирование иконов светофороф на карте
-let calculate = function (zoom) {
-    switch (zoom) {
-        // case 11:
-        //     return 5;
-        // case 12:
-        //     return 10;
-        // case 13:
-        //     return 20;
-        case 14:
-            return 30;
-        case 15:
-            return 35;
-        case 16:
-            return 50;
-        case 17:
-            return 60;
-        case 18:
-            return 80;
-        case 19:
-            return 130;
-        default:
-            return 20;
-        // return 80;
-    }
-};
+    let calculate = function (zoom) {
+        switch (zoom) {
+            // case 11:
+            //     return 5;
+            // case 12:
+            //     return 10;
+            // case 13:
+            //     return 20;
+            case 14:
+                return 30;
+            case 15:
+                return 35;
+            case 16:
+                return 50;
+            case 17:
+                return 60;
+            case 18:
+                return 80;
+            case 19:
+                return 130;
+            default:
+                return 20;
+            // return 80;
+        }
+    };
 
-function createAreasLayout(map) {
-    if (!$('#switchLayout').prop('checked')) return;
-    areaZone.forEach(area => {
-        let polygon = convexHullTry(map, area.zone, 'Регион: ' + area.region + ', Район: ' + area.area);
-        areaLayout.push(polygon);
-    })
-}
-
-function deleteAreasLayout(map) {
-    areaLayout.forEach(layout => map.geoObjects.remove(layout));
-    areaLayout = [];
-}
-
-function createSubareasLayout(map) {
-    if (!$('#switchSubLayout').prop('checked')) return;
-    areaZone.forEach(area => {
-        area.sub.forEach(sub => {
-            let polygon = convexHullTry(map, sub.zone, 'Регион: ' + area.region + ', Район: ' + area.area + ', Подрайон:' + sub.subArea);
-            subareasLayout.push(polygon);
+    function createAreasLayout(map) {
+        if (!$('#switchLayout').prop('checked')) return;
+        areaZone.forEach(area => {
+            let polygon = convexHullTry(map, area.zone, 'Регион: ' + area.region + ', Район: ' + area.area);
+            areaLayout.push(polygon);
         })
-    })
-}
+    }
 
-function deleteSubareasLayout(map) {
-    subareasLayout.forEach(layout => {
-        map.geoObjects.remove(layout);
-    });
-    subareasLayout = [];
-}
+    function deleteAreasLayout(map) {
+        areaLayout.forEach(layout => map.geoObjects.remove(layout));
+        areaLayout = [];
+    }
 
-function convexHullTry(map, coordinates, description) {
-    let color = getRandomColor();
+    function createSubareasLayout(map) {
+        if (!$('#switchSubLayout').prop('checked')) return;
+        areaZone.forEach(area => {
+            area.sub.forEach(sub => {
+                let polygon = convexHullTry(map, sub.zone, 'Регион: ' + area.region + ', Район: ' + area.area + ', Подрайон:' + sub.subArea);
+                subareasLayout.push(polygon);
+            })
+        })
+    }
 
-    // Создаем многоугольник, используя вспомогательный класс Polygon.
-    var myPolygon = new ymaps.Polygon([
-        // Указываем координаты вершин многоугольника.
-        // Координаты вершин внешнего контура.
-        coordinates.map(point => [point.Y, point.X]),
-        // Координаты вершин внутреннего контура.
-        [
-            [0, 0]
-        ]
-    ], {
-        // Описываем свойства геообъекта.
-        // Содержимое балуна.
-        hintContent: description
-    }, {
-        // Задаем опции геообъекта.
-        // Цвет заливки.
-        fillColor: color,
-        fillOpacity: 0.1,
-        // Ширина обводки.
-        strokeWidth: 5
-    });
+    function deleteSubareasLayout(map) {
+        subareasLayout.forEach(layout => {
+            map.geoObjects.remove(layout);
+        });
+        subareasLayout = [];
+    }
 
-    // Добавляем многоугольник на карту.
-    map.geoObjects.add(myPolygon);
-    return myPolygon;
-}
+    function convexHullTry(map, coordinates, description) {
+        let color = getRandomColor();
+
+        // Создаем многоугольник, используя вспомогательный класс Polygon.
+        var myPolygon = new ymaps.Polygon([
+            // Указываем координаты вершин многоугольника.
+            // Координаты вершин внешнего контура.
+            coordinates.map(point => [point.Y, point.X]),
+            // Координаты вершин внутреннего контура.
+            [
+                [0, 0]
+            ]
+        ], {
+            // Описываем свойства геообъекта.
+            // Содержимое балуна.
+            hintContent: description
+        }, {
+            // Задаем опции геообъекта.
+            // Цвет заливки.
+            fillColor: color,
+            fillOpacity: 0.1,
+            // Ширина обводки.
+            strokeWidth: 5
+        });
+
+        // Добавляем многоугольник на карту.
+        map.geoObjects.add(myPolygon);
+        return myPolygon;
+    }
 
 //Заполнение поля выбора районов для создания или изменения пользователя
-function fillAreas($area, $region, areaInfo) {
-    $area.empty();
-    for (let regAreaJson in areaInfo) {
-        for (let areaJson in areaInfo[regAreaJson]) {
-            if (regAreaJson === $region.find(':selected').text()) {
-                $area.append(new Option(areaInfo[regAreaJson][areaJson], areaJson));
+    function fillAreas($area, $region, areaInfo) {
+        $area.empty();
+        for (let regAreaJson in areaInfo) {
+            for (let areaJson in areaInfo[regAreaJson]) {
+                if (regAreaJson === $region.find(':selected').text()) {
+                    $area.append(new Option(areaInfo[regAreaJson][areaJson], areaJson));
+                }
             }
         }
     }
-}
 
-function modifiedControlSend(toSend) {
-    let loopFunc;
-    if (loopFuncMap.get(toSend.id)) {
-        clearInterval(loopFuncMap.get(toSend.id));
-        loopFuncMap.set(toSend.id, undefined)
+    function asteriskControl(idevice, sended) {
+        $('#asterisk' + findIndex(idevice)).css('color', sended ? 'green' : 'red');
     }
 
-    controlSend(toSend);
+    function modifiedControlSend(toSend) {
+        let loopFunc;
+        if (loopFuncMap.get(toSend.id)) {
+            clearInterval(loopFuncMap.get(toSend.id));
+            loopFuncMap.set(toSend.id, undefined)
+        }
 
-    if (toSend.param !== 9) {
-        loopFunc = window.setInterval(function () {
-            controlSend(toSend);
-        }, 60000);
-        loopFuncMap.set(toSend.id, loopFunc);
+        controlSend(toSend);
+
+        if (toSend.param !== 9) {
+            loopFunc = window.setInterval(function () {
+                controlSend(toSend);
+            }, 60000);
+            loopFuncMap.set(toSend.id, loopFunc);
+        }
+
+        asteriskControl(toSend.id, false);
     }
-}
 
 //Отправка выбранной команды на сервер
-function controlSend(toSend) {
-    ws.send(JSON.stringify({type: 'dispatch', id: toSend.id, cmd: toSend.cmd, param: toSend.param}));
-}
+    function controlSend(toSend) {
+        ws.send(JSON.stringify({type: 'dispatch', id: toSend.id, cmd: toSend.cmd, param: toSend.param}));
+    }
+});

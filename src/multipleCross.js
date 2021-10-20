@@ -75,7 +75,7 @@ $(function () {
                                 setPhases.forEach(setter => {
                                     if (setter.blockId === i + 1) {
                                         console.log(svgId + '-' + data.dk.fdk);
-                                        setter.func(data.dk.fdk)
+                                        setter.func(data.dk.fdk);
                                     }
                                 });
                                 break;

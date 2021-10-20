@@ -444,10 +444,12 @@ ymaps.ready(function () {
     });
 
     $('#dispatchControlButton').on('click', () => {
+        localStorage.setItem('mapSettings', JSON.stringify({bounds: map.getBounds(), zoom: map.getZoom()}))
         openPage('/dispatchControl');
     });
 
     $('#standardZUButton').on('click', () => {
+        localStorage.setItem('mapSettings', JSON.stringify({bounds: map.getBounds(), zoom: map.getZoom()}))
         openPage('/greenStreet');
     });
 
