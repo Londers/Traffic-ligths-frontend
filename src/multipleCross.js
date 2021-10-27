@@ -14,11 +14,18 @@ $(function () {
             url: window.location.origin + '/file/static/cross/' + cross.region + '/' + cross.area + '/' + cross.id + '/cross.svg',
             type: 'GET',
             success: function (svgData) {
-                // todo Жду обновлённые картинки от Андрея
+                // todo Жду обновлённые картинки от Андрея и удаление .onload
                 const kostil = 'function setPhase(phase){';
+                const kostil2 = '    modever=0;\n' +
+                    '    currentPhase=0;\n' +
+                    `    if (typeof setVisualMode !== 'undefined') setVisualMode(modever);\n` +
+                    `    if (typeof dropLight !== 'undefined') dropLight();\n` +
+                    `    if (typeof dropDirect !== 'undefined') dropDirect();\n` +
+                    `    if (typeof dropLocale !== 'undefined') dropLocale();\n`
 
                 const svgId = cross.region + cross.area + cross.id;
                 let outerHTML = svgData.children[0].outerHTML;
+                outerHTML = outerHTML.substring(0, outerHTML.indexOf(kostil)) + kostil2 + outerHTML.substring(outerHTML.indexOf(kostil))
                 let setPhaseStart = outerHTML.indexOf(kostil) + kostil.length;
 
                 outerHTML = outerHTML.slice(0, setPhaseStart) + outerHTML.slice(setPhaseStart).replace('};', '');
@@ -26,7 +33,6 @@ $(function () {
 
                 let scriptStart = outerHTML.indexOf('<script>') + 8;
                 let scriptEnd = outerHTML.indexOf('</script>');
-
                 outerHTML = outerHTML.slice(0, scriptStart) + kostil + outerHTML.slice(scriptStart, scriptEnd) + '};' + outerHTML.slice(scriptEnd);
 
                 const $block = $('#block' + (i + 1));
@@ -42,8 +48,9 @@ $(function () {
 
                 if (setPhase !== undefined) {
                     let setPhaseFunc = setPhase.bind({});
+
                     setPhase = undefined;
-                    setPhases.push({blockId: i + 1, func: setPhaseFunc});
+                    setPhases.push({blockId: i + 1, setPhase: setPhaseFunc});
 
                     let closeReason = '';
                     const ws = new WebSocket(`wss://${location.host}/user/${localStorage.getItem('login')}/crossW?Region=${cross.region}&Area=${cross.area}&ID=${cross.id}`);
@@ -67,17 +74,11 @@ $(function () {
                         switch (allData.type) {
                             case 'crossBuild':
                                 $(`#block${i + 1} h4`).html(data.state.name);
-                                setPhases.forEach(setter => {
-                                    if (setter.blockId === i + 1) setter.func(data.dk.fdk)
-                                });
+                                setPhases.find(setter => setter.blockId === i+1).setPhase(data.dk.fdk)
                                 break;
                             case 'phase':
-                                setPhases.forEach(setter => {
-                                    if (setter.blockId === i + 1) {
-                                        console.log(svgId + '-' + data.dk.fdk);
-                                        setter.func(data.dk.fdk);
-                                    }
-                                });
+                                console.log(svgId + '-' + data.dk.fdk);
+                                setPhases.find(setter => setter.blockId === i+1).setPhase(data.dk.fdk)
                                 break;
                             case 'error':
                                 closeReason = data.message;

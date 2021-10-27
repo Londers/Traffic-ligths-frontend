@@ -70,7 +70,7 @@ function getSelectedRowData(table, fullPath, force) {
 function colorizeSelectedRow(table) {
     let index = $('#' + table).find('tr.success').data('index');
 
-    $('#' + table).find('tbody').find('tr').each(function (counter) {
+    $('#' + table).find('tbody').find('tr').each(function (counter, tr) {
         $(this).find('td').each(function () {
             $(this).attr('style', (counter === index) ? 'background-color: #cccccc' : '')
         })
@@ -593,7 +593,9 @@ $(() => {
 
     // Кнопка для удаления переключения
     $('#switchDel').on('click', () => {
-        let index = $('#pkTable').find('tr.success').data('index');
+        const index = $('#pkTable').find('tr.success').data('index');
+        const tf = setDK[$('#pkSelect').val()].sts[index].tf;
+        if (((tf >= 5) && (tf <= 7)) && ($('#tpu').val() === '0')) return;
         deleteSwitch(index);
     });
 
@@ -1196,6 +1198,7 @@ function pkTabFill2(newData, firstLoadFlag) {
                 $('#shift').prop('disabled', false);
                 $('#tc').prop('disabled', false);
                 $('#transfer').prop('disabled', false);
+                validateTVPReplacements();
             }
             $('#razlen').change();
         });
@@ -1889,6 +1892,7 @@ function buildPkTable(table, tableType, currPK) {
                             deleteSwitch(index);
                             addPkSwitch(index - 1, Number(evt.target.value), (evt.target.value === '2') ? 2 : 3, saveStart, saveStop);
                             addPkSwitch(index, 7, 1, saveStart, saveStop);
+                            $('#tc').val(saveStop).change();
                         } else if (evt.target.value === '4') {
                             // При смене типа на 1,2 ТВП вствляю связку со всеми Зам`ами
                             let saveStart = Number($('[class~=start' + index + ']').val());
@@ -1898,6 +1902,7 @@ function buildPkTable(table, tableType, currPK) {
                             addPkSwitch(index, 5, 2, saveStart, saveStop);
                             addPkSwitch(index + 1, 6, 3, saveStart, saveStop);
                             addPkSwitch(index + 2, 7, 1, saveStart, saveStop);
+                            $('#tc').val(saveStop).change();
                         } else {
                             if ((evt.target.value === '5') || (evt.target.value === '6') || (evt.target.value === '7')) {
                                 // При смене типа на один из Зам`ов проверка возможности редакции длительности
@@ -2087,6 +2092,26 @@ function getCycleDiff(cycle, currSts, switchCount, difLen) {
     return cycle;
 }
 
+// Проверка ПК на наличие замещающих фаз при переход на ПК с ЛПУ
+function validateTVPReplacements() {
+    const currSts = setDK[Number($('#pkSelect').val())].sts;
+    currSts.forEach(sts => {
+        if (sts.tf === 4) {
+            //1,2 ТВП
+            if (findReplacementCount(currSts, sts.line - 1) === 0) {
+                addPkSwitch(sts.line - 1, 5, 2);
+                addPkSwitch(sts.line - 1, 6, 3);
+                addPkSwitch(sts.line - 1, 7, 1);
+            }
+        } else if (sts.tf === 2 || sts.tf === 3) {
+            //Одиночная ТВП
+            if (findReplacementCount(currSts, sts.line - 1) === 0) {
+                addPkSwitch(sts.line - 1, 7, 1);
+            }
+        }
+    })
+}
+
 // Считается количество Зам`ов у фазы ТВП
 function findReplacementCount(currSts, swId) {
     let replCounter = 0;
@@ -2192,7 +2217,7 @@ function addPkSwitch(index, tf, num, start, stop) {
     function sortFunc(a, b) {
         return a[0] - b[0];
     }
-    
+
     let selected = $('#pkSelect').val();
     if (index === undefined) return;
     let currSts = setDK[selected].sts;

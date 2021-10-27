@@ -420,9 +420,9 @@ function buildExpandedTable(data) {
     let dataArr = $expandedTable.bootstrapTable('getData').slice();
 
     let toWrite = {
-        column1: ((data.fdk === 9) || (dataArr.length === 0) || (dataArr[currentIndex] === undefined)) ?
+        column1: ((data.fdk >= 9) || (dataArr.length === 0) || (dataArr[currentIndex] === undefined)) ?
             data.ftudk : dataArr[currentIndex].column1,
-        column2: ((data.fdk === 9) || (dataArr.length === 0) || (dataArr[currentIndex] === undefined)) ?
+        column2: ((data.fdk >= 9) || (dataArr.length === 0) || (dataArr[currentIndex] === undefined)) ?
             data.tdk : dataArr[currentIndex].column2,
         column3: 0,
         column4: data.fdk,

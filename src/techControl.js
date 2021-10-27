@@ -16,6 +16,7 @@ function sortByID(a, b) {
     return a.id - b.id;
 }
 
+// Отправить обновленную информацию GPRS
 function sendGPRS() {
     // let toSend = {ip: '', port: ''};
     let gprsFlag = $('#changeGPRS').prop('checked');
@@ -37,6 +38,8 @@ function sendGPRS() {
     }
 }
 
+
+// Проверка несовпадения информации о типе устройства
 function checkTypeDifference() {
     let devNumInTable = 4;
     devicesSave.forEach(device => {
@@ -61,6 +64,8 @@ function checkTypeDifference() {
         }
     })
 }
+
+// Проверка разницы во времени с устройством, не больше одной минуты
 function checkTimeDifference() {
     let timeNumInTable = 5;
     devicesSave.forEach(device => {
@@ -85,15 +90,61 @@ function checkTimeDifference() {
     })
 }
 
+let selectedFilter = 0;
+function filterValuesFunc(event) {
+    selectedFilter = event.currentTarget.selectedIndex;
+    buildTable(crossesSave, false);
+    if ($('#table').bootstrapTable('getSelections').length === 0) $('#table').bootstrapTable('check', 0);
+}
+
+// Фильтрация таблицы
+function filterTable(data) {
+    let crosses = data;
+    switch (selectedFilter) {
+        case 0:
+            // Без фильтров
+            return crosses;
+        case 1:
+            // Отстутсвие связи
+            return crosses.filter(row => row.sv === '')
+        case 2:
+            // Неисправности
+            return crosses.filter(row => row.status >= 16);
+        case 3:
+            // Аварии 220, Выключенные УСДК
+            return crosses.filter(row => (row.status === 17 || row.status === 18));
+        case 4:
+            // Неисправности GPS
+            return crosses.filter(row => (row.gps !== '') && (row.gps !== 'Исправно'));
+        case 5:
+            // Управление из центра
+            return crosses
+                .filter(row => row.traffic !== '')
+                .filter(row => {
+                    const commands = checkDevice(row.idevice).device.StatusCommandDU
+                    return commands.IsDUDK1 || commands.IsPK || commands.IsCK || commands.IsNK
+                });
+        case 6:
+            // Присутствие связи
+            return crosses.filter(row => row.sv !== '')
+    }
+}
+
 $(function () {
-    $('.fixed-table-toolbar').hide();
+    $('[class~=search]').find('input').attr('placeholder', 'Поиск');
+
+    $('.fixed-table-toolbar').append('<select id="searchValues" class="mt-3 ml-4"></select>');
+    $('#searchValues').on('change', filterValuesFunc)
+    for (const [key, value] of Object.entries(selectValues)) {
+        $('#searchValues').append(new Option(value, key));
+    }
 
     let closeReason = '';
     ws = new WebSocket('wss://' + location.host + location.pathname + 'W' + location.search);
 
     ws.onerror = function (evt) {
         console.log('WebSocket error:', evt);
-        alert('Произошла ошибка WebSocket: ' + evt);
+        alert('Произошла ошибка WebSocket: ' + JSON.stringify(evt));
         // window.close();
     };
 
@@ -105,7 +156,7 @@ $(function () {
     ws.onmessage = function (evt) {
         let allData = JSON.parse(evt.data);
         let data = allData.data;
-        console.log(data);
+        // console.log(data);
 
         switch (allData.type) {
             case 'armInfo': {
@@ -121,12 +172,12 @@ $(function () {
 
                 $('#changeGPRSButton')[0].disabled = !data.gprs.send;
 
-                buildTable(true);
+                buildTable(crossesSave, true);
                 break;
             }
             case 'crosses':
                 crossesSave = data.crosses.sort(sortByID);
-                buildTable(false);
+                buildTable(crossesSave, false);
                 break;
             case 'devices':
                 data.devices.forEach(device => {
@@ -136,7 +187,7 @@ $(function () {
                         devicesSave.push(device);
                     }
                 });
-                buildTable(false);
+                buildTable(crossesSave, false);
                 break;
             case 'close':
                 closeReason = 'WS closed by server';
@@ -182,17 +233,18 @@ $(function () {
     });
 });
 
-function buildTable(firstLoadFlag) {
+// Заполнения таблицы
+function buildTable(crosses, firstLoadFlag) {
     let $table = $('#table');
     let toWrite = [];
     let selected = $table.bootstrapTable('getSelections');
     scrollSave = $table.bootstrapTable('getScrollPosition');
 
     $('#deviceCount').text(devicesSave.filter(dev => dev.device.scon).length);
-    $('#crossCount').text(crossesSave.length);
+    $('#crossCount').text(crosses.length);
 
-    crossesSave.forEach(cross => {
-        let device = checkDevice(cross.idevice).device;
+    crosses.forEach(cross => {
+        let device = checkDevice(cross.idevice)?.device;
         let devFlag = (device !== undefined);
         let copy = {
             state: (selected.length !== 0) ? (cross.idevice === selected[0].idevice) : false,
@@ -208,21 +260,23 @@ function buildTable(firstLoadFlag) {
                 + checkMalfunction(device.Error)) : '',
             traffic: devFlag ? (`${prettyTraffic(device.Traffic.FromDevice1Hour)}Кб / ${prettyTraffic(device.Traffic.LastFromDevice1Hour)}Кб`) : '',
             place: cross.describe,
+            status: cross.StatusCode,
             idevice: cross.idevice
         };
 
-        if ((cross.idevice === crossesSave[0].idevice) && (firstLoadFlag)) copy.state = true;
+        if ((cross.idevice === crosses[0].idevice) && (firstLoadFlag)) copy.state = true;
         toWrite.push(copy);
     });
-
+    toWrite = filterTable(toWrite);
     $table.bootstrapTable('load', toWrite);
-    $table.bootstrapTable('hideColumn', 'idevice');
     $table.bootstrapTable('scrollTo', {unit: 'px', value: scrollSave});
 
     let data = $table.bootstrapTable('getData');
     devicesSave.forEach(devSave => {
         let id = findDevice(data, devSave);
-        $('#table tbody tr')[id].cells[3].style.backgroundColor = devSave.device.StatusCommandDU.IsReqSFDK1 ? 'lightblue' : '';
+        if (id !== -1) {
+            $('#table tbody tr')[id].cells[3].style.backgroundColor = devSave.device.StatusCommandDU.IsReqSFDK1 ? 'lightblue' : '';
+        }
     });
 
     $table.unbind().on('click', function () {
@@ -234,16 +288,13 @@ function buildTable(firstLoadFlag) {
     buildBottom();
 }
 
+// Приведения траффика к читабельному виду
 function prettyTraffic(tf) {
     return (tf / 1024).toFixed(1);
 }
 
 function findDevice(data, device) {
-    let id = -1;
-    data.forEach((row, index) => {
-        if (row.idevice === device.idevice) id = index;
-    });
-    return id;
+    return data.findIndex(row => row.idevice === device.idevice);
 }
 
 //ПРОБЕЛЫ ВАЖНЫ #SPACELIVESMATTER
@@ -256,6 +307,7 @@ function checkCommand(cmd, value) {
     }
 }
 
+// Расшифровка типа устройства
 function switchArrayTypeFromDevice(model) {
     let type = 'УСДК';
     if (model.C12) return 'С12' + type;
@@ -264,12 +316,13 @@ function switchArrayTypeFromDevice(model) {
     return type;
 }
 
+// Заполнение информации о выбранном перекрёстке
 function buildBottom() {
     let selected = $('#table').bootstrapTable('getSelections');
     if (selected.length === 0) return;
     let cross = checkCross(selected[0].idevice);
     let deviceInfo = checkDevice(selected[0].idevice);
-    let device = deviceInfo.device;
+    let device = deviceInfo?.device;
 
     if (errorRows.includes(selected[0].idevice)) {
         $('#type').attr('style', 'background-color: red;');
@@ -337,7 +390,7 @@ function buildBottom() {
 
         $('#status').text(deviceInfo.modeRdk);
         $('#type2').text(switchArrayTypeFromDevice(device.Model));
-        $('#phase').text(device.DK.fdk);
+        $('#phase').text(phaseSpellOut(device.DK.fdk));
         $('#state').text((checkMalfunction(device.Error) === '') ? '-' : checkMalfunction(device.Error));
         $('#lamps').text(device.DK.ldk);
         $('#doors').text(device.DK.odk ? 'Открыты' : 'Закрыты');
@@ -419,6 +472,24 @@ function buildBottom() {
     }
 }
 
+// Расшифровка фазы
+function phaseSpellOut(value) {
+    switch (Number(value)) {
+        case 0:
+            return 'ЛР';
+        case 10:
+        case 14:
+            return 'ЖМ';
+        case 11:
+        case 15:
+            return 'ОС';
+        case 12:
+            return 'КК';
+        default:
+            break;
+    }
+}
+
 function updateDevices(device) {
     devicesSave.forEach((dev, i) => {
         if (device.idevice === dev.idevice) devicesSave[i] = device;
@@ -426,27 +497,15 @@ function updateDevices(device) {
 }
 
 function checkDevice(idevice) {
-    let device = {};
-    devicesSave.forEach((dev, i) => {
-        if (dev.idevice === idevice) device = devicesSave[i];
-    });
-    return device;
-}
-
-function checkCross(idevice) {
-    let cross = {};
-    crossesSave.forEach((crossS, i) => {
-        if (crossS.idevice === idevice) cross = crossesSave[i];
-    });
-    return cross;
+    return devicesSave.find(dev => dev.idevice === idevice);
 }
 
 function checkDeviceID(idevice) {
-    let retValue = -1;
-    devicesSave.forEach((dev, i) => {
-        if (dev.idevice === idevice) retValue = i;
-    });
-    return retValue;
+    return crossesSave.findIndex(crossS => crossS.idevice === idevice);
+}
+
+function checkCross(idevice) {
+    return crossesSave.find(crossS => crossS.idevice === idevice);
 }
 
 function timeFormat(time) {
@@ -526,6 +585,16 @@ const mErrorText = {
     50: 'Не было данных от сервера в течение интервала обмена  +1 минута',
     51: 'Был разрыв связи по команде ПСПД',
     52: 'Модем выдал сообщение об ошибке в процессе обмена'
+};
+
+const selectValues = {
+    0: 'Все привязки',
+    1: 'Отстутсвие связи',
+    2: 'Неисправности',
+    3: 'Аварии 220, Выключенные УСДК',
+    4: 'Неисправности GPS',
+    5: 'Управление из центра',
+    6: 'Наличие связи'
 };
 
 function switchArrayType(type) {

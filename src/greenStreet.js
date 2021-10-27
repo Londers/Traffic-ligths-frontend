@@ -117,7 +117,10 @@ ymaps.ready(function () {
             if ((key.region === region) && (key.area === area) && (key.id === id)) {
                 deleteCircle(map, value, key, description);
                 returnFlag = true;
-                if (circlesMap.size === 0) $('#phaseTableButton').hide();
+                if (circlesMap.size === 0) {
+                    $('#phaseTableButton').hide();
+                    $('#createRouteButton')[0].disabled = true;
+                }
             }
         });
 
@@ -163,7 +166,10 @@ ymaps.ready(function () {
         });
 
         circlesMap.set(JSON.stringify({region: region, area: area, id: id, description: description}), myCircle);
-        if (circlesMap.size === 1) $('#phaseTableButton').show();
+        if (circlesMap.size === 1) {
+            $('#phaseTableButton').show();
+            $('#createRouteButton')[0].disabled = false;
+        }
 
         // Добавляем круг на карту.
         map.geoObjects.add(myCircle);
@@ -537,9 +543,10 @@ ymaps.ready(function () {
         map.geoObjects.remove(circlesMap.get(
             JSON.stringify(fullPos)
         ));
-        circlesMap.delete(fullPos)
+        circlesMap.delete(JSON.stringify(fullPos));
         if (circlesMap.size === 0) {
             $('#phaseTableButton').hide();
+            $('#createRouteButton')[0].disabled = true;
             $('#phaseTableDialog').dialog('close');
         }
         delete svg[(pos.region + '/' + pos.area + '/' + pos.id)];
@@ -583,6 +590,7 @@ ymaps.ready(function () {
     $('#creatingModeButton').on('click', function () {
         $('#routeDesc').val('');
         startCreating(true);
+        $('#createRouteButton')[0].disabled = true;
     });
 
     $('#createRouteButton').on('click', function () {
@@ -1012,7 +1020,7 @@ ymaps.ready(function () {
                 }
                 const [region, desc] = $('#routes').val().split('---');
                 const currRoute = allRoutesList.find(route => (route.region === region) && (route.description === desc));
-                currRoute.listTL.map((tl, index) => $('#cross' + index).val(tl.phase));
+                currRoute.listTL.map((tl, index) => $('#cross' + index).val(tl.phase).trigger('change'));
                 $(this).dialog('close');
             }
         },

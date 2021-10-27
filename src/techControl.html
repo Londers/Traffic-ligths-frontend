@@ -5,10 +5,10 @@
     <meta charset="utf-8">
     <meta http-equiv="Cache-control" content="must-revalidate">
     <title>Сервер связи</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link href="https://unpkg.com/bootstrap-table@1.15.5/dist/bootstrap-table.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-select@1.13.9/dist/css/bootstrap-select.min.css">
+    <meta content="text/html" http-equiv="Content-Type">
+    <link href="https://unpkg.com/bootstrap-table@1.18.3/dist/bootstrap-table.min.css" rel="stylesheet">    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/bootstrap-select@1.13.9/dist/css/bootstrap-select.min.css">
     <link href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.9.2/themes/ui-darkness/jquery-ui.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.0.4/popper.js"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
@@ -16,8 +16,7 @@
     <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.9.2/jquery-ui.min.js"></script>
     <!--            <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>-->
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
-    <script src="https://unpkg.com/bootstrap-table@1.15.5/dist/bootstrap-table.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap-select@1.13.9/dist/js/bootstrap-select.min.js"></script>
+    <script src="https://unpkg.com/bootstrap-table@1.18.3/dist/bootstrap-table.min.js"></script>    <script src="https://cdn.jsdelivr.net/npm/bootstrap-select@1.13.9/dist/js/bootstrap-select.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/js/bootstrap.bundle.min.js"></script>
     <script src="https://kit.fontawesome.com/c9d9ba4d4e.js" crossorigin="anonymous"></script>
     <link href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
@@ -109,21 +108,31 @@
 </div>
 <div class="container-fluid" id="top" style="max-width: 98%; max-height: 520px;">
     <div class="row-fluid overflow-auto" style="max-height: 520px;">
-        <table class="table table-bordered" id="table" data-toggle="table" data-toolbar="#toolbar" data-click-to-select="true" data-single-select="true" data-height="520" cellspacing="0" style="max-height: 520px;">
+        <table class="table table-bordered" id="table"
+               data-toggle="table"
+               data-toolbar="#toolbar"
+               data-search="true"
+               data-search-align="left"
+               data-click-to-select="true"
+               data-single-select="true"
+               data-height="520"
+               cellspacing="0"
+               style="max-height: 520px;">
             <thead>
             <tr style="">
                 <th class="sorting" data-field="state" data-checkbox="true"></th>
-                <th data-field="area" data-sortable="true">Район</th>
-                <th data-field="usdk" data-sortable="true">УСДК</th>
+                <th data-field="area" data-sortable="true" data-visible-search="false">Район</th>
+                <th data-field="usdk" data-sortable="true" data-visible-search="false">УСДК</th>
                 <th data-field="sv" data-sortable="true">Св</th>
                 <th data-field="type" data-sortable="true">Тип</th>
-                <th data-field="exTime" data-sortable="true">Время обмена</th>
+                <th data-field="exTime" data-sortable="true" data-visible-search="false">Время обмена</th>
                 <th data-field="malfDk" data-sortable="true">Состояние ДК</th>
                 <th data-field="gps" data-sortable="true">GPS</th>
                 <th data-field="addData" data-sortable="true">Доп. данные</th>
-                <th data-field="traffic" data-sortable="true">Трафик</th>
+                <th data-field="traffic" data-sortable="true" data-visible-search="false">Трафик</th>
                 <th data-field="place" data-sortable="true">Место размещения</th>
-                <th data-field="idevice">qqq</th>
+                <th data-field="status" data-visible="false" data-visible-search="false">qqq</th>
+                <th data-field="idevice" data-visible="false">qqq</th>
             </tr>
             </thead>
             <tbody style="">
@@ -157,7 +166,9 @@
         <div class="col-md-6">
             <div class="row">
                 <div class="col-md-4 text-center">
-                    <button type="button" class="btn-sm btn-light justify-content-center" id="bindButton" style=""> Привязка </button>
+                    <button type="button" class="btn-sm btn-light justify-content-center" id="bindButton" style="">
+                        Привязка
+                    </button>
                 </div>
             </div>
         </div>
@@ -233,7 +244,9 @@
                         <div class="col-md-8 text-center" id="technology">ТР</div>
                     </div>
                     <div>
-                        <button type="button" class="btn-sm btn-light ml-5 justify-content-center" style="min-width:123px" id="crossButton">ДК 16 </button>
+                        <button type="button" class="btn-sm btn-light ml-5 justify-content-center"
+                                style="min-width:123px" id="crossButton">ДК 16
+                        </button>
                     </div>
                 </div>
                 <div class="col-md-1">
@@ -271,9 +284,15 @@
         <div class="col-md-6">
             <div class="row">
                 <div class="col-md-3">
-                    <button type="button" class="btn btn-light justify-content-center border" style="min-width:123px"> Контроль </button>
-                    <button type="button" class="btn btn-light justify-content-center border" style="min-width:123px" id="changeGPRSButton"> GPRS-обмен </button>
-                    <button type="button" class="btn btn-light justify-content-center border" style="min-width:123px" id="sfSwitchButton"> Вкл.СФ </button>
+                    <button type="button" class="btn btn-light justify-content-center border" style="min-width:123px">
+                        Контроль
+                    </button>
+                    <button type="button" class="btn btn-light justify-content-center border" style="min-width:123px"
+                            id="changeGPRSButton"> GPRS-обмен
+                    </button>
+                    <button type="button" class="btn btn-light justify-content-center border" style="min-width:123px"
+                            id="sfSwitchButton"> Вкл.СФ
+                    </button>
                     <p id="ip" class="mt-3"></p>
                 </div>
                 <div class="col-md-2"> Режим<br>Уст-во<br>Состояние<br> Фаза<br>Лампы<br>Двери</div>
@@ -312,19 +331,22 @@
                         <div class="col-md-12">
                             <div id="inputErrors">Ошибка <span id="inputs"></span> <span id="statistics"></span></div>
                             <br>
-                            Сигнал <div id="signal" style="display: inline;">-</div>
+                            Сигнал
+                            <div id="signal" style="display: inline;">-</div>
                             <br>
-<!--                            <div class="bg-danger text-center"> 11.03.2020 8:27:08.3</div>-->
-<!--                            <div class="ml-3">-->
-<!--                                <button type="button" class="btn-sm btn-light justify-content-center" style="min-width:123px">Сброс отв. </button>-->
-<!--                            </div>-->
+                            <!--                            <div class="bg-danger text-center"> 11.03.2020 8:27:08.3</div>-->
+                            <!--                            <div class="ml-3">-->
+                            <!--                                <button type="button" class="btn-sm btn-light justify-content-center" style="min-width:123px">Сброс отв. </button>-->
+                            <!--                            </div>-->
                         </div>
                     </div>
                 </div>
-                <div class="col-md-4 ml-auto mt-auto" >
-                    Количество устройств: <div id="deviceCount" style="display: inline;"></div>
+                <div class="col-md-4 ml-auto mt-auto">
+                    Количество устройств:
+                    <div id="deviceCount" style="display: inline;"></div>
                     <br>
-                    Количество привязок: <div id="crossCount" style="display: inline;"></div>
+                    Количество привязок:
+                    <div id="crossCount" style="display: inline;"></div>
                 </div>
             </div>
         </div>
