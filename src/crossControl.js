@@ -322,6 +322,7 @@ $(() => {
             data.state.arrays.SetTimeUse.uses[0].name = '1 ТВП';
             data.state.arrays.SetTimeUse.uses[1].name = '2 ТВП';
         }
+        $('#forceSendButton').prop('disabled', false);
     });
 
     // Заполнение 3х массивов для статистики (defstatis, pointset, useinput)
@@ -571,11 +572,16 @@ $(() => {
     });
 
     // Кнопка для добавления строки
-    $('#tf').on('change', () => {
-        let index = $('#pkTable').find('tr.success').data('index');
-        let tf = Number($('#tf').val());
+    $('#tf').on('change', (event) => {
+        const index = $('#pkTable').find('tr.success').data('index');
+        const tf = Number(event.currentTarget.value);
+        const nextTf = Number($(`[class~=tf${(index + 1)}]`).val());
 
         if (tf === -1) return;
+        if ((nextTf >= 5) && (nextTf <= 7)) {
+            $('#tf').val(-1);
+            return;
+        }
 
         if ((tf === 2) || (tf === 3)) {
             addPkSwitch(index, tf, (tf === 2) ? 2 : 3);
@@ -968,7 +974,8 @@ function loadData(newData, firstLoadFlag) {
     $('#kvTable').bootstrapTable('removeAll');
 
     if (firstLoadFlag) {
-        $('#forceSendButton').on('click', () => {
+        $('#forceSendButton').prop('disabled', true).on('click', () => {
+            $('#forceSendButton').prop('disabled', true);
             controlSend(newData.state.idevice);
         });
     }
@@ -1194,11 +1201,12 @@ function pkTabFill2(newData, firstLoadFlag) {
                 $('#shift').val(0).change().prop('disabled', true);
                 $('#tc').prop('disabled', true);
                 $('#transfer').prop('disabled', true);
+                validateTVPReplacements(true);
             } else {
                 $('#shift').prop('disabled', false);
                 $('#tc').prop('disabled', false);
                 $('#transfer').prop('disabled', false);
-                validateTVPReplacements();
+                validateTVPReplacements(false);
             }
             $('#razlen').change();
         });
@@ -1496,6 +1504,7 @@ function kvTableChange(table) {
 
 function pkTableDurationFunctional(table, tableType, currPK) {
     let difLen = $('#razlen').prop('checked');
+    const tpu = Number($('#tpu').val());
 
     currPK.sts.forEach(function (row, index) {
         const disabledStatusMap = {start: true, tf: true, num: true, duration: true, plus: true};
@@ -1506,7 +1515,13 @@ function pkTableDurationFunctional(table, tableType, currPK) {
             disabledStatusMap[editMod] = false;
         } else if ((index <= (currPK.sts.length - 1)) && (($('[class~=num' + index + ']').val() !== '0') || ($('[class~=tf' + index + ']').val() !== '0'))) {
             disabledStatusMap.num = (row.tf === 1) || (row.tf === 8);
-            disabledStatusMap.tf = false;
+            // disabledStatusMap.tf = false;
+            if (tpu === 0) {
+                disabledStatusMap.tf = (row.tf >= 5) && (row.tf <= 7);
+            } else {
+                disabledStatusMap.tf = false;
+            }
+
             disabledStatusMap[editMod] = false;
             if (!difLen) {
                 if ((row.tf === 5) || (row.tf === 6) || (row.tf === 7)) disabledStatusMap[editMod] = true;
@@ -2093,7 +2108,7 @@ function getCycleDiff(cycle, currSts, switchCount, difLen) {
 }
 
 // Проверка ПК на наличие замещающих фаз при переход на ПК с ЛПУ
-function validateTVPReplacements() {
+function validateTVPReplacements(isLpu) {
     const currSts = setDK[Number($('#pkSelect').val())].sts;
     currSts.forEach(sts => {
         if (sts.tf === 4) {
@@ -2108,6 +2123,8 @@ function validateTVPReplacements() {
             if (findReplacementCount(currSts, sts.line - 1) === 0) {
                 addPkSwitch(sts.line - 1, 7, 1);
             }
+        } else if (sts.tf >= 5 && sts.tf <= 7) {
+            $('[class~=tf' + (sts.line - 1) + ']')[0].disabled = !isLpu;
         }
     })
 }
@@ -2249,8 +2266,8 @@ function addPkSwitch(index, tf, num, start, stop) {
     });
     setDK[selected].sts = currSts;
     pkTabFill('pkTable');
-
     $(`[class~=duration${index + 1}]`).val((start === undefined) ? minPhaseDuration : (stop - start)).change();
+    if (($('#tpu').val() === '0') && ((tf >= 5) && (tf <= 7))) $(`.tf${index + 1}`)[0].disabled = true;
 }
 
 // Удаление переключателя из ПК
@@ -2534,7 +2551,6 @@ function controlSend(id) {
 
 function checkEdit() {
     $('#reloadButton').prop('disabled', !editFlag);
-    $('#forceSendButton').prop('disabled', !editFlag);
     $('#deleteButton').prop('disabled', !editFlag);
 }
 

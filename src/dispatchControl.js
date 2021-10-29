@@ -9,6 +9,7 @@ let boxRemember = {Y: 0, X: 0};
 let fixationFlag = false;
 
 let ideviceSave = -1;
+let test;
 
 ymaps.ready(function () {
 
@@ -125,7 +126,7 @@ ymaps.ready(function () {
                         });
 
                         // Если открыто управление перекрёстком, замена объекта на карте произойдет по закрытию управления
-                        if (ideviceSave !== trafficLight.idevice){
+                        if (ideviceSave !== trafficLight.idevice) {
                             //Замена метки контроллера со старым состоянием на метку с новым
                             map.geoObjects.splice(index, 1, placemark);
                         } else {
@@ -318,7 +319,7 @@ ymaps.ready(function () {
                     // handlePlacemarkClick(map, trafficLight, oldplacemark);
                     return;
                 }
-                placemark.balloon.open();
+                // placemark.balloon.open().then(() => $('#table').parent().parent().width('').height(''));
             },
             error: function (request) {
                 console.log(request.status + ' ' + request.responseText);
@@ -364,18 +365,25 @@ ymaps.ready(function () {
                     `    </td>` +
                     `</tr>`
             });
-
+            phases += phases;
+            phases += phases;
+            phases += phases;
             const index = table.indexOf('<tbody>');
             table = table.slice(0, index) + phases + table.slice(index, table.length);
 
+            let buttons = '';
             specialCommands.forEach((pic) => {
-                table +=
+                buttons +=
                     `<div class="btn btn-light border" onclick="controlSend(${idevice}, 9, ${pic.num})">` +
                     ` <img className="img-fluid" src="/file/static/img/buttons${pic.phase}"` +
                     ` height="50" alt="error">` +
                     `</div>`
             })
+            buttons = `<div>${buttons}</div>`;
+            let qqq = `<div class="row"><div class="col-md-7">${table}</div><div class="col-md-5">${buttons}</div></div>`
+            table = qqq;
         }
+        test = table;
         return table;
     }
 

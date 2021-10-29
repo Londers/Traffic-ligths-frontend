@@ -105,7 +105,7 @@ function filterTable(data) {
             // Без фильтров
             return crosses;
         case 1:
-            // Отстутсвие связи
+            // Отсутствие связи
             return crosses.filter(row => row.sv === '')
         case 2:
             // Неисправности
@@ -589,7 +589,7 @@ const mErrorText = {
 
 const selectValues = {
     0: 'Все привязки',
-    1: 'Отстутсвие связи',
+    1: 'Отсутствие связи',
     2: 'Неисправности',
     3: 'Аварии 220, Выключенные УСДК',
     4: 'Неисправности GPS',
