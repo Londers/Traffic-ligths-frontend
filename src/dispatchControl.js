@@ -11,6 +11,12 @@ let fixationFlag = false;
 let ideviceSave = -1;
 let test;
 
+$(() => {
+    $('body').append('<div class="border border-dark" id="map" ' +
+        `style="max-height: 100%; max-width: 100%; position: relative; z-index: 1"></div>`
+    )
+})
+
 ymaps.ready(function () {
 
     //Создание и первичная настройка карты
@@ -312,13 +318,16 @@ ymaps.ready(function () {
                 });
                 //Добавление метки контроллера на карту
                 // map.geoObjects.add(placemark);
+
                 try {
                     map.geoObjects.splice(map.geoObjects.indexOf(oldplacemark), 1, placemark);
+                    placemark.balloon.open();
                 } catch (e) {
                     console.log('error', e.message);
                     // handlePlacemarkClick(map, trafficLight, oldplacemark);
                     return;
                 }
+
                 // placemark.balloon.open().then(() => $('#table').parent().parent().width('').height(''));
             },
             error: function (request) {
@@ -365,9 +374,6 @@ ymaps.ready(function () {
                     `    </td>` +
                     `</tr>`
             });
-            phases += phases;
-            phases += phases;
-            phases += phases;
             const index = table.indexOf('<tbody>');
             table = table.slice(0, index) + phases + table.slice(index, table.length);
 

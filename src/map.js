@@ -1,5 +1,11 @@
 'use strict';
 
+$(() => {
+    $('body').append('<div class="border border-dark mx-1" id="map" ' +
+        `style="max-height: 90%; max-width: 100%; position: relative; z-index: 1"></div>`
+    )
+})
+
 ymaps.ready(function () {
     let map;
 
@@ -10,6 +16,7 @@ ymaps.ready(function () {
     let userRegion;
     let areaInfo;
     let areaZone;
+    let fragmentInfo;
     let boxRemember = {Y: 0, X: 0};
     let authorizedFlag = false;
     let logDeviceFlag = false;
@@ -139,7 +146,7 @@ ymaps.ready(function () {
                                 })
                                 allCamsWithZones.set(id, camsWithZones);
                             }
-                        } else if (allCamsWithZones.get(id) !== undefined){
+                        } else if (allCamsWithZones.get(id) !== undefined) {
                             allCamsWithZones.get(id).forEach(cam => {
                                 map.geoObjects.remove(cam)
                                 console.log('remove')
@@ -189,7 +196,8 @@ ymaps.ready(function () {
             })
             camPlacemark.events.add('click', function () {
                 if (authorizedFlag) {
-                    openPage(`/cameras?` + searchStr)
+                    localStorage.setItem('cam', angle.name);
+                    openPage(`/cameras?` + searchStr);
                 }
             });
             // map.geoObjects.add(camPlacemark)
@@ -415,6 +423,12 @@ ymaps.ready(function () {
         $('#locationDialog').dialog('open');
     });
 
+    //Выбор фрагмента для открытия на карте
+    $('#fragmentButton').on('click', function () {
+        makeFragmentSelect('fragment');
+        $('#fragmentDialog').dialog('open');
+    });
+
     $('#techSuppButton').on('click', function () {
         openPage('/techSupp');
     });
@@ -621,6 +635,20 @@ ymaps.ready(function () {
         localStorage.setItem('multipleCross', JSON.stringify([]));
     });
 
+    $('#addFragmentButton').on('click', function () {
+        $('#toolbar').hide();
+        $('#createFragmentsBar').show();
+    });
+
+    $('#selectFragment').on('click', function () {
+        $('#createFragmentDialog').dialog('open');
+    });
+
+    $('#backFragment').on('click', function () {
+        $('#toolbar').show();
+        $('#createFragmentsBar').hide();
+    });
+
     let closeReason = '';
     ws = new WebSocket('wss://' + location.host + '/mapW');
 
@@ -650,6 +678,7 @@ ymaps.ready(function () {
                 regionInfo = data.regionInfo;
                 areaInfo = data.areaInfo;
                 userRegion = data.region;
+                fragmentInfo = data.fragmentInfo;
                 // let techRegionInfo = (data.region === '*') ? regionInfo : data.region;
                 // let techAreaInfo = (data.area === null) ? areaInfo : data.area;
                 authorizedFlag = data.authorizedFlag;
@@ -1012,6 +1041,57 @@ ymaps.ready(function () {
         // close: function () {
         //     $('#areasMsg').remove();
         // }
+    });
+
+    $('#createFragmentDialog').dialog({
+        autoOpen: false,
+        buttons: {
+            'Подтвердить': function () {
+                ws.send(
+                    JSON.stringify({
+                            type: 'createFragment',
+                            data: {
+                                name: $('#fragmentName').val(),
+                                bounds: map.getBounds()
+                            }
+                        })
+                );
+                $('#fragmentName').val('');
+                $(this).dialog('close');
+            },
+            'Отмена': function () {
+                $(this).dialog('close');
+            }
+        },
+        modal: true,
+        resizable: false
+    });
+
+    function makeFragmentSelect(select) {
+        const fragmentSelect = $('#' + select);
+        if (fragmentSelect.children().length !== 0) return;
+        if (fragmentInfo === undefined) {
+            $('#fragment').append(new Option('test option', map.getBounds()))
+        } else {
+            fragmentInfo.forEach(fragment => fragmentSelect.append(new Option(fragment.name, fragment.bounds)))
+        }
+    }
+
+    $('#fragmentDialog').dialog({
+        autoOpen: false,
+        buttons: {
+            'Подтвердить': function () {
+                const [x1, y1, x2, y2] = $('#fragment')[0].value.split(',').map(el => Number(el));
+                const bounds = [[x1, y1], [x2, y2]];
+                map.setBounds(bounds);
+                $(this).dialog('close');
+            },
+            'Отмена': function () {
+                $(this).dialog('close');
+            }
+        },
+        modal: true,
+        resizable: false
     });
 
     function authorize() {

@@ -6,17 +6,57 @@
     <meta http-equiv="Cache-control" content="must-revalidate">
     <title>Сервер связи</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="//code.jquery.com/ui/1.13.0/themes/base/jquery-ui.css">
+    <link rel="stylesheet" href="/resources/demos/style.css">
+    <style>
+        #resizable { width: 150px; height: 150px; padding: 0.5em; }
+        #resizable h3 { text-align: center; margin: 0; }
+    </style>
+    <script src="https://code.jquery.com/jquery-3.6.0.js"></script>
+    <script src="https://code.jquery.com/ui/1.13.0/jquery-ui.js"></script>
+    <script>
+        $( function() {
+            $(".resizable").draggable().resizable();
+        } );
+    </script>
 </head>
 <body>
-<!--<video id="test_video1" controls autoplay>-->
-<img style="-webkit-user-select: none;margin: auto;background-color: hsl(0, 0%, 25%);" src="http://192.168.115.168:3080/video_ch1" alt="Ошибка камеры"><!--</video>-->
-<img style="-webkit-user-select: none;margin: auto;background-color: hsl(0, 0%, 25%);" src="http://192.168.115.168:3080/video_ch2" alt="Ошибка камеры"><!--</video>-->
-<!--<video id="test_video2" controls autoplay>-->
-<!--    <source src="rtsp://192.168.9.10:554/rtsp?channel=db4a7bd4-aeaf-49f6-a8bd-a3a673ce3833" type="application/x-rtsp">-->
-<!--</video>-->
-<!--<video id="test_video3" controls autoplay>-->
-<!--    <source src="rtsp://192.168.9.10:554/rtsp?channel=c4bcf949-667c-4969-b92d-f715eb8c704f&login=RTVideo&password=2C2B9C1210A2765C752DE1C9577957F6" type="application/x-rtsp">-->
-<!--</video>-->
+<!--<img style="width: 800px;display: block;height: 500px;background-color: gray;" src="https://192.168.115.134:8181/stream?camera=http://192.168.115.168:3080/video_ch1">-->
+
+<div class="row" style="height: 50%; display: inline-flex">
+    <div class="col-md-4 resizable" style="width: 33%">
+        <img style="width: 100%;display: block;height: 100%;background-color: gray;" src="https://192.168.115.134:4444/stream?camera=rtsp://10.8.0.4/video41">
+    </div>
+    <div class="col-md-4 resizable" style="width: 33%">
+        <img style="width: 100%;display: block;height: 100%;background-color: gray;" src="https://192.168.115.134:4444/stream?camera=rtsp://10.8.0.4/video42">
+    </div>
+    <div class="col-md-4 resizable" style="width: 33%">
+        <img style="width: 100%;display: block;height: 100%;background-color: gray;" src="https://192.168.115.134:4444/stream?camera=rtsp://10.8.0.4/video43">
+    </div>
+</div>
+<!--<div class="row" style="height: 50%; display: inline-flex">-->
+<!--    <div class="col-md-4 resizable" style="width: 33%">-->
+<!--        <img style="width: 100%;display: block;height: 100%;background-color: gray;" src="https://192.168.115.134:4444/stream?camera=rtsp://10.8.0.4/video44">-->
+<!--    </div>-->
+<!--    <div class="col-md-4 resizable" style="width: 33%">-->
+<!--        <img style="width: 100%;display: block;height: 100%;background-color: gray;" src="https://192.168.115.134:4444/stream?camera=rtsp://10.8.0.4/video45">-->
+<!--    </div>-->
+<!--    <div class="col-md-4 resizable" style="width: 33%">-->
+<!--        <img style="width: 100%;display: block;height: 100%;background-color: gray;" src="https://192.168.115.134:4444/stream?camera=rtsp://10.8.0.4/video46">-->
+<!--    </div>-->
+<!--</div>-->
+<!--<div class="row" style="height: 50%; display: inline-flex">-->
+<!--    <div class="col-md-4 resizable" style="width: 33%">-->
+<!--        <img style="width: 100%;display: block;height: 100%;background-color: gray;" src="https://192.168.115.134:4444/stream?camera=rtsp://10.8.0.4/video11">-->
+<!--    </div>-->
+<!--    <div class="col-md-4 resizable" style="width: 33%">-->
+<!--        <img style="width: 100%;display: block;height: 100%;background-color: gray;" src="https://192.168.115.134:4444/stream?camera=rtsp://10.8.0.4/video21">-->
+<!--    </div>-->
+<!--    <div class="col-md-4 resizable" style="width: 33%">-->
+<!--        <img style="width: 100%;display: block;height: 100%;background-color: gray;" src="https://192.168.115.134:4444/stream?camera=rtsp://10.8.0.4/video31">-->
+<!--    </div>-->
+<!--</div>-->
+
 </body>
 </html>
 <!--камера video (для ctrl+f)-->

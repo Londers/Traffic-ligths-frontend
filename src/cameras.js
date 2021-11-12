@@ -2,22 +2,27 @@ $(function () {
     const [region, area, ID] = window.location.search.split('&').map(searchItem => searchItem.split('=')[1])
 
     $('title').text('ДТ ДК-' + ID)
-
     $.ajax({
         url: window.location.origin + '/file/static/cross/' + region + '/' + area + '/' + ID + '/cross.svg',
         type: 'GET',
         success: function (svgData) {
-            $('body').append(svgData.children[0].outerHTML);
+            $('body').append(`<div id="svg" style="position: absolute; width: 500px; height: 500px">${svgData.children[0].outerHTML}</div>`);
             setVisualMode(1);
-            $('svg').attr('width', '40%').attr('height', '40%');
+            $('svg').attr('width', '100%').attr('height', '100%');
+            $('#svg').draggable().resizable({aspectRatio: true});
             if (typeof getAnglesCamera === "function") {
                 const cameras = getAnglesCamera();
-                cameras.forEach((camera) => {
+                cameras.forEach((camera, id) => {
                     if (camera.ip.length > 4) {
-                        $('body').append(`<a style="margin: 15px; position: fixed" href="http://${camera.ip}/video_ch1" target="_blank">${camera.name}</a>`)
-                        // const video = `<img id="video${num}" height="100%" style="-webkit-user-select: none;margin: auto;background-color: hsl(0, 0%, 25%);" src="http://${camera.ip}/video_ch1" alt="Ошибка камеры">`;
-                        // $('body').append(video)
-                        // $('body').append(`<div><label for="video${num}">camera.name</label>${video}</div>`)
+                        const cameraDiv = `<div id="cam${id}" style="position:absolute; top: 500px;">` +
+                            `<img class="resizable" style="width: 480px; height: 270px; display: block; background-color: gray;" src="${location.origin}/stream?camera=${camera.ip}">` +
+                            `</div>`
+                        $('#svg').prepend(`<button id="btn${id}">${camera.name}</button>`);
+                        $('#btn' + id).on('click', () => cameraControl(cameraDiv, camera.name, id));
+                        if (localStorage.getItem('cam') === camera.name) {
+                            $('#btn' + id).trigger('click');
+                            localStorage.removeItem('cam')
+                        }
                     }
                 })
             }
@@ -28,4 +33,15 @@ $(function () {
         }
     });
 
+    function cameraControl(camera, name, id) {
+        const camDiv = $('#cam' + id);
+        if (camDiv.length === 0) {
+            $('body').append(camera);
+            $('.resizable').resizable({aspectRatio: 16/9});
+            $('.resizable').parent().draggable();
+            $('#cam' + id).children().prepend(`<div style="position: absolute; color: white; background-color: black; font-size: large;">${name}</div>`)
+        } else {
+            camDiv.remove();
+        }
+    }
 })

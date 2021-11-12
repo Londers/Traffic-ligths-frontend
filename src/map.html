@@ -136,8 +136,33 @@
         </div>
     </form>
 </div>
+<div id="createFragmentDialog" title="Создание фрагмента">
+    <form class="needs-validated">
+        <div class="form-group" id="createFragmentForm">
+            <label for="fragmentName">Название фрагмента</label>
+            <input id="fragmentName" class="ml-3" type="text">
+        </div>
+    </form>
+</div>
+<div id="fragmentDialog" title="Выбор фрагмента">
+    <form class="needs-validated">
+        <div class="form-group" id="fragmentForm">
+            <label for="region">Регион</label>
+            <select class="form-control" id="fragment">
+            </select>
+        </div>
+    </form>
+</div>
 <body style="max-height: 960px;">
 <div class="container-fluid">
+    <div id="createFragmentsBar" style="display: none;">
+        <button class="btn btn-secondary" type="button" id="selectFragment" style="min-width: 250px;">
+            Выбрать фрагмент
+        </button>
+        <button class="btn btn-secondary" type="button" id="backFragment" style="min-width: 250px;">
+            Вернуться
+        </button>
+    </div>
     <div id="toolbar" class="row" style="min-height: 38px;">
         <div class="col-md-2 text-center">
             <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownControlButton"
@@ -146,7 +171,7 @@
             </button>
             <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
                 <button class="dropdown-item" type="button" id="locationButton">Перемещение</button>
-<!--                <button class="dropdown-item" type="button" id="fragmentButton">Фрагменты</button>-->
+                <button class="dropdown-item" type="button" id="fragmentButton">Фрагменты</button>
                 <button class="dropdown-item" type="button" id="fixationButton">Зафиксировать экран</button>
                 <button class="dropdown-item" type="button" id="fixationReset">Снять фиксацию</button>
             </div>
@@ -186,8 +211,9 @@
                     aria-haspopup="true" aria-expanded="false">Настройки
             </button>
             <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                <button class="dropdown-item" type="button" id="setAreaButton">Районы перемещения</button>
-                <button class="dropdown-item" type="button" id="setFragmentButton">Районы фрагментов</button>
+                <!--                <button class="dropdown-item" type="button" id="setAreaButton">Районы перемещения</button>-->
+                <button class="dropdown-item" type="button" id="addFragmentButton">Создание фрагментов</button>
+                <button class="dropdown-item" type="button" id="delFragmentButton">Удаление фрагментов</button>
             </div>
         </div>
         <div class="dropdown col-md-2 text-center">
@@ -199,7 +225,7 @@
                 <button class="dropdown-item" type="button" id="changeUserButton">Сменить пользователя</button>
                 <button class="dropdown-item" type="button" id="changeButton">Сменить пароль</button>
                 <button class="dropdown-item" type="button" id="manageButton" style="display: none;">Таблица прав и
-                    данных операторов, названий армов
+                    данных операторов, названий АРМов
                 </button>
                 <button class="dropdown-item" type="button" id="licenseButton">Просмотр лицензии</button>
             </div>
@@ -306,7 +332,8 @@
     </div>
     <div class="btn-secondary" style="position: absolute; bottom: 10%; left: 10px; z-index: 2; padding: .375rem .75rem;
     font-size: 1rem; border-radius: .25rem; pointer-events: none;">
-        Выбрано перекрёстков для просмотра: <div id="crossesCount" style="display: inline">0</div>
+        Выбрано перекрёстков для просмотра:
+        <div id="crossesCount" style="display: inline">0</div>
     </div>
 </div>
 
@@ -343,8 +370,6 @@
                required>
     </div>
 </div>
-<div class="container-fluid border border-dark" id="map"
-     style="max-height: 920px; position: relative; z-index: 1"></div>
 <template id="chat">
     <button class="open-button" onclick="openForm()" style="position: fixed; z-index: 2;">Открыть чат</button>
     <div class="form-popup" id="myForm">
