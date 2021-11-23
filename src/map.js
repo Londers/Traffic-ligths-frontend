@@ -16,7 +16,7 @@ ymaps.ready(function () {
     let userRegion;
     let areaInfo;
     let areaZone;
-    let fragmentInfo;
+    let fragments = [];
     let boxRemember = {Y: 0, X: 0};
     let authorizedFlag = false;
     let logDeviceFlag = false;
@@ -425,7 +425,7 @@ ymaps.ready(function () {
 
     //Выбор фрагмента для открытия на карте
     $('#fragmentButton').on('click', function () {
-        makeFragmentSelect('fragment');
+        makeFragmentSelect('jump');
         $('#fragmentDialog').dialog('open');
     });
 
@@ -451,6 +451,11 @@ ymaps.ready(function () {
         }
     });
 
+    //Логи сервера
+    $('#serverLogButton').on('click', function () {
+        openPage( '/manage/serverLog')
+    });
+
     $('#changeUserButton').on('click', function () {
         $('#login').val('');
         $('#password').val('');
@@ -465,6 +470,11 @@ ymaps.ready(function () {
     $('#standardZUButton').on('click', () => {
         localStorage.setItem('mapSettings', JSON.stringify({bounds: map.getBounds(), zoom: map.getZoom()}))
         openPage('/greenStreet');
+    });
+
+    $('#arbitraryZUButton').on('click', () => {
+        localStorage.setItem('mapSettings', JSON.stringify({bounds: map.getBounds(), zoom: map.getZoom()}))
+        openPage('/arbitraryGS');
     });
 
     $('#charPointsButton').on('click', () => {
@@ -637,7 +647,12 @@ ymaps.ready(function () {
 
     $('#addFragmentButton').on('click', function () {
         $('#toolbar').hide();
-        $('#createFragmentsBar').show();
+        $('#createFragmentsBar')[0].hidden = false;
+    });
+
+    $('#delFragmentButton').on('click', function () {
+        makeFragmentSelect('del');
+        $('#fragmentDialog').dialog('open');
     });
 
     $('#selectFragment').on('click', function () {
@@ -646,7 +661,7 @@ ymaps.ready(function () {
 
     $('#backFragment').on('click', function () {
         $('#toolbar').show();
-        $('#createFragmentsBar').hide();
+        $('#createFragmentsBar')[0].hidden = true;
     });
 
     let closeReason = '';
@@ -678,7 +693,7 @@ ymaps.ready(function () {
                 regionInfo = data.regionInfo;
                 areaInfo = data.areaInfo;
                 userRegion = data.region;
-                fragmentInfo = data.fragmentInfo;
+                fragments = data.fragments;
                 // let techRegionInfo = (data.region === '*') ? regionInfo : data.region;
                 // let techAreaInfo = (data.area === null) ? areaInfo : data.area;
                 authorizedFlag = data.authorizedFlag;
@@ -799,6 +814,7 @@ ymaps.ready(function () {
                 if (data.status && (localStorage.getItem('bf') !== '5')) {
                     localStorage.setItem('multipleCross', JSON.stringify([]));
                     userRegion = data.region;
+                    fragments = data.fragments;
 
                     $('#login').val('');
                     $('#password').val('');
@@ -890,6 +906,22 @@ ymaps.ready(function () {
                     $('#serverConnection').children().css({
                         'background-color': ((data.statusS) ? 'green' : 'red')
                     });
+                }
+                break;
+            case 'createFragment':
+                if (data.status) {
+                    fragments = data.fragment;
+                    makeFragmentSelect();
+                } else {
+                    alert('При создании фрагмента произошла ошибка');
+                }
+                break;
+            case 'deleteFragment':
+                if (data.status) {
+                    fragments = data.fragment;
+                    makeFragmentSelect();
+                } else {
+                    alert('При создании фрагмента произошла ошибка');
                 }
                 break;
             case 'error':
@@ -1058,6 +1090,7 @@ ymaps.ready(function () {
                 );
                 $('#fragmentName').val('');
                 $(this).dialog('close');
+                $('#backFragment').trigger('click');
             },
             'Отмена': function () {
                 $(this).dialog('close');
@@ -1067,13 +1100,23 @@ ymaps.ready(function () {
         resizable: false
     });
 
-    function makeFragmentSelect(select) {
-        const fragmentSelect = $('#' + select);
-        if (fragmentSelect.children().length !== 0) return;
-        if (fragmentInfo === undefined) {
-            $('#fragment').append(new Option('test option', map.getBounds()))
+    function makeFragmentSelect(type) {
+        const fragmentSelect = $('#fragment');
+        $('#fragment option').remove();
+        if (fragments ?? false) {
+            fragments.forEach(fragment => fragmentSelect.append(new Option(fragment.name, fragment.bounds)))
         } else {
-            fragmentInfo.forEach(fragment => fragmentSelect.append(new Option(fragment.name, fragment.bounds)))
+            $('#fragment').append(new Option('Фрагменты отсутствуют', map.getBounds()))
+        }
+        switch (type) {
+            case 'jump':
+                $('#fragmentDialog').parent().find('button').filter((i,v) => v.innerText === 'Подтвердить').show()
+                $('#fragmentDialog').parent().find('button').filter((i,v) => v.innerText === 'Удалить').hide()
+                break;
+            case 'del':
+                $('#fragmentDialog').parent().find('button').filter((i,v) => v.innerText === 'Подтвердить').hide()
+                $('#fragmentDialog').parent().find('button').filter((i,v) => v.innerText === 'Удалить').show()
+                break;
         }
     }
 
@@ -1084,6 +1127,11 @@ ymaps.ready(function () {
                 const [x1, y1, x2, y2] = $('#fragment')[0].value.split(',').map(el => Number(el));
                 const bounds = [[x1, y1], [x2, y2]];
                 map.setBounds(bounds);
+
+                $(this).dialog('close');
+            },
+            'Удалить': function () {
+                ws.send(JSON.stringify({type: 'deleteFragment', data: {name: $('#fragment :selected').text()}}))
                 $(this).dialog('close');
             },
             'Отмена': function () {
@@ -1099,7 +1147,7 @@ ymaps.ready(function () {
             $('#loginButton').show();
             $('#logoutButton').hide();
             $('#leftToolbar').hide();
-            // $('#serverLogButton').hide();
+            $('#serverLogButton').hide();
             // $('#DUJournalButton').hide();
             // $('#standardZUButton').hide();
             // $('#arbitraryZUButton').hide();
@@ -1113,7 +1161,7 @@ ymaps.ready(function () {
             $('#loginButton').hide();
             $('#logoutButton').show();
             $('#leftToolbar').show();
-            // $('#serverLogButton').show();
+            $('#serverLogButton').show();
             // $('#DUJournalButton').show();
             // $('#standardZUButton').show();
             // $('#arbitraryZUButton').show();
@@ -1133,11 +1181,11 @@ ymaps.ready(function () {
         (logDeviceFlag) ? $('#deviceLogButton').show() : $('#deviceLogButton').hide();
         (techFlag) ? $('#techArmButton').show() : $('#techArmButton').hide();
         if (gsFlag) {
-            $('#DUJournalButton').show();
+            $('#dispatchControlButton').show();
             $('#standardZUButton').show();
             $('#arbitraryZUButton').show();
         } else {
-            $('#DUJournalButton').hide();
+            $('#dispatchControlButton').hide();
             $('#standardZUButton').hide();
             $('#arbitraryZUButton').hide();
         }
