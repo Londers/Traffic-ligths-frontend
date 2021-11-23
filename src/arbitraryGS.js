@@ -14,126 +14,130 @@ let creatingMode = false;
 
 class tfLink {
     constructor() {
-        this._west = new cardinalPoint();
-        this._north = new cardinalPoint();
-        this._east = new cardinalPoint();
-        this._south = new cardinalPoint();
-        this._add1 = new cardinalPoint();
-        this._add2 = new cardinalPoint();
+        this.west = new cardinalPoint();
+        this.north = new cardinalPoint();
+        this.east = new cardinalPoint();
+        this.south = new cardinalPoint();
+        this.add1 = new cardinalPoint();
+        this.add2 = new cardinalPoint();
     }
 
     copy(tfl) {
-        this._west = tfl.west;
-        this._north = tfl.north;
-        this._east = tfl.east;
-        this._south = tfl.south;
-        this._add1 = tfl.add1;
-        this._add2 = tfl.add2;
+        this.west = new cardinalPoint(tfl.west);
+        this.north = new cardinalPoint(tfl.north);
+        this.east = new cardinalPoint(tfl.east);
+        this.south = new cardinalPoint(tfl.south);
+        this.add1 = new cardinalPoint(tfl.add1);
+        this.add2 = new cardinalPoint(tfl.add2);
     }
 
-    get west() {
-        return this._west;
+    set West(value) {
+        this.west = value;
     }
 
-    set west(value) {
-        this._west = value;
+    get West() {
+        return this.west;
     }
 
-    get north() {
-        return this._north;
+    set North(value) {
+        this.north = value;
     }
 
-    set north(value) {
-        this._north = value;
+    get North() {
+        return this.north;
     }
 
-    get east() {
-        return this._east;
+    set East(value) {
+        this.east = value;
     }
 
-    set east(value) {
-        this._east = value;
+    get East() {
+        return this.east;
     }
 
-    get south() {
-        return this._south;
+    set South(value) {
+        this.south = value;
     }
 
-    set south(value) {
-        this._south = value;
+    get South() {
+        return this.south;
     }
 
-    get add1() {
-        return this._add1;
+    set Add1(value) {
+        this.add1 = value;
     }
 
-    set add1(value) {
-        this._add1 = value;
+    get Add1() {
+        return this.add1;
     }
 
-    get add2() {
-        return this._add2;
+    set Add2(value) {
+        this.add2 = value;
     }
 
-    set add2(value) {
-        this._add2 = value;
+    get Add2() {
+        return this.add2;
     }
 }
 
 class cardinalPoint {
-    constructor(id, wayPointsArray) {
-        this._wayPointsArray = wayPointsArray;
-        this._id = id;
+    constructor(struct) {
+        if (struct === undefined) return;
+        this.wayPointsArray = [];
+        if (struct.wayPointsArray ?? false) {
+            struct.wayPointsArray.forEach(wp => this.wayPointsArray.push(new wayPoint(wp.id, wp.phase)))
+        }
+        this.id = struct.id;
     }
 
-    set id(value) {
-        this._id = value;
+    set Id(value) {
+        this.id = value;
     }
 
-    set wayPointsArray(value) {
-        this._wayPointsArray = value;
+    get Id() {
+        return this.id;
     }
 
-    get wayPointsArray() {
-        return this._wayPointsArray;
+    set WayPointsArray(value) {
+        this.wayPointsArray = value;
     }
 
-    get id() {
-        return this._id;
+    get WayPointsArray() {
+        return this.wayPointsArray;
     }
 
     getPhaseToObj(obj) {
-        return this.wayPointsArray?.find(wp => wp.id === obj)?.phase;
+        return this.wayPointsArray?.find(wp => wp.Id === obj)?.phase;
     }
 }
 
 class wayPoint {
     constructor(id, phase) {
-        this._id = id;
-        this._phase = phase;
+        this.id = id;
+        this.phase = phase;
     }
 
-    set id(value) {
-        this._id = value;
+    set Id(value) {
+        this.id = value;
     }
 
-    set phase(value) {
-        this._phase = value;
+    get Id() {
+        return this.id;
     }
 
-    get id() {
-        return this._id;
+    set Phase(value) {
+        this.phase = value;
     }
 
-    get phase() {
-        return this._phase;
+    get Phase() {
+        return this.phase;
     }
 }
 
 let currentTfId = '';
 let currentTfLink = new tfLink()
 
-const tfLinksArray = [];
+let tfLinksArray = [];
 
 $(() => {
     $('body').append('<div class="border border-dark" id="map" ' +
@@ -148,7 +152,7 @@ function getUniqueId(trafficLight) {
 
 function getPhase(curr, from, to) {
     return Object.values(tfLinksArray.find(tfl => tfl.id === curr).tflink)
-        .find(cp => cp.id === from).getPhaseToObj(to);
+        .find(cp => cp.Id === from).getPhaseToObj(to);
 }
 
 let svg = {};
@@ -199,6 +203,7 @@ ymaps.ready(function () {
     ws.onopen = function () {
         // on connecting, do nothing but log it to the console
         console.log('connected')
+        ws.send(JSON.stringify({type: 'getBindings'}));
     };
 
     ws.onclose = function (evt) {
@@ -297,6 +302,21 @@ ymaps.ready(function () {
                         }
                     })
                 }
+                break;
+            case 'getBindings':
+                data.tfLinks.forEach(link => {
+                    const tflink = new tfLink();
+                    tflink.copy(link.tflink);
+                    tfLinksArray.push({id: link.id, tflink});
+                });
+                break;
+            case 'updateBindings':
+                tfLinksArray = [];
+                data.tfLinks.forEach(link => {
+                    const tflink = new tfLink();
+                    tflink.copy(link.tflink);
+                    tfLinksArray.push({id: link.id, tflink});
+                });
                 break;
             //  case 'repaint':
             //     map.geoObjects.removeAll();
@@ -410,28 +430,32 @@ ymaps.ready(function () {
     function validateTfLink() {
         const allValidFrom = Array.from($('td.from input')).map(input => input.value);
         Object.values(currentTfLink).forEach(cp => {
+            if (cp.Id === '') {
+                cp.WayPointsArray = [];
+                return
+            }
             const deleteIndexes = []
-            cp.wayPointsArray?.forEach((wp, i) => {
-                if ((!allValidFrom.some(from => from === wp.id)) || (cp.id === wp.id)) {
+            cp.WayPointsArray?.forEach((wp, i) => {
+                if ((!allValidFrom.some(from => from === wp.Id)) || (cp.Id === wp.Id)) {
                     deleteIndexes.push(i)
                 }
             })
-            deleteIndexes.sort((a, b) => b - a).forEach(del => cp.wayPointsArray.splice(del, 1))
+            deleteIndexes.sort((a, b) => b - a).forEach(del => cp.WayPointsArray.splice(del, 1))
         })
     }
 
     function updateBindings() {
         validateTfLink();
-        let emptyLink = new tfLink();
-        emptyLink.copy(currentTfLink);
+        let copyLink = new tfLink();
+        copyLink.copy(currentTfLink);
         if (tfLinksArray.some(tfl => tfl.id === currentTfId)) {
             // tfLinksArray.find(tfl => tfl.id === currentTfId).tflink = JSON.parse(JSON.stringify(currentTfLink))
-            tfLinksArray.find(tfl => tfl.id === currentTfId).tflink = emptyLink
+            tfLinksArray.find(tfl => tfl.id === currentTfId).tflink = copyLink
         } else {
             // tfLinksArray.push({id: currentTfId, tflink: JSON.parse(JSON.stringify(currentTfLink))});
-            tfLinksArray.push({id: currentTfId, tflink: emptyLink});
+            tfLinksArray.push({id: currentTfId, tflink: copyLink});
         }
-        ws.send(JSON.stringify({type: 'updateBindings', data: tfLinksArray}));
+        ws.send(JSON.stringify({type: 'updateBindings', data: {id: currentTfId, tflink: copyLink}}));
         currentTfLink = new tfLink();
         currentTfId = '';
     }
@@ -487,13 +511,13 @@ ymaps.ready(function () {
                 let phase = 1;
                 if (tfLinksArray.some(tfl => tfl.id === getUniqueId(trafficLight))) {
                     const tfl = tfLinksArray.find(tflink => tflink.id === getUniqueId(trafficLight)).tflink;
-                    phase = getPhase(getUniqueId(trafficLight), tfl[directions[i].en].id, $($('td.to')[i]).find('div')[j].innerText) ?? 1
+                    phase = getPhase(getUniqueId(trafficLight), tfl[directions[i].en].Id, $($('td.to')[i]).find('div')[j].innerText) ?? 1
                     // phase = tfl[directions[i].en].getPhaseToObj($($('td.to')[i]).find('div')[j].innerText) ?? 1
                 }
 
-                const wayPointsArr = currentTfLink[directions[i].en].wayPointsArray
-                if (wayPointsArr.some(wp => wp.id === val.innerText)) {
-                    let currIndex = wayPointsArr.findIndex(wp => wp.id === val.innerText)
+                const wayPointsArr = currentTfLink[directions[i].en].WayPointsArray ?? [];
+                if (wayPointsArr.some(wp => wp.Id === val.innerText)) {
+                    let currIndex = wayPointsArr.findIndex(wp => wp.Id === val.innerText)
                     wayPointsArr[currIndex] = new wayPoint(val.innerText, phase.toString())
                 } else {
                     wayPointsArr.push(new wayPoint(val.innerText, phase.toString()))
@@ -508,7 +532,7 @@ ymaps.ready(function () {
         const split = index.split('-');
         const currDir = directions[split[0]].en;
         const to = $($('td.to')[split[0]]).find('div')[split[1]].innerText;
-        currentTfLink[currDir].wayPointsArray.find(wp => wp.id === to).phase = value;
+        currentTfLink[currDir].WayPointsArray.find(wp => wp.Id === to).phase = value;
     }
 
     function fillPhases(trafficLight) {
@@ -611,7 +635,7 @@ ymaps.ready(function () {
         // });
     }
 
-    const directions = [{en: 'west', ru: 'З'}, {en: 'north', ru: 'С'}, {en: 'east', ru: 'В'}, {en: 'south', ru: 'Ю'}];
+    const directions = [{en: 'West', ru: 'З'}, {en: 'North', ru: 'С'}, {en: 'East', ru: 'В'}, {en: 'South', ru: 'Ю'}];
     const directionsStr = 'ЮВСЗ';
 
     function makeToInputs(trafficLight) {
@@ -623,8 +647,8 @@ ymaps.ready(function () {
             const otherDirs = directions.filter(dir => dir.ru !== directions[i].ru);
             let otherValues = [];
             otherDirs.forEach(dir => {
-                if ((currentTfLink[dir.en].id !== '') && (currentTfLink[dir.en].id ?? false)) {
-                    otherValues.push({dir: dir.ru, id: currentTfLink[dir.en].id});
+                if ((currentTfLink[dir.en].Id !== '') && (currentTfLink[dir.en].Id ?? false)) {
+                    otherValues.push({dir: dir.ru, id: currentTfLink[dir.en].Id});
                 }
             })
 
@@ -636,7 +660,7 @@ ymaps.ready(function () {
                 return part.indexOf(val1.dir) - part.indexOf(val2.dir)
             })
 
-            if (currentTfLink[directions[i].en].wayPointsArray === undefined) currentTfLink[directions[i].en].wayPointsArray = [];
+            if (currentTfLink[directions[i].en].WayPointsArray === undefined) currentTfLink[directions[i].en].WayPointsArray = [];
             let toHTML = '';
             otherValues.forEach(val => {
                 toHTML += `<div>${val.id}</div>`;
@@ -648,7 +672,7 @@ ymaps.ready(function () {
     }
 
     function handleFromInputKeyup(trafficLight, index, evt) {
-        currentTfLink[directions[index].en].id = evt.currentTarget.value;
+        currentTfLink[directions[index].en].Id = evt.currentTarget.value;
         $('#' + directions[index].en).text(evt.currentTarget.value);
         makeToInputs(trafficLight);
     }
@@ -675,7 +699,7 @@ ymaps.ready(function () {
             const tfl = tfLinksArray.find(tflink => tflink.id === getUniqueId(trafficLight)).tflink;
             currentTfLink = tfl;
             directions.forEach((dir, index) => {
-                $('td.from input')[index].value = (tfl[dir.en]?.id) ?? ''
+                $('td.from input')[index].value = (tfl[dir.en]?.Id) ?? ''
             })
             makeToInputs(trafficLight);
             // $('td.from input').trigger('keyup');
