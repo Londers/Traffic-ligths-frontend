@@ -71,12 +71,15 @@
     </button>
     <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
         <button class="dropdown-item" type="button" id="locationButton">Перемещение</button>
-        <!--                <button class="dropdown-item" type="button" id="fragmentButton">Фрагменты</button>-->
+        <button class="dropdown-item" type="button" id="fragmentButton">Фрагменты</button>
         <button class="dropdown-item" type="button" id="fixationButton">Зафиксировать экран</button>
         <button class="dropdown-item" type="button" id="fixationReset">Снять фиксацию</button>
     </div>
     <button class="btn btn-secondary ml-2" type="button" id="createModeButton"
             aria-haspopup="true" aria-expanded="false">Режим назначения
+    </button>
+    <button class="btn btn-secondary ml-2" type="button" id="createPointButton"
+            aria-haspopup="true" aria-expanded="false">Создать объект
     </button>
     <button class="btn btn-secondary ml-2" type="button" id="controlModeButton"
             aria-haspopup="true" aria-expanded="false">Режим управления
@@ -94,6 +97,14 @@
         <div class="form-group" id="areasForm">
             <label for="area">Районы (зажмите ctrl для выбора нескольких)</label>
             <select class="form-control" id="area" multiple>
+            </select>
+        </div>
+    </form>
+</div>
+<div id="fragmentDialog" title="Выбор фрагмента">
+    <form class="needs-validated">
+        <div class="form-group" id="fragmentForm">
+            <select class="form-control text-center" id="fragment">
             </select>
         </div>
     </form>

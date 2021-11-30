@@ -2176,8 +2176,8 @@ function findMaxTvpDuration(currSts, index, tf) {
 
 // Приведение данных массивов ПК в соотвествие с таблицей на экране
 function validatePkByDuration(currSts, difLen) {
+    let shift = Number($('#shift').val());
     currSts.forEach((sw, index) => {
-        let shift = Number($('#shift').val());
         let tf = Number($(`[class~=tf${index}]`).val());
 
         if (!checkLastLine(sw)) {
@@ -2203,9 +2203,8 @@ function validatePkByDuration(currSts, difLen) {
         }
 
         sw.stop = Number($(`[class~=duration${index}`).val()) + Number($(`[class~=start${index}`).val());
-
-        if (shift !== 0) $('#shift').change();
     })
+    if (shift !== 0) $('#shift').change();
 }
 
 // Автоматическое создание простого ПК
@@ -2381,7 +2380,8 @@ function makeTransition(currSts, index) {
         } else {
             const replCount = findReplacementCount(currSts, index);
             if (replCount !== 0) {
-                currSts[index].dt = currSts[index + replCount + 1].start;
+                const lastLine = ((index + replCount + 1) >= 11) || (checkLastLine(currSts[index + replCount + 1]))
+                currSts[index].dt = currSts[lastLine ? 0 : (index + replCount + 1)].start;
                 currSts[index].trs = currSts[index].dt !== 0;
                 for (let i = (index + 1); i < (index + replCount + 1); i++) {
                     currSts[i].dt = currSts[index].dt;

@@ -10,6 +10,7 @@ ymaps.ready(function () {
     let areaZone;
     let boxRemember = {Y: 0, X: 0};
     let boxPoint = [];
+    let fragments = [];
     let description = '';
     let tflights = [];
     let currentRouteTflights = new Map();
@@ -492,6 +493,11 @@ ymaps.ready(function () {
 
     const mapSettings = JSON.parse(localStorage.getItem('mapSettings'));
     boxPoint = mapSettings.bounds;
+
+    if ((localStorage.getItem('fragment') ?? 'null') !== '') {
+        mapSettings.bounds = JSON.parse(localStorage.getItem('fragment'));
+        localStorage.setItem('fragment', '');
+    }
     //Создание и первичная настройка карты
     const map = new ymaps.Map('map', {
         bounds: mapSettings.bounds,
@@ -529,6 +535,12 @@ ymaps.ready(function () {
     //Выбор места для открытия на карте
     $('#locationButton').on('click', function () {
         $('#locationDialog').dialog('open');
+    });
+
+    //Выбор фрагмента для открытия на карте
+    $('#fragmentButton').on('click', function () {
+        makeFragmentSelect();
+        $('#fragmentDialog').dialog('open');
     });
 
     $('#phaseTableButton').on('click', function () {
@@ -684,7 +696,7 @@ ymaps.ready(function () {
                 currentRouteTflights = new Map([...currentRouteTflights.entries()].sort());
                 $('#navTable tbody tr').each((i, tr) => {
                     $(tr).on('click', () => {
-                        map.setCenter(currentRouteTflights.get(tr.rowIndex - 1).geometry.getCoordinates(), zoom);
+                        map.setCenter(currentRouteTflights.get(tr.rowIndex - 1)?.geometry.getCoordinates(), zoom);
                     });
                     tr.cells[1].innerHTML = '<div class="placemark"  style="background-image:url(\'' + location.origin +
                         '/free/img/trafficLights/' + getStatus(route.listTL[i].pos) + '.svg\');' +
@@ -731,6 +743,7 @@ ymaps.ready(function () {
                 allRoutesList = data.routes;
                 regionInfo = data.regionInfo;
                 areaInfo = data.areaInfo;
+                fragments = data.fragments;
                 tflights = data.tflight;
                 if ((areaZone === undefined) && (data.areaZone !== undefined)) {
                     areaZone = data.areaZone;
@@ -1006,6 +1019,32 @@ ymaps.ready(function () {
         }
     });
 
+    $('#fragmentDialog').dialog({
+        autoOpen: false,
+        buttons: {
+            'Открыть в новой вкладке': function () {
+                const [x1, y1, x2, y2] = $('#fragment')[0].value.split(',').map(el => Number(el));
+                const bounds = [[x1, y1], [x2, y2]];
+                localStorage.setItem('fragment', JSON.stringify(bounds))
+                window.open(location.href);
+                $(this).dialog('close');
+            },
+            'Подтвердить': function () {
+                const [x1, y1, x2, y2] = $('#fragment')[0].value.split(',').map(el => Number(el));
+                const bounds = [[x1, y1], [x2, y2]];
+                map.setBounds(bounds);
+
+                $(this).dialog('close');
+            },
+            'Отмена': function () {
+                $(this).dialog('close');
+            }
+        },
+        minWidth: 480,
+        modal: true,
+        resizable: false
+    });
+
     $('#phaseTableDialog').dialog({
         autoOpen: false,
         buttons: {
@@ -1048,6 +1087,16 @@ ymaps.ready(function () {
             $('#areasMsg').remove();
         }
     });
+
+    function makeFragmentSelect() {
+        const fragmentSelect = $('#fragment');
+        $('#fragment option').remove();
+        if (fragments ?? false) {
+            fragments.forEach(fragment => fragmentSelect.append(new Option(fragment.name, fragment.bounds)))
+        } else {
+            $('#fragment').append(new Option('Фрагменты отсутствуют', map.getBounds()))
+        }
+    }
 
     function findIdevice(region, area, id) {
         let idevice = -1;

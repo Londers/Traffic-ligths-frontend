@@ -7,6 +7,7 @@ let waiter = undefined;
 
 let boxRemember = {Y: 0, X: 0};
 let fixationFlag = false;
+let fragments = [];
 
 let ideviceSave = -1;
 
@@ -135,7 +136,7 @@ class wayPoint {
 }
 
 let currentTfId = '';
-let currentTfLink = new tfLink()
+let currentTfLink = new tfLink();
 
 let tfLinksArray = [];
 
@@ -160,12 +161,36 @@ let svg = {};
 ymaps.ready(function () {
 
     $('#controlModeButton')[0].disabled = true;
+    $('#createPointButton')[0].disabled = true;
     // $('#phaseTableDialog').find('div.fixed-table-body').css('max-height', window.innerHeight * 0.8)
 
     //Создание и первичная настройка карты
     map = new ymaps.Map('map', {
         center: [54.9912, 73.3685],
         zoom: 19
+    });
+
+    map.events.add('click', function (evt) {
+        if (!creatingMode) return;
+        let placemark = new ymaps.Placemark(evt.get('coords'), {
+            // balloonContentHeader: 'Выберите фазу',
+            // balloonContentBody: 'Содержимое <em>балуна</em> метки',
+            // balloonContentFooter: 'Подвал',
+            hintContent: 'TEST POINT'
+        }, {
+            iconLayout: createChipsLayout(function (zoom) {
+                // Размер метки будет определяться функией с оператором switch.
+                return calculate(zoom);
+            }, 'testPoint'),
+        });
+        // placemark.pos = {region: trafficLight.region.num, area: trafficLight.area.num, id: trafficLight.ID};
+        //Функция для вызова АРМ нажатием на контроллер
+        placemark.events.add('click', function () {
+            console.log('testPoint click')
+            // handlePlacemarkClick(map, trafficLight, placemark);
+        });
+        //Добавление метки контроллера на карту
+        map.geoObjects.add(placemark);
     });
 
     $('#dropdownControlButton').trigger('click');
@@ -189,12 +214,14 @@ ymaps.ready(function () {
         creatingMode = true;
         $('#controlModeButton')[0].disabled = false;
         $('#createModeButton')[0].disabled = true;
+        $('#createPointButton')[0].disabled = false;
     });
 
     $('#controlModeButton').on('click', function () {
         creatingMode = false;
         $('#controlModeButton')[0].disabled = true;
         $('#createModeButton')[0].disabled = false;
+        $('#createPointButton')[0].disabled = true;
     });
 
     let closeReason = '';
@@ -224,6 +251,7 @@ ymaps.ready(function () {
         // localStorage.setItem("maintab", "closed");
         switch (allData.type) {
             case 'mapInfo':
+                fragments = data.fragments;
                 //Заполнение поля выбора регионов для перемещения
                 for (let reg in data.regionInfo) {
                     $('#region').append(new Option(data.regionInfo[reg], reg));
@@ -234,14 +262,19 @@ ymaps.ready(function () {
                     fillAreas($('#area'), $('#region'), data.areaInfo);
                 });
 
-                map.setBounds([
-                    [data.boxPoint.point0.Y, data.boxPoint.point0.X],
-                    [data.boxPoint.point1.Y, data.boxPoint.point1.X]
-                ]);
+                if ((localStorage.getItem('fragment') ?? 'null') !== '') {
+                    map.setBounds(JSON.parse(localStorage.getItem('fragment')));
+                    localStorage.setItem('fragment', '');
+                } else {
+                    map.setBounds([
+                        [data.boxPoint.point0.Y, data.boxPoint.point0.X],
+                        [data.boxPoint.point1.Y, data.boxPoint.point1.X]
+                    ]);
+                }
 
                 //Разбор полученной от сервера информации
                 data.tflight.forEach(trafficLight => {
-                    IDs.push(trafficLight.region.num + '-' + trafficLight.area.num + '-' + trafficLight.ID);
+                    IDs.push(getUniqueId(trafficLight));
                     //Создание меток контроллеров на карте
                     let placemark = new ymaps.Placemark([trafficLight.points.Y, trafficLight.points.X], {
                         // balloonContentHeader: 'Выберите фазу',
@@ -271,11 +304,10 @@ ymaps.ready(function () {
                     // console.log('Обновление');
                     //Обновление статуса контроллера происходит только при его изменении
                     data.tflight.forEach(trafficLight => {
-                        let id = trafficLight.ID;
-                        let index = IDs.indexOf(trafficLight.region.num + '-' + trafficLight.area.num + '-' + id);
+                        let index = IDs.indexOf(getUniqueId(trafficLight));
                         //Создание меток контроллеров на карте
                         let placemark = new ymaps.Placemark([trafficLight.points.Y, trafficLight.points.X], {
-                            balloonContent: 'Отсутсвует картинка перекрёстка',
+                            // balloonContent: 'Отсутсвует картинка перекрёстка',
                             hintContent: trafficLight.description + '<br>' + trafficLight.idevice
                         }, {
                             iconLayout: createChipsLayout(function (zoom) {
@@ -374,6 +406,12 @@ ymaps.ready(function () {
         $('#locationDialog').dialog('open');
     });
 
+    //Выбор фрагмента для открытия на карте
+    $('#fragmentButton').on('click', function () {
+        makeFragmentSelect();
+        $('#fragmentDialog').dialog('open');
+    });
+
     //Всплывающее окно для создания пользователя /locationButton
     $('#locationDialog').dialog({
         autoOpen: false,
@@ -410,6 +448,32 @@ ymaps.ready(function () {
         }
     });
 
+    $('#fragmentDialog').dialog({
+        autoOpen: false,
+        buttons: {
+            'Открыть в новой вкладке': function () {
+                const [x1, y1, x2, y2] = $('#fragment')[0].value.split(',').map(el => Number(el));
+                const bounds = [[x1, y1], [x2, y2]];
+                localStorage.setItem('fragment', JSON.stringify(bounds))
+                window.open(location.href);
+                $(this).dialog('close');
+            },
+            'Подтвердить': function () {
+                const [x1, y1, x2, y2] = $('#fragment')[0].value.split(',').map(el => Number(el));
+                const bounds = [[x1, y1], [x2, y2]];
+                map.setBounds(bounds);
+
+                $(this).dialog('close');
+            },
+            'Отмена': function () {
+                $(this).dialog('close');
+            }
+        },
+        minWidth: 480,
+        modal: true,
+        resizable: false
+    });
+
     $('#tableDialog').dialog({
         autoOpen: false,
         buttons: {
@@ -418,6 +482,8 @@ ymaps.ready(function () {
                 $(this).dialog('close');
             },
             'Отмена': function () {
+                currentTfLink = new tfLink();
+                currentTfId = '';
                 $(this).dialog('close');
             }
         },
@@ -426,6 +492,16 @@ ymaps.ready(function () {
         modal: true,
         resizable: false
     });
+
+    function makeFragmentSelect() {
+        const fragmentSelect = $('#fragment');
+        $('#fragment option').remove();
+        if (fragments ?? false) {
+            fragments.forEach(fragment => fragmentSelect.append(new Option(fragment.name, fragment.bounds)))
+        } else {
+            $('#fragment').append(new Option('Фрагменты отсутствуют', map.getBounds()))
+        }
+    }
 
     function validateTfLink() {
         const allValidFrom = Array.from($('td.from input')).map(input => input.value);
@@ -449,10 +525,8 @@ ymaps.ready(function () {
         let copyLink = new tfLink();
         copyLink.copy(currentTfLink);
         if (tfLinksArray.some(tfl => tfl.id === currentTfId)) {
-            // tfLinksArray.find(tfl => tfl.id === currentTfId).tflink = JSON.parse(JSON.stringify(currentTfLink))
             tfLinksArray.find(tfl => tfl.id === currentTfId).tflink = copyLink
         } else {
-            // tfLinksArray.push({id: currentTfId, tflink: JSON.parse(JSON.stringify(currentTfLink))});
             tfLinksArray.push({id: currentTfId, tflink: copyLink});
         }
         ws.send(JSON.stringify({type: 'updateBindings', data: {id: currentTfId, tflink: copyLink}}));
@@ -471,7 +545,6 @@ ymaps.ready(function () {
                     // let data = x2js.xml2json(svgData);
                     // svg.push(data.svg.mphase.phase)
 
-                    // $('body').append('<div id="kostil" class="img-fluid" style="display: none" />');
                     $('#svgContainer').html(svgData.children[0].outerHTML.replace('let currentPhase', 'var currentPhase'));
                     const uniqueId = trafficLight.region.num + '/' + trafficLight.area.num + '/' + trafficLight.ID;
                     if (typeof getPhasesMass === "function") {
@@ -481,9 +554,6 @@ ymaps.ready(function () {
                         svg[uniqueId] = [];
                         resolve(false);
                     }
-
-                    // if (svg[uniqueId] ?? true) handleSelectChange(trafficLight);
-                    // $('#kostil').remove();
                 },
                 error: function (request) {
                     console.log(request.status + ' ' + request.responseText);
@@ -496,42 +566,35 @@ ymaps.ready(function () {
 
     function makeSelects(trafficLight) {
         $('td.phase').each((i, td) => {
-            const phases = {currPhase: -1, phases: trafficLight.phases};
             let optionsHTML = '';
             $(td).empty();
-            phases.phases.forEach(phase => {
-                optionsHTML +=
-                    `<option value="${phase}">${phase}</option>`;
-                // `<option value="${phase}" ${((phase === phases.currPhase) ? ' selected="selected"' : '')}>${phase}</option>`;
+            trafficLight.phases.forEach(phase => {
+                optionsHTML += `<option value="${phase}">${phase}</option>`;
             });
-
             $($('td.to')[i]).find('div').each((j, val) => {
-                $(td).append(`<select id="phase${i + '-' + j}">${optionsHTML}</select>`)
+                $(td).append(`<select id="phase${i}-${j}">${optionsHTML}</select>`)
 
                 let phase = 1;
                 if (tfLinksArray.some(tfl => tfl.id === getUniqueId(trafficLight))) {
                     const tfl = tfLinksArray.find(tflink => tflink.id === getUniqueId(trafficLight)).tflink;
                     phase = getPhase(getUniqueId(trafficLight), tfl[directions[i].en].Id, $($('td.to')[i]).find('div')[j].innerText) ?? 1
-                    // phase = tfl[directions[i].en].getPhaseToObj($($('td.to')[i]).find('div')[j].innerText) ?? 1
                 }
-
                 const wayPointsArr = currentTfLink[directions[i].en].WayPointsArray ?? [];
                 if (wayPointsArr.some(wp => wp.Id === val.innerText)) {
-                    let currIndex = wayPointsArr.findIndex(wp => wp.Id === val.innerText)
+                    const currIndex = wayPointsArr.findIndex(wp => wp.Id === val.innerText)
                     wayPointsArr[currIndex] = new wayPoint(val.innerText, phase.toString())
                 } else {
                     wayPointsArr.push(new wayPoint(val.innerText, phase.toString()))
                 }
-                $(`#phase${i + '-' + j}`).val(phase).on('change', () => handleSelectChange(i + '-' + j));
+                $(`#phase${i}-${j}`).val(phase).on('change', () => handleSelectChange(i, j));
             })
         })
     }
 
-    function handleSelectChange(index) {
-        const value = $('#phase' + index).val();
-        const split = index.split('-');
-        const currDir = directions[split[0]].en;
-        const to = $($('td.to')[split[0]]).find('div')[split[1]].innerText;
+    function handleSelectChange(row, index) {
+        const value = $(`#phase${row}-${index}`).val();
+        const currDir = directions[row].en;
+        const to = $($('td.to')[row]).find('div')[index].innerText;
         currentTfLink[currDir].WayPointsArray.find(wp => wp.Id === to).phase = value;
     }
 
@@ -550,12 +613,12 @@ ymaps.ready(function () {
             $('#miniContainer' + containerIndex).append(
                 `<div class="text-center m-1" style="display: inline-flex;">` +
                 `<h2 class="my-auto">${phaseSvg.num}</h2>` +
-                `<svg width="100%" height="100%"` +
+                `<svg width="100%" height="100%" ` +
                 `style="background-color: white; ` +
-                `max-height: ${width}px; max-width: ${width}px;" xmlns="http://www.w3.org/2000/svg"` +
-                `xmlns:xlink="http://www.w3.org/1999/xlink">` +
-                `<image x="0" y="0" width="100%" height="100%"` +
-                `style="max-height: ${width}px; max-width: ${width}px;"` +
+                `max-height: ${width}px; max-width: ${width}px;" xmlns="http://www.w3.org/2000/svg" ` +
+                `xmlns:xlink="http://www.w3.org/1999/xlink"> ` +
+                `<image x="0" y="0" width="100%" height="100%" ` +
+                `style="max-height: ${width}px; max-width: ${width}px;" ` +
                 `xlink:href="data:image/png;base64,${phaseSvg.phase}"></image>` +
                 `</svg>` +
                 `</div>`
@@ -688,7 +751,7 @@ ymaps.ready(function () {
 
         $('#table').bootstrapTable('load', initialState);
         $('.fixed-table-container').prop('style', '');
-        $('.fixed-table-toolbar').remove()
+        $('.fixed-table-toolbar').remove();
         $('td.from').each((i, td) => {
             $(td).html(`<input type="text" class="form-control mx-auto" id="from${i}" required="" ` +
                 'style="max-width: 100px;">');
@@ -697,7 +760,8 @@ ymaps.ready(function () {
 
         if (tfLinksArray.some(tfl => tfl.id === getUniqueId(trafficLight))) {
             const tfl = tfLinksArray.find(tflink => tflink.id === getUniqueId(trafficLight)).tflink;
-            currentTfLink = tfl;
+            currentTfLink = new tfLink();
+            currentTfLink.copy(tfl);
             directions.forEach((dir, index) => {
                 $('td.from input')[index].value = (tfl[dir.en]?.Id) ?? ''
             })

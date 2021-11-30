@@ -163,6 +163,8 @@ $(function () {
                 crossesSave = data.crosses.sort(sortByID);
                 devicesSave = data.devices;
 
+                $('#bindButton')[0].disabled = !data.techArmPrivilege[4];
+
                 let gprs = data.gprs.ip.split('.');
                 $('#gprs1').val(gprs[0]);
                 $('#gprs2').val(gprs[1]);

@@ -127,6 +127,7 @@ $(function () {
                         //             .attr('width', '36%')
                         //             .attr('style', 'max-height: 140px; max-width: 140px; min-height: 75px; min-width: 75px;');
                         // });
+
                         if (typeof getPhasesMass === "function") {
                             let phases = getPhasesMass();
                             phases.sort((a, b) => {
@@ -209,7 +210,7 @@ $(function () {
                             });
                         });
                         checkEdit();
-                        checkConnection(cross.tlsost.control);
+                        checkConnection(cross.tlsost.control, data.dk.fdk);
                     },
                     error: function (request) {
                         console.log(request.status + ' ' + request.responseText);
@@ -226,6 +227,7 @@ $(function () {
                 */
                 //---------------------------------------------------------------------------------------------------------------------------------------------------
                 $('#status').html('Статус: ' + data.cross.tlsost.description);
+                if (data.techMode !== undefined) $('#techMode').html('Технология: ' + data.techMode);
 
                 $('#deviceLog').on('click', () => {
                     localStorage.setItem('ID', cross.ID);
@@ -356,6 +358,7 @@ $(function () {
                 //Обработка таблицы
                 if ($('#expandedTable')[0].style.display === 'none') $('#expandedTable').show();
                 if ($('#phase')[0].style.display === 'none') $('#phase').show();
+                if (data.techMode !== undefined) $('#techMode').html('Технология: ' + data.techMode);
 
                 buildExpandedTable(data.dk);
 
@@ -575,7 +578,7 @@ function buildExpandedTable(data) {
     $('#phase')[0].innerText = 'Фаза: ' + toWrite.column4;
 }
 
-function checkConnection(connectionFlag) {
+function checkConnection(connectionFlag, phase) {
     // console.log('checkConnection', connectionFlag);
     connectionFlag = (connectionFlag === undefined) ? control : connectionFlag;
 
@@ -605,7 +608,7 @@ function checkConnection(connectionFlag) {
 
         if (typeof setPhase !== "undefined") {
             if (typeof setVisualMode !== "undefined") setVisualMode(0);
-            setPhase(0);
+            setPhase(phase ?? 0);
         }
     } else {
         $('a').each(function () {

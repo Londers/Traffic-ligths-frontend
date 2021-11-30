@@ -70,6 +70,10 @@ $(function () {
                 // now = new Date(now.getTime() - (now.getTimezoneOffset() * 60 * 1000));
                 let timeStart = $('#dateStart')[0].value + 'T' + $('#timeStart')[0].value + ':00Z';
                 let timeEnd = $('#dateEnd')[0].value + 'T' + $('#timeEnd')[0].value + ':00Z';
+                if ((new Date(timeStart).getTime()) >= (new Date(timeEnd).getTime())) {
+                    alert('Неверно задано время');
+                    return;
+                }
                 getLogs(timeStart, timeEnd, false);
             });
 

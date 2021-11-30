@@ -453,7 +453,7 @@ ymaps.ready(function () {
 
     //Логи сервера
     $('#serverLogButton').on('click', function () {
-        openPage( '/manage/serverLog')
+        openPage('/manage/serverLog')
     });
 
     $('#changeUserButton').on('click', function () {
@@ -727,17 +727,32 @@ ymaps.ready(function () {
                     fillAreas($('#area'), $('#region'), areaInfo);
                 });
 
-                map.setBounds([
-                    [data.boxPoint.point0.Y, data.boxPoint.point0.X],
-                    [data.boxPoint.point1.Y, data.boxPoint.point1.X]
-                ]);
+                if ((localStorage.getItem('fragment') ?? 'null') !== '') {
+                    map.setBounds(JSON.parse(localStorage.getItem('fragment')));
+                    localStorage.setItem('fragment', '');
+                } else {
+                    map.setBounds([
+                        [data.boxPoint.point0.Y, data.boxPoint.point0.X],
+                        [data.boxPoint.point1.Y, data.boxPoint.point1.X]
+                    ]);
+                }
 
                 zoom = map.getZoom();
 
                 //Разбор полученной от сервера информации
                 data.tflight.forEach(trafficLight => {
                     //Создание метки контроллера для карты
-                    const placemark = createPlacemark(trafficLight, calculate, '')
+                    let inputError = false;
+                    const inputs = Object.values(trafficLight.input)
+                    const statistics = inputs.pop()
+                    inputs.forEach(input => {
+                        if (input) inputError = true;
+
+                    })
+                    statistics.forEach(st => {
+                        if (st) inputError = true;
+                    })
+                    const placemark = createPlacemark(trafficLight, calculate, inputError ? 'det' : '');
                     //Добавление метки контроллера на карту
                     map.geoObjects.add(placemark);
                     IDs.set(getUniqueId(trafficLight), placemark);
@@ -769,7 +784,31 @@ ymaps.ready(function () {
                         const uniqeuId = getUniqueId(trafficLight)
                         const cameras = camerasShown.get(uniqeuId) !== undefined
                         const oldPlacemark = IDs.get(uniqeuId);
-                        const placemark = createPlacemark(trafficLight, cameras ? (zoom => (zoom < 17) ? 50 : 0) : calculate, cameras ? 'cam' : '')
+
+                        let inputError = false;
+                        const inputs = Object.values(trafficLight.input)
+                        const statistics = inputs.pop()
+                        inputs.forEach(input => {
+                            if (input) inputError = true;
+                        })
+                        statistics.forEach(st => {
+                            if (st) inputError = true;
+                        })
+                        let layoutSettings = '';
+
+                        if (inputError) {
+                            if (cameras) {
+                                layoutSettings = 'cdt';
+                            } else {
+                                layoutSettings = 'det';
+                            }
+                        } else {
+                            if (cameras) {
+                                layoutSettings = 'cam';
+                            }
+                        }
+
+                        const placemark = createPlacemark(trafficLight, cameras ? (zoom => (zoom < 17) ? 50 : 0) : calculate, layoutSettings)
                         //Замена метки контроллера со старым состоянием на метку с новым
                         map.geoObjects.set(map.geoObjects.indexOf(oldPlacemark), placemark);
 
@@ -1081,12 +1120,12 @@ ymaps.ready(function () {
             'Подтвердить': function () {
                 ws.send(
                     JSON.stringify({
-                            type: 'createFragment',
-                            data: {
-                                name: $('#fragmentName').val(),
-                                bounds: map.getBounds()
-                            }
-                        })
+                        type: 'createFragment',
+                        data: {
+                            name: $('#fragmentName').val(),
+                            bounds: map.getBounds()
+                        }
+                    })
                 );
                 $('#fragmentName').val('');
                 $(this).dialog('close');
@@ -1110,12 +1149,14 @@ ymaps.ready(function () {
         }
         switch (type) {
             case 'jump':
-                $('#fragmentDialog').parent().find('button').filter((i,v) => v.innerText === 'Подтвердить').show()
-                $('#fragmentDialog').parent().find('button').filter((i,v) => v.innerText === 'Удалить').hide()
+                $('#fragmentDialog').parent().find('button').filter((i, v) => v.innerText === 'Подтвердить').show()
+                $('#fragmentDialog').parent().find('button').filter((i, v) => v.innerText === 'Открыть в новой вкладке').show()
+                $('#fragmentDialog').parent().find('button').filter((i, v) => v.innerText === 'Удалить').hide()
                 break;
             case 'del':
-                $('#fragmentDialog').parent().find('button').filter((i,v) => v.innerText === 'Подтвердить').hide()
-                $('#fragmentDialog').parent().find('button').filter((i,v) => v.innerText === 'Удалить').show()
+                $('#fragmentDialog').parent().find('button').filter((i, v) => v.innerText === 'Подтвердить').hide()
+                $('#fragmentDialog').parent().find('button').filter((i, v) => v.innerText === 'Открыть в новой вкладке').hide()
+                $('#fragmentDialog').parent().find('button').filter((i, v) => v.innerText === 'Удалить').show()
                 break;
         }
     }
@@ -1123,6 +1164,13 @@ ymaps.ready(function () {
     $('#fragmentDialog').dialog({
         autoOpen: false,
         buttons: {
+            'Открыть в новой вкладке': function () {
+                const [x1, y1, x2, y2] = $('#fragment')[0].value.split(',').map(el => Number(el));
+                const bounds = [[x1, y1], [x2, y2]];
+                localStorage.setItem('fragment', JSON.stringify(bounds))
+                window.open(location.origin);
+                $(this).dialog('close');
+            },
             'Подтвердить': function () {
                 const [x1, y1, x2, y2] = $('#fragment')[0].value.split(',').map(el => Number(el));
                 const bounds = [[x1, y1], [x2, y2]];
@@ -1138,6 +1186,7 @@ ymaps.ready(function () {
                 $(this).dialog('close');
             }
         },
+        minWidth: 480,
         modal: true,
         resizable: false
     });
