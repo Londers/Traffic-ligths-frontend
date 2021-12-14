@@ -7,13 +7,22 @@
     <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
     <link href="https://unpkg.com/bootstrap-table@1.15.5/dist/bootstrap-table.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.0.4/popper.js"></script>
+    <link href="https://cdn.jsdelivr.net/gh/akottr/dragtable@master/dragtable.css" rel="stylesheet">
+    <link href="https://unpkg.com/bootstrap-table@1.19.1/dist/bootstrap-table.min.css" rel="stylesheet">
+    <link href="https://unpkg.com/jquery-resizable-columns@0.2.3/dist/jquery.resizableColumns.css" rel="stylesheet">
+
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
-    <script src="https://cdn.rawgit.com/rainabba/jquery-table2excel/1.1.0/dist/jquery.table2excel.min.js"></script>
     <script src="https://code.jquery.com/jquery-migrate-3.1.0.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jqueryui@1.11.1/jquery-ui.min.js"></script>
+    <script src="https://unpkg.com/bootstrap-table@1.19.1/dist/bootstrap-table.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.0.4/popper.js"></script>
+    <script src="https://cdn.rawgit.com/rainabba/jquery-table2excel/1.1.0/dist/jquery.table2excel.min.js"></script>
     <!--            <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>-->
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
-    <script src="https://unpkg.com/bootstrap-table@1.15.5/dist/bootstrap-table.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/akottr/dragtable@master/jquery.dragtable.js"></script>
+    <script src="https://unpkg.com/bootstrap-table@1.19.1/dist/extensions/reorder-columns/bootstrap-table-reorder-columns.min.js"></script>
+    <script src="https://unpkg.com/jquery-resizable-columns@0.2.3/dist/jquery.resizableColumns.min.js"></script>
+    <script src="https://unpkg.com/bootstrap-table@1.19.1/dist/extensions/resizable/bootstrap-table-resizable.min.js"></script>
     <style>
         /* Just common table stuff. Really. */
         table {
@@ -27,6 +36,11 @@
 
         th {
             background: #eee;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
         }
     </style>
     <link rel="stylesheet" href="/file/web/css/chat.css">
@@ -53,6 +67,7 @@
             <!--        <button id="timeButton1" class="btn btn-secondary ml-4 mt-2">30 минут</button>-->
             <button id="currentDay" class="btn btn-secondary ml-4 mt-2">Сутки</button>
             <button id="chosenTime" class="btn btn-secondary ml-4 mt-2">Выбранное время</button>
+            <button id="toggleTable" class="btn btn-secondary ml-4 mt-2">Спрятать таблицу</button>
         </div>
 
         <div class="col-md-2 mt-3">
@@ -100,23 +115,36 @@
                 </tbody>
             </table>
         </div>
-        <div class="col-md-8">
+        <div class="col-md-8 overflow-auto" style="max-height: 750px">
             <table class="table table-bordered"
                    id="logsTable"
                    data-show-columns="true"
                    data-search="true"
+                   data-search-align="left"
+                   data-buttons-align="left"
                    data-visible-search="true"
                    data-show-jump-to="true"
                    data-toggle="table"
-                   data-height="800">
+                   data-reorderable-columns="true"
+                   data-resizable="true"
+                   data-sticky-header="true">
                 <thead>
                 <tr>
-                    <th data-field="time" data-sortable="false" data-visible="false">Время</th>
-                    <th data-field="dateStart" data-sortable="false">Время начала</th>
+                    <th data-field="time" data-sortable="false" data-visible="false" data-visible-search="false">Время
+                    </th>
+                    <th data-field="id" data-sortable="false" data-visible="false" data-visible-search="false">id</th>
+                    <th data-field="dateStart" data-sortable="true" data-sorter="dateStartSorter">Время начала</th>
                     <th data-field="dateEnd" data-sortable="false">Время конца</th>
                     <th data-field="duration" data-sortable="false">Длительность</th>
-                    <!--                    <th data-field="cross" data-sortable="false">Перекрёсток</th>-->
                     <th data-field="message" data-sortable="false">Событие</th>
+                    <th data-field="device" data-sortable="false" data-visible="false">Устройство</th>
+                    <th data-field="arm" data-sortable="false" data-visible="false">АРМ</th>
+                    <th data-field="status" data-sortable="false" data-visible="false">Состояние</th>
+                    <th data-field="rez" data-sortable="false" data-visible="false">Режим</th>
+                    <th data-field="phase" data-sortable="false" data-visible="false">Фаза</th>
+                    <th data-field="nk" data-sortable="false" data-visible="false">НК</th>
+                    <th data-field="ck" data-sortable="false" data-visible="false">СК</th>
+                    <th data-field="pk" data-sortable="false" data-visible="false">ПК</th>
                 </tr>
                 </thead>
                 <tbody>

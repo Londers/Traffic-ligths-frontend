@@ -974,8 +974,7 @@ function loadData(newData, firstLoadFlag) {
     $('#kvTable').bootstrapTable('removeAll');
 
     if (firstLoadFlag) {
-        $('#forceSendButton').prop('disabled', true).on('click', () => {
-            $('#forceSendButton').prop('disabled', true);
+        $('#forceSendButton').on('click', () => {
             controlSend(newData.state.idevice);
         });
     }
@@ -1102,6 +1101,23 @@ function mainTabFill(data, firstLoadFlag) {
     setChange('area', 'select');
     $('#area option[value=' + data.state.area + ']').attr('selected', 'selected');
     setChange('type', 'select', 'arrays');
+    $('#type').on('change', (e) => {
+        switch (Number(e.currentTarget.value)) {
+            case 1:
+                data.state.Model.C12 = true;
+                break;
+            // case 2:
+            //     break;
+            case 4:
+                data.state.Model.DKA = true;
+                break;
+            case 8:
+                data.state.Model.DTA = true;
+                break;
+            default:
+                break;
+        }
+    })
     $('#type option[value=' + data.state.arrays.type + ']').attr('selected', 'selected');
     $('#subarea').val(data.state.subarea);
     setChange('subarea', 'input');
@@ -1945,6 +1961,8 @@ function buildPkTable(table, tableType, currPK) {
                     );
                     $(this).find('input').on('keyup change', (event) => {
                         if ((event.type === 'keyup') && (!event.originalEvent.code.includes('Enter'))) return;
+                        // костыль от сломанных не мной ПК
+                        if (firstLoad) return;
 
                         const controlType = $('#tpu').val();
                         const cycleTime = Number($('#tc').val());
@@ -2551,6 +2569,7 @@ function controlSend(id) {
 
 function checkEdit() {
     $('#reloadButton').prop('disabled', !editFlag);
+    $('#forceSendButton').prop('disabled', !editFlag);
     $('#deleteButton').prop('disabled', !editFlag);
 }
 

@@ -91,10 +91,11 @@ function checkTimeDifference() {
 }
 
 let selectedFilter = 0;
+
 function filterValuesFunc(event) {
     selectedFilter = event.currentTarget.selectedIndex;
     buildTable(crossesSave, false);
-    if ($('#table').bootstrapTable('getSelections').length === 0) $('#table').bootstrapTable('check', 0);
+    if ($('#table').bootstrapTable('getData').length === 1) $('#table').bootstrapTable('check', 0);
 }
 
 // Фильтрация таблицы
@@ -105,28 +106,35 @@ function filterTable(data) {
             // Без фильтров
             return crosses;
         case 1:
-            // Отсутствие связи
-            return crosses.filter(row => row.sv === '')
+            // Неисправности GPS
+            return crosses.filter(row => (row.gps !== '') && (row.gps !== 'Исправно'));
         case 2:
             // Неисправности
             return crosses.filter(row => row.status >= 16);
         case 3:
+            // Отсутствие связи
+            return crosses.filter(row => row.sv === '')
+        case 4:
             // Аварии 220, Выключенные УСДК
             return crosses.filter(row => (row.status === 17 || row.status === 18));
-        case 4:
-            // Неисправности GPS
-            return crosses.filter(row => (row.gps !== '') && (row.gps !== 'Исправно'));
         case 5:
             // Управление из центра
-            return crosses
-                .filter(row => row.traffic !== '')
+            return crosses.filter(row => row.traffic !== '')
                 .filter(row => {
                     const commands = checkDevice(row.idevice).device.StatusCommandDU
                     return commands.IsDUDK1 || commands.IsPK || commands.IsCK || commands.IsNK
                 });
         case 6:
-            // Присутствие связи
+            // Наличие связи
             return crosses.filter(row => row.sv !== '')
+        case 7:
+            // Включена смена фаз
+            return crosses.filter(row => {
+                    if (devicesSave.find(dev => (dev.idevice === row.idevice))?.device.StatusCommandDU.IsReqSFDK1) {
+                        return row;
+                    }
+                }
+            )
     }
 }
 
@@ -239,7 +247,7 @@ $(function () {
 function buildTable(crosses, firstLoadFlag) {
     let $table = $('#table');
     let toWrite = [];
-    let selected = $table.bootstrapTable('getSelections');
+    const selected = $table.bootstrapTable('getSelections');
     scrollSave = $table.bootstrapTable('getScrollPosition');
 
     $('#deviceCount').text(devicesSave.filter(dev => dev.device.scon).length);
@@ -258,8 +266,8 @@ function buildTable(crosses, firstLoadFlag) {
             malfDk: cross.status,
             gps: devFlag ? checkGPS(device.GPS) : '',
             addData: devFlag ? (((mErrorText[device.Status.elc] === undefined)
-                ? ('Неизвестный код неисправности ' + device.Status.elc) : mErrorText[device.Status.elc])
-                + checkMalfunction(device.Error)) : '',
+                    ? ('Неизвестный код неисправности ' + device.Status.elc) : mErrorText[device.Status.elc])
+                + (', неисправности ' + checkMalfunction(device.Error))) : '',
             traffic: devFlag ? (`${prettyTraffic(device.Traffic.FromDevice1Hour)}Кб / ${prettyTraffic(device.Traffic.LastFromDevice1Hour)}Кб`) : '',
             place: cross.describe,
             status: cross.StatusCode,
@@ -311,11 +319,11 @@ function checkCommand(cmd, value) {
 
 // Расшифровка типа устройства
 function switchArrayTypeFromDevice(model) {
-    let type = 'УСДК';
-    if (model.C12) return 'С12' + type;
-    if (model.DKA) return 'ДК-А';
-    if (model.DTA) return 'ДТ СК';
-    return type;
+    if (model.C12) return 'С12';
+    if (model.DKA) return 'ДКА';
+    if (model.DTA) return 'ДТА' +
+        '';
+    return 'УСДК';
 }
 
 // Заполнение информации о выбранном перекрёстке
@@ -467,7 +475,7 @@ function buildBottom() {
 
         $('#pspd').text('-');
         $('#pbs').text('-');
-        
+
         $('#signal').text('')
 
         $('#inputErrors').hide();
@@ -535,7 +543,7 @@ const ErrorsText = {
 };
 
 function checkMalfunction(Error) {
-    let retValue = ', ';
+    let retValue = ' ';
     for (const [key, value] of Object.entries(Error)) {
         if (value) retValue += ErrorsText[key] + ', ';
     }
@@ -591,12 +599,13 @@ const mErrorText = {
 
 const selectValues = {
     0: 'Все привязки',
-    1: 'Отсутствие связи',
+    1: 'Аварии 220, Выключенные УСДК',
     2: 'Неисправности',
-    3: 'Аварии 220, Выключенные УСДК',
-    4: 'Неисправности GPS',
+    3: 'Неисправности GPS',
+    4: 'Отсутствие связи',
     5: 'Управление из центра',
-    6: 'Наличие связи'
+    6: 'Наличие связи',
+    7: 'Режим смены фаз',
 };
 
 function switchArrayType(type) {
@@ -610,10 +619,10 @@ function switchArrayType(type) {
             retValue = 'УСДК';
             break;
         case 4:
-            retValue = 'ДК-А';
+            retValue = 'ДКА';
             break;
         case 8:
-            retValue = 'ДТ СК';
+            retValue = 'ДТА';
             break;
     }
 

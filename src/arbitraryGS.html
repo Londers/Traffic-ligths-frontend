@@ -109,6 +109,32 @@
         </div>
     </form>
 </div>
+<div id="creatingAddDialog" title="Создание доп. объекта">
+    <form class="needs-validated">
+        <div class="form-group" id="addRegionForm">
+            <label for="addRegion">Регион</label>
+            <select class="form-control text-center" id="addRegion">
+            </select>
+            <div class="invalid-feedback">Пожалуйста, заполните поле верно.</div>
+        </div>
+        <div class="form-group" id="addAreaForm">
+            <label for="addArea">Район</label>
+            <select class="form-control text-center" id="addArea">
+            </select>
+            <div class="invalid-feedback">Пожалуйста, заполните поле верно.</div>
+        </div>
+        <div class="form-group" id="addIdForm">
+            <label for="addId">ID</label>
+            <input type="number" class="form-control" id="addId" placeholder="Введите ID" name="id" required>
+            <div class="invalid-feedback">Пожалуйста, заполните поле верно.</div>
+        </div>
+        <div class="form-group" id="addDescForm">
+            <label for="addDesc">Описание</label>
+            <input type="text" class="form-control" id="addDesc" placeholder="Введите описание" name="desc" required>
+            <div class="invalid-feedback">Пожалуйста, заполните поле верно.</div>
+        </div>
+    </form>
+</div>
 <div id="tableDialog" class="row" style="display:inline-flex; min-width: 100%;" title="Таблица фаз">
     <!--    <button id="deleteButton" class="btn btn-secondary ml-auto">Удалить</button>-->
     <div class="col-md-4 img-fluid my-auto text-center">

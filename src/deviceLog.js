@@ -77,9 +77,14 @@ $(function () {
                 getLogs(timeStart, timeEnd, false);
             });
 
+            $('#toggleTable').on('click', () => {
+                toggleTable($('.col-md-4').css('display') === 'block');
+                $('#logsTable').bootstrapTable('resetView');
+            });
+
             $('#type').on('change', () => {
                 type = Number($('#type').val());
-                buildLogTable(undefined, true);
+                buildLogsTable(undefined, true);
             });
 
             if (localStorage.getItem('jump') !== 'undefined') {
@@ -95,6 +100,11 @@ $(function () {
                 let timeEnd = now.toISOString();
                 getLogs(timeStart, timeEnd, true, true);
             }
+
+            if (!data.devices.some(dev => dev.region !== data.devices[0].region)) {
+                $('#table').bootstrapTable('checkAll');
+                $('#currentDay').trigger('click');
+            }
         },
         // data: JSON.stringify(data.state),
         error: function (request) {
@@ -103,7 +113,26 @@ $(function () {
         }
     });
     // });
+    $('input[data-field="time"]').parent().remove();
+    $('input[data-field="id"]').parent().remove();
+    $('#logsTable').on('reorder-column.bs.table post-body.bs.table', function () {
+        makeMergedDesc($('#logsTable').bootstrapTable('getData'))
+        colorizeCrosses()
+    })
 });
+
+function toggleTable(state) {
+    $('#toggleTable').text(state ? 'Показать таблицу' : 'Спрятать таблицу');
+    if (state) {
+        $('.col-md-4').hide();
+        $('.col-md-8').removeClass('col-md-8').addClass('col-md-12');
+    } else {
+        $('.col-md-4').show();
+        $('.col-md-12').removeClass('col-md-12').addClass('col-md-8');
+    }
+    $('#table').bootstrapTable();
+    $('#logsTable').bootstrapTable();
+}
 
 function getLogs(start, end, chosenTimeFlag, remoteOpenFlag) {
     // {ID: '', area: '', region: ''}
@@ -150,7 +179,7 @@ function getLogs(start, end, chosenTimeFlag, remoteOpenFlag) {
         dataType: 'json',
         success: function (data) {
             dateSave = new Date();
-            buildLogTable(data, chosenTimeFlag);
+            buildLogsTable(data, chosenTimeFlag);
             $('#logsTable').bootstrapTable('hideLoading');
             if (remoteOpenFlag) {
                 $('input[class$="search-input"]:first').val(localStorage.getItem('description')).trigger('blur');
@@ -184,7 +213,7 @@ function collapseDuplicates(data) {
         collapsedData[dev] = [];
         data[dev].forEach((log, index) => {
             if (index < (data[dev].length - 1)) {
-                if (log.text !== data[dev][index + 1].text) {
+                if (log.time !== data[dev][index + 1].time) {
                     collapsedData[dev].push(log);
                 }
             } else {
@@ -195,19 +224,41 @@ function collapseDuplicates(data) {
     return collapsedData;
 }
 
-function buildLogTable(data, chosenTimeFlag) {
+function buildLogsTable(data, chosenTimeFlag) {
     (data === undefined) ? data = dataSave : dataSave = data;
+
+    let journalFlag = false;
 
     let filteredData = collapseDuplicates(filterByType(data));
 
     let allData = new Array(filteredData.length);
 
-    for (let dev in filteredData) {
+    for (const dev in filteredData) {
         filteredData[dev].forEach((log, index) => {
+            if (log.text === '') journalFlag = true;
             if (index === 0) {
-                allData.push({
-                    message: JSON.parse(dev).description
-                });
+                if (!journalFlag) {
+                    allData.push({
+                        message: JSON.parse(dev).description,
+                        id: log.id,
+                    });
+                } else {
+                    allData.push({
+                        dateStart: JSON.parse(dev).description,
+                        dateEnd: JSON.parse(dev).description,
+                        duration: JSON.parse(dev).description,
+                        message: JSON.parse(dev).description,
+                        device: JSON.parse(dev).description,
+                        arm: JSON.parse(dev).description,
+                        status: JSON.parse(dev).description,
+                        rez: JSON.parse(dev).description,
+                        phase: JSON.parse(dev).description,
+                        nk: JSON.parse(dev).description,
+                        ck: JSON.parse(dev).description,
+                        pk: JSON.parse(dev).description,
+                        id: log.id,
+                    });
+                }
             }
             let localPrevDate, duration;
             let date = new Date(log.time);
@@ -241,25 +292,105 @@ function buildLogTable(data, chosenTimeFlag) {
 
             let text = log.text;
             let localDate = date.toLocaleString('ru-RU');
+
             let add = {
                 message: text,
                 dateStart: localDate,
                 dateEnd: (localPrevDate !== undefined) ? localPrevDate : '',
                 duration: (duration !== undefined) ? duration : '',
-                time: date.getTime().toString()
+                time: date.getTime().toString(),
+                id: log.id,
             };
-            allData.push(add);
+            allData.push(validateForJournal(add, log));
         });
     }
 
+    validateColumns(journalFlag);
     $('#logsTable')
         .bootstrapTable('load', allData)// $('#selection').prop('checked')) ? sortedData : allData)
         .bootstrapTable('scrollTo', 'top')
         .bootstrapTable('refresh', {
             data: allData
         });
-
+    if (journalFlag) makeMergedDesc(allData)
+    toggleTable(journalFlag);
     colorizeCrosses();
+    $('#logsTable').trigger('resize')
+}
+
+function makeMergedDesc(data) {
+    const visibleColumns = $('#logsTable').bootstrapTable('getVisibleColumns');
+    data.forEach((row, index) => {
+        if (row.dateStart === row.duration) {
+            $('#logsTable').bootstrapTable('mergeCells',
+                {
+                    index,
+                    field: visibleColumns[0].field,
+                    colspan: visibleColumns.length,
+                    rowspan: 1
+                }
+            )
+        }
+    })
+    $('td[rowspan=1]').addClass('text-center');
+}
+
+function switchColumnsByType(type) {
+    const $table = $('#logsTable');
+    switch (type) {
+        case 0: // 0 - технология
+            $table.bootstrapTable('showAllColumns');
+            $table.bootstrapTable('hideColumn', ['time', 'id', 'message', 'status', 'phase', 'device']);
+            // $table.bootstrapTable('orderColumns', {
+            //     dateStart: 0,
+            //     dateEnd: 1,
+            //     duration: 2,
+            //     rez: 3,
+            //     arm: 4,
+            //     nk: 5,
+            //     ck: 6,
+            //     pk: 7,
+            // })
+            break;
+        case 1: // 1 - по устройству
+            $table.bootstrapTable('showAllColumns');
+            $table.bootstrapTable('hideColumn', ['time', 'id', 'message', 'nk', 'ck', 'pk']);
+            // $table.bootstrapTable('orderColumns', {
+            //     dateStart: 0,
+            //     dateEnd: 1,
+            //     duration: 2,
+            //     device: 3,
+            //     arm: 4,
+            //     status: 5,
+            //     rez: 6,
+            //     phase: 7
+            // })
+            break;
+    }
+}
+
+function validateForJournal(add, log) {
+    if (add.message === '') {
+        delete add.message;
+        add.arm = log.journal.arm;
+        add.pk = log.journal.pk;
+        add.ck = log.journal.ck;
+        add.nk = log.journal.nk;
+        add.device = log.journal.device;
+        add.phase = log.journal.phase;
+        add.rez = log.journal.rez;
+        add.status = log.journal.status;
+    }
+    return add;
+}
+
+const journalColumns = ['arm', 'pk', 'ck', 'nk', 'device', 'phase', 'rez', 'status']
+
+function validateColumns(hasJournal) {
+    // const hasJournal = row.message !== '';
+    $('#logsTable').bootstrapTable(!hasJournal ? 'showColumn' : 'hideColumn', 'message')
+    if (hasJournal) switchColumnsByType(type)
+    // journalColumns.forEach(col => $('#logsTable').bootstrapTable(hasJournal ? 'showColumn' : 'hideColumn', col));
 }
 
 function colorizeCrosses() {
@@ -268,11 +399,7 @@ function colorizeCrosses() {
     let switchFlag = true;
     data.forEach((row, index) => {
         if (row.time === undefined) switchFlag = !switchFlag;
-        if (switchFlag) {
-            $(tableRows[index]).attr('style', 'background-color: lightgray');
-        } else {
-            $(tableRows[index]).attr('style', '');
-        }
+        $(tableRows[index]).attr('style', switchFlag ? 'background-color: lightgray' : '');
     })
 }
 
@@ -336,4 +463,14 @@ function downloadLogs() {
         link.href = window.URL.createObjectURL(blob);
         link.click();
     }
+}
+
+function dateStartSorter(aStart, bStart, aRow, bRow) {
+    const chosenDevices = $('#table').bootstrapTable('getSelections').map(dev => dev.idevice);
+    if (chosenDevices.findIndex(dev => dev === aRow.id) === chosenDevices.findIndex(dev => dev === bRow.id)) {
+        if ((aRow.dateStart !== aRow.duration) && (bRow.dateStart !== bRow.duration)) {
+            return bRow.time - aRow.time;
+        }
+    }
+    return 0;
 }

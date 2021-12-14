@@ -1,5 +1,6 @@
 let scrollSave = 0;
 let isMuted = false;
+let tableData;
 
 const soundMap = {
     'vizg_svini' : new Audio('/free/resources/vizg_svini.mp3'),
@@ -66,10 +67,18 @@ $(function () {
         let allData = JSON.parse(evt.data);
         let data = allData.data;
         switch (allData.type) {
-            case 'alarm':
+            case 'alarm': {
+                const selected = $('#table').bootstrapTable('getSelections')[0]?.idevice ?? -1;
                 scrollSave = $('#table').bootstrapTable('getScrollPosition');
-                let tableData = data.alarm.CrossInfo;
+
+                data.alarm.CrossInfo.forEach(cross => {
+                    const oldCross = tableData?.find(oldCross => ((oldCross.idevice === cross.idevice)));
+                    if (oldCross?.status !== cross.status) data.alarm.ring = true;
+                })
+
+                tableData = data.alarm.CrossInfo;
                 tableData.forEach(row => {
+                    if (row.idevice === selected) row.state = true;
                     if (row.time.includes('1970')) {
                         row.time = 'Не подключался';
                     } else {
@@ -86,6 +95,7 @@ $(function () {
 
                 if (data.alarm.ring) playSound();
                 break;
+            }
             case 'error':
                 closeReason = data.message;
                 ws.close(1000);
@@ -101,7 +111,8 @@ $(function () {
     function playSound() {
         let promise = soundMap[$('#alarmSound').val()].play();
         if (promise !== undefined) {
-            promise.then(_ => {
+            promise.then(() => {
+                console.log('Play sound')
                 // Autoplay started
             }).catch(error => {
                 console.log('Play sound error', error.message)

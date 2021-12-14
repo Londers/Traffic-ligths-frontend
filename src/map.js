@@ -108,11 +108,11 @@ ymaps.ready(function () {
     let allCamsAngles = new Map();
 
     $('#camerasLayout').on('change', function (event) {
-        const checked = event.currentTarget.checked;
-        if (!checked) {
+        if (!event.currentTarget.checked) {
             // Замена меток контроллеров с камерами на метки без камер
             camerasShown.forEach(el => {
-                map.geoObjects.set(map.geoObjects.indexOf(el), createPlacemark(el.tf, calculate, ''));
+                map.geoObjects.set(map.geoObjects.indexOf(el),
+                    createPlacemark(el.tf, calculate, getLayoutSettings(el.tf.inputError, false)));
             })
             camerasShown = new Map();
             // Удаление меток камер и углов обзора
@@ -134,7 +134,8 @@ ymaps.ready(function () {
                         // Проверка наличия камер на картинке перекрёстка
                         if (!hasCam) return;
                         const id = getUniqueId(trafficLight)
-                        const placemark = createPlacemark(trafficLight, (zoom => (zoom < 17) ? 50 : 0), 'cam')
+                        const placemark = createPlacemark(trafficLight,
+                            (zoom => (zoom < 17) ? 50 : 0), getLayoutSettings(trafficLight.inputError, true))
 
                         // Работа с отображением камер и углов обзора. При zoom 17 и больше создание меток, иначе - удаление
                         if (map.getZoom() >= 17) {
@@ -155,7 +156,7 @@ ymaps.ready(function () {
                         }
 
                         if (camerasShown.get(id) !== undefined) {
-                            if (camerasShown.get(id) && checked) return;
+                            if (camerasShown.get(id)) return;
                         }
 
                         // Замена метки контроллера на карте с обычной на метку с камерой
@@ -192,7 +193,7 @@ ymaps.ready(function () {
             }, {
                 iconLayout: createChipsLayout(function () {
                     return 50;
-                }, 'cam', camDirectionAngle)
+                }, (el.tf.inputError) ? 'camErr' : 'cam', camDirectionAngle)
             })
             camPlacemark.events.add('click', function () {
                 if (authorizedFlag) {
@@ -249,25 +250,6 @@ ymaps.ready(function () {
         const endY = startY + length * Math.sin(angle * (Math.PI / 180));
         return [endX, endY];
     }
-
-// //48.466567, 135.086474
-// function test1(y, x) {
-//     let placemark = new ymaps.Placemark([y, x], {
-//         hintContent: `test`
-//     }, {
-//         iconLayout: createChipsLayout(function (zoom) {
-//             // Размер метки будет определяться функией с оператором switch.
-//             return calculate(zoom);
-//         }, 1),
-//     });
-//     //Функция для вызова АРМ нажатием на контроллер
-//     // placemark.events.add('click', function () {
-//     //     if (authorizedFlag) handlePlacemarkClick(map, trafficLight);
-//     // });
-//
-//     //Добавление метки контроллера на карту
-//     map.geoObjects.add(placemark);
-// }
 
     function checkCameras(trafficLight) {
         return new Promise(function (resolve) {
@@ -682,6 +664,24 @@ ymaps.ready(function () {
         alert(`Ошибка соединения WebSocket, ${evt.reason}`);
     }
 
+    // При наличи ошибков входов и/или статистики меняет картинку статуса на картинку с ошибкой
+    function getLayoutSettings(inputError, cameras) {
+        let layoutSettings = '';
+
+        if (inputError) {
+            if (cameras) {
+                layoutSettings = 'cdt';
+            } else {
+                layoutSettings = 'det';
+            }
+        } else {
+            if (cameras) {
+                layoutSettings = 'cam';
+            }
+        }
+        return layoutSettings;
+    }
+
     //Функция для обновления статусов контроллеров в реальном времени
     ws.onmessage = function (evt) {
         let allData = JSON.parse(evt.data);
@@ -727,7 +727,7 @@ ymaps.ready(function () {
                     fillAreas($('#area'), $('#region'), areaInfo);
                 });
 
-                if ((localStorage.getItem('fragment') ?? 'null') !== '') {
+                if ((localStorage.getItem('fragment') ?? '') !== '') {
                     map.setBounds(JSON.parse(localStorage.getItem('fragment')));
                     localStorage.setItem('fragment', '');
                 } else {
@@ -742,17 +742,8 @@ ymaps.ready(function () {
                 //Разбор полученной от сервера информации
                 data.tflight.forEach(trafficLight => {
                     //Создание метки контроллера для карты
-                    let inputError = false;
-                    const inputs = Object.values(trafficLight.input)
-                    const statistics = inputs.pop()
-                    inputs.forEach(input => {
-                        if (input) inputError = true;
-
-                    })
-                    statistics.forEach(st => {
-                        if (st) inputError = true;
-                    })
-                    const placemark = createPlacemark(trafficLight, calculate, inputError ? 'det' : '');
+                    const placemark = createPlacemark(trafficLight,
+                        calculate, getLayoutSettings(trafficLight.inputError, false));
                     //Добавление метки контроллера на карту
                     map.geoObjects.add(placemark);
                     IDs.set(getUniqueId(trafficLight), placemark);
@@ -784,31 +775,9 @@ ymaps.ready(function () {
                         const uniqeuId = getUniqueId(trafficLight)
                         const cameras = camerasShown.get(uniqeuId) !== undefined
                         const oldPlacemark = IDs.get(uniqeuId);
-
-                        let inputError = false;
-                        const inputs = Object.values(trafficLight.input)
-                        const statistics = inputs.pop()
-                        inputs.forEach(input => {
-                            if (input) inputError = true;
-                        })
-                        statistics.forEach(st => {
-                            if (st) inputError = true;
-                        })
-                        let layoutSettings = '';
-
-                        if (inputError) {
-                            if (cameras) {
-                                layoutSettings = 'cdt';
-                            } else {
-                                layoutSettings = 'det';
-                            }
-                        } else {
-                            if (cameras) {
-                                layoutSettings = 'cam';
-                            }
-                        }
-
-                        const placemark = createPlacemark(trafficLight, cameras ? (zoom => (zoom < 17) ? 50 : 0) : calculate, layoutSettings)
+                        const placemark = createPlacemark(trafficLight,
+                            cameras ? (zoom => (zoom < 17) ? 50 : 0) : calculate,
+                            getLayoutSettings(trafficLight.inputError, cameras))
                         //Замена метки контроллера со старым состоянием на метку с новым
                         map.geoObjects.set(map.geoObjects.indexOf(oldPlacemark), placemark);
 
@@ -822,14 +791,21 @@ ymaps.ready(function () {
                 }
                 authorize();
                 break;
-            case 'repaint':
+            case 'repaint': {
+                let cams = false;
+                if ($('#camerasLayout')[0].checked) {
+                    $('#camerasLayout').trigger('click');
+                    cams = true;
+                }
                 map.geoObjects.removeAll();
                 //Разбор полученной от сервера информации
                 data.tflight.forEach(trafficLight => {
                     const uniqeuId = getUniqueId(trafficLight)
                     const cameras = camerasShown.get(uniqeuId) !== undefined
                     //Создание меток контроллеров на карте
-                    const placemark = createPlacemark(trafficLight, cameras ? (zoom => (zoom < 17) ? 50 : 0) : calculate, cameras ? 'cam' : '')
+                    const placemark = createPlacemark(trafficLight,
+                        cameras ? (zoom => (zoom < 17) ? 50 : 0) : calculate,
+                        getLayoutSettings(trafficLight.inputError, cameras))
                     //Добавление метки контроллера на карту
                     map.geoObjects.add(placemark);
 
@@ -842,7 +818,11 @@ ymaps.ready(function () {
                 });
                 areaZone = data.areaZone;
                 createAreasLayout(map);
+                if (cams) {
+                    $('#camerasLayout').trigger('click');
+                }
                 break;
+            }
             case 'jump':
                 map.setBounds([
                     [data.boxPoint.point0.Y, data.boxPoint.point0.X],

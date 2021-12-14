@@ -80,7 +80,7 @@ ymaps.ready(function () {
                     fillAreas($('#area'), $('#region'), data.areaInfo);
                 });
 
-                if ((localStorage.getItem('fragment') ?? 'null') !== '') {
+                if ((localStorage.getItem('fragment') ?? '') !== '') {
                     map.setBounds(JSON.parse(localStorage.getItem('fragment')));
                     localStorage.setItem('fragment', '');
                 } else {

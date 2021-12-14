@@ -6,6 +6,7 @@ let map = undefined;
 let waiter = undefined;
 
 let boxRemember = {Y: 0, X: 0};
+let coordsSave = [];
 let fixationFlag = false;
 let fragments = [];
 
@@ -172,25 +173,28 @@ ymaps.ready(function () {
 
     map.events.add('click', function (evt) {
         if (!creatingMode) return;
-        let placemark = new ymaps.Placemark(evt.get('coords'), {
-            // balloonContentHeader: 'Выберите фазу',
-            // balloonContentBody: 'Содержимое <em>балуна</em> метки',
-            // balloonContentFooter: 'Подвал',
-            hintContent: 'TEST POINT'
-        }, {
-            iconLayout: createChipsLayout(function (zoom) {
-                // Размер метки будет определяться функией с оператором switch.
-                return calculate(zoom);
-            }, 'testPoint'),
-        });
-        // placemark.pos = {region: trafficLight.region.num, area: trafficLight.area.num, id: trafficLight.ID};
-        //Функция для вызова АРМ нажатием на контроллер
-        placemark.events.add('click', function () {
-            console.log('testPoint click')
-            // handlePlacemarkClick(map, trafficLight, placemark);
-        });
-        //Добавление метки контроллера на карту
-        map.geoObjects.add(placemark);
+        coordsSave = evt.get('coords');
+        $('#creatingAddDialog').dialog('open');
+
+        // let placemark = new ymaps.Placemark(evt.get('coords'), {
+        //     // balloonContentHeader: 'Выберите фазу',
+        //     // balloonContentBody: 'Содержимое <em>балуна</em> метки',
+        //     // balloonContentFooter: 'Подвал',
+        //     hintContent: 'TEST POINT'
+        // }, {
+        //     iconLayout: createChipsLayout(function (zoom) {
+        //         // Размер метки будет определяться функией с оператором switch.
+        //         return calculate(zoom);
+        //     }, 'testPoint'),
+        // });
+        // // placemark.pos = {region: trafficLight.region.num, area: trafficLight.area.num, id: trafficLight.ID};
+        // //Функция для вызова АРМ нажатием на контроллер
+        // placemark.events.add('click', function () {
+        //     console.log('testPoint click')
+        //     // handlePlacemarkClick(map, trafficLight, placemark);
+        // });
+        // //Добавление метки контроллера на карту
+        // map.geoObjects.add(placemark);
     });
 
     $('#dropdownControlButton').trigger('click');
@@ -255,14 +259,19 @@ ymaps.ready(function () {
                 //Заполнение поля выбора регионов для перемещения
                 for (let reg in data.regionInfo) {
                     $('#region').append(new Option(data.regionInfo[reg], reg));
+                    $('#addRegion').append(new Option(data.regionInfo[reg], reg));
                 }
                 fillAreas($('#area'), $('#region'), data.areaInfo);
+                fillAreas($('#addArea'), $('#addRegion'), data.areaInfo);
 
                 $('#regionForm').on('change', function () {
                     fillAreas($('#area'), $('#region'), data.areaInfo);
                 });
+                $('#addRegion').on('change', function () {
+                    fillAreas($('#addArea'), $('#addRegion'), data.areaInfo);
+                });
 
-                if ((localStorage.getItem('fragment') ?? 'null') !== '') {
+                if ((localStorage.getItem('fragment') ?? '') !== '') {
                     map.setBounds(JSON.parse(localStorage.getItem('fragment')));
                     localStorage.setItem('fragment', '');
                 } else {
@@ -470,6 +479,33 @@ ymaps.ready(function () {
             }
         },
         minWidth: 480,
+        modal: true,
+        resizable: false
+    });
+
+    $('#creatingAddDialog').dialog({
+        autoOpen: false,
+        buttons: {
+            'Создать': function () {
+                ws.send(JSON.stringify({
+                        type: 'createAddObj',
+                        data: {
+                            region: Number($('#addRegion').val()),
+                            area: Number($('#addArea').val()),
+                            id: $('#addId')[0].valueAsNumber,
+                            description: $('#addDesc').val(),
+                            dgis: coordsSave
+                        }
+                    })
+                )
+                $(this).dialog('close');
+            },
+            'Отмена': function () {
+                $(this).dialog('close');
+            }
+        },
+        // minWidth: window.innerWidth * 0.9,
+        // height: window.innerHeight * 0.9,
         modal: true,
         resizable: false
     });
@@ -753,8 +789,8 @@ ymaps.ready(function () {
         $('.fixed-table-container').prop('style', '');
         $('.fixed-table-toolbar').remove();
         $('td.from').each((i, td) => {
-            $(td).html(`<input type="text" class="form-control mx-auto" id="from${i}" required="" ` +
-                'style="max-width: 100px;">');
+            $(td).html(`<input type="text" class="form-control mx-auto text-center" id="from${i}" required="" ` +
+                'style="max-width: 120px;">');
             $(td).find('input').on('keyup', (evt) => handleFromInputKeyup(trafficLight, i, evt))
         })
 

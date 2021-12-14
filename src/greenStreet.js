@@ -494,7 +494,7 @@ ymaps.ready(function () {
     const mapSettings = JSON.parse(localStorage.getItem('mapSettings'));
     boxPoint = mapSettings.bounds;
 
-    if ((localStorage.getItem('fragment') ?? 'null') !== '') {
+    if ((localStorage.getItem('fragment') ?? '') !== '') {
         mapSettings.bounds = JSON.parse(localStorage.getItem('fragment'));
         localStorage.setItem('fragment', '');
     }

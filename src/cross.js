@@ -9,6 +9,7 @@ let editFlag = false;
 let control;
 let idevice = undefined;
 let ws;
+let model;
 
 $(function () {
     let closeReason = '';
@@ -45,6 +46,7 @@ $(function () {
                 let controlCrossFlag = data.access[4];
                 let region = data.cross.region.num;
                 let area = data.cross.area.num;
+                model = state.Model;
                 ID = data.cross.ID;
                 idevice = data.state.idevice;
                 editFlag = data.edit;
@@ -376,7 +378,10 @@ $(function () {
                             ddk = 'ИП УСДК';
                             break
                         case 4:
-                            ddk = 'УСДК/ДКА';
+                            ddk = "УСДК"
+                            if (model.C12) ddk = "C12"
+                            if (model.DKA) ddk = "ДКА"
+                            if (model.DTA) ddk = "ДТА"
                             break
                         case 5:
                             ddk = 'ИП ДКА';
