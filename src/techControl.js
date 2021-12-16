@@ -328,11 +328,12 @@ function switchArrayTypeFromDevice(model) {
 
 // Заполнение информации о выбранном перекрёстке
 function buildBottom() {
-    let selected = $('#table').bootstrapTable('getSelections');
+    const selected = $('#table').bootstrapTable('getSelections');
     if (selected.length === 0) return;
-    let cross = checkCross(selected[0].idevice);
-    let deviceInfo = checkDevice(selected[0].idevice);
-    let device = deviceInfo?.device;
+    const cross = checkCross(selected[0].idevice);
+    const deviceInfo = checkDevice(selected[0].idevice);
+    const device = deviceInfo?.device;
+    const armInfo = JSON.parse(cross.Arm)
 
     if (errorRows.includes(selected[0].idevice)) {
         $('#type').attr('style', 'background-color: red;');
@@ -399,7 +400,15 @@ function buildBottom() {
         $('#ip').text('IP: ' + device.ip);
 
         $('#status').text(deviceInfo.modeRdk);
-        $('#type2').text(switchArrayTypeFromDevice(device.Model));
+
+        if (armInfo.length === 0) {
+            $('#type2').text(
+                switchArrayTypeFromDevice(device.Model)
+            );
+        } else {
+            $('#type2').text(armInfo);
+        }
+
         $('#phase').text(phaseSpellOut(device.DK.fdk));
         $('#state').text((checkMalfunction(device.Error) === '') ? '-' : checkMalfunction(device.Error));
         $('#lamps').text(device.DK.ldk);

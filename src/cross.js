@@ -130,42 +130,38 @@ $(function () {
                         //             .attr('style', 'max-height: 140px; max-width: 140px; min-height: 75px; min-width: 75px;');
                         // });
 
+                        const phases = data.phases.slice().sort((a, b) => b - a);
                         if (typeof getPhasesMass === "function") {
-                            let phases = getPhasesMass();
-                            phases.sort((a, b) => {
-                                return Number(b.num) - Number(a.num);
-                            });
+                            const svgPhases = getPhasesMass();
+                            phases.forEach(phase => {
+                                if (svgPhases.map(svg => Number(svg.num)).includes(phase)) {
+                                    $('#buttons')
+                                        .prepend(
+                                            `<a class="btn btn-light border disabled" id="p${phase}" 
+                                            data-toggle="tooltip" title="Включить ${phase} фазу" role="button">       
+                                                <svg id="example1" width="100%" height="100%" style="max-height: 50px;            
+                                                max-width: 50px; min-height: 30px; min-width: 30px;"           
+                                                xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">           
+                                                    <image x="0" y="0" width="100%" height="100%" style="max-height: 50px;            
+                                                    max-width: 50px; min-height: 30px; min-width: 30px;"             
+                                                    xlink:href="data:image/png;base64,${svgPhases.find(svg => Number(svg.num) === phase).phase}"/>       
+                                                </svg>
+                                            </a>`
+                                        );
+                                } else {
+                                    $('#buttons')
+                                        .prepend('<a class="btn btn-light border disabled" id="p' + phase + '" data-toggle="tooltip" title="Включить ' + phase + ' фазу"'
+                                            + ' role="button"><img class="img-fluid" src="/file/static/img/buttons/' + phase + '.svg" height="50"'
+                                            + '  alt="Фаза "' + phase + '></a>');
+                                }
+                            })
+                        } else {
                             phases.forEach(phase => {
                                 $('#buttons')
-                                    .prepend('<a class="btn btn-light border disabled" id="p' + phase.num + '" data-toggle="tooltip" title="Включить ' + phase.num + ' фазу" role="button"\n' +
-                                        '><svg id="example1" width="100%" height="100%" style="max-height: 50px; max-width: 50px; min-height: 30px; min-width: 30px;" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">' +
-                                        '<image x="0" y="0" width="100%" height="100%" style="max-height: 50px; max-width: 50px; min-height: 30px; min-width: 30px;"  xlink:href="data:image/png;base64,' + phase.phase + '"/>' +
-                                        '</svg></a>');
-                                // $('#p' + phase.num).on('click', function () {
-                                // setPhase(phase.num);
-                                //TODO make change request
-                                // })
-                            });
-                            // phases.forEach((svgPhase, index) => {
-                            //     if (!data.phases.includes(Number(svgPhase.num))) console.log('I DID IT', phases[index])
-                            // })
-
-                            //Проверка соотсветсвия фаз
-                            // data.phases.forEach((phase, index) => {
-                            //     if (!phases.some(svgPhase => Number(svgPhase.num) === phase)) {
-                            //         $('#buttons')
-                            //             .prepend('<a class="btn btn-light border disabled" style="background-color: red" id="p' + data.phases[index] + '" data-toggle="tooltip" title="Включить ' + data.phases[index] + ' фазу" role="button">' +
-                            //                 '<div class="container-fluid" style="width: 50px; height: 50px;"><strong><big><big><big >' + data.phases[index] + '</big></big></big></big></strong></div>' +
-                            //                 '</a>');
-                            //     }
-                            // })
-                        } else {
-                            for (let i = 8; i > 0; i--) {
-                                $('#buttons')
-                                    .prepend('<a class="btn btn-light border mt-2 disabled" id="p' + i + '" data-toggle="tooltip" title="' + i + '"'
-                                        + ' role="button"><img class="img-fluid" src="/file/static/img/buttons/' + i + '.svg" height="50"'
-                                        + '  alt="Фаза "' + i + '></a>');
-                            }
+                                    .prepend('<a class="btn btn-light border mt-2 disabled" id="p' + phase + '" data-toggle="tooltip" title="' + phase + '"'
+                                        + ' role="button"><img class="img-fluid" src="/file/static/img/buttons/' + phase + '.svg" height="50"'
+                                        + '  alt="Фаза "' + phase + '></a>');
+                            })
                         }
 
                         if (typeof hasCam === 'function') {

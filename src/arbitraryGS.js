@@ -139,6 +139,7 @@ class wayPoint {
 let currentTfId = '';
 let currentTfLink = new tfLink();
 
+let addObjectsArray = [];
 let tfLinksArray = [];
 
 $(() => {
@@ -162,7 +163,6 @@ let svg = {};
 ymaps.ready(function () {
 
     $('#controlModeButton')[0].disabled = true;
-    $('#createPointButton')[0].disabled = true;
     // $('#phaseTableDialog').find('div.fixed-table-body').css('max-height', window.innerHeight * 0.8)
 
     //Создание и первичная настройка карты
@@ -175,26 +175,7 @@ ymaps.ready(function () {
         if (!creatingMode) return;
         coordsSave = evt.get('coords');
         $('#creatingAddDialog').dialog('open');
-
-        // let placemark = new ymaps.Placemark(evt.get('coords'), {
-        //     // balloonContentHeader: 'Выберите фазу',
-        //     // balloonContentBody: 'Содержимое <em>балуна</em> метки',
-        //     // balloonContentFooter: 'Подвал',
-        //     hintContent: 'TEST POINT'
-        // }, {
-        //     iconLayout: createChipsLayout(function (zoom) {
-        //         // Размер метки будет определяться функией с оператором switch.
-        //         return calculate(zoom);
-        //     }, 'testPoint'),
-        // });
-        // // placemark.pos = {region: trafficLight.region.num, area: trafficLight.area.num, id: trafficLight.ID};
-        // //Функция для вызова АРМ нажатием на контроллер
-        // placemark.events.add('click', function () {
-        //     console.log('testPoint click')
-        //     // handlePlacemarkClick(map, trafficLight, placemark);
-        // });
-        // //Добавление метки контроллера на карту
-        // map.geoObjects.add(placemark);
+        $('#creatingAddDialog input').val('')
     });
 
     $('#dropdownControlButton').trigger('click');
@@ -218,14 +199,12 @@ ymaps.ready(function () {
         creatingMode = true;
         $('#controlModeButton')[0].disabled = false;
         $('#createModeButton')[0].disabled = true;
-        $('#createPointButton')[0].disabled = false;
     });
 
     $('#controlModeButton').on('click', function () {
         creatingMode = false;
         $('#controlModeButton')[0].disabled = true;
         $('#createModeButton')[0].disabled = false;
-        $('#createPointButton')[0].disabled = true;
     });
 
     let closeReason = '';
@@ -235,6 +214,7 @@ ymaps.ready(function () {
         // on connecting, do nothing but log it to the console
         console.log('connected')
         ws.send(JSON.stringify({type: 'getBindings'}));
+        ws.send(JSON.stringify({type: 'getAddObjects'}));
     };
 
     ws.onclose = function (evt) {
@@ -289,7 +269,8 @@ ymaps.ready(function () {
                         // balloonContentHeader: 'Выберите фазу',
                         // balloonContentBody: 'Содержимое <em>балуна</em> метки',
                         // balloonContentFooter: 'Подвал',
-                        hintContent: trafficLight.description
+                        hintContent: `${trafficLight.description}<br>` + `${trafficLight.tlsost.description}<br>` +
+                            `[${trafficLight.region.num}, ${trafficLight.area.num}, ${trafficLight.ID}]`
                     }, {
                         iconLayout: createChipsLayout(function (zoom) {
                             // Размер метки будет определяться функией с оператором switch.
@@ -317,7 +298,8 @@ ymaps.ready(function () {
                         //Создание меток контроллеров на карте
                         let placemark = new ymaps.Placemark([trafficLight.points.Y, trafficLight.points.X], {
                             // balloonContent: 'Отсутсвует картинка перекрёстка',
-                            hintContent: trafficLight.description + '<br>' + trafficLight.idevice
+                            hintContent: `${trafficLight.description}<br>` + `${trafficLight.tlsost.description}<br>` +
+                                `[${trafficLight.region.num}, ${trafficLight.area.num}, ${trafficLight.ID}]`
                         }, {
                             iconLayout: createChipsLayout(function (zoom) {
                                 // Размер метки будет определяться функией с оператором switch.
@@ -390,6 +372,75 @@ ymaps.ready(function () {
                 $(`#table tbody td:hidden:contains("${data.phases[0].phase}")`).parent().css({backgroundColor: 'lightgreen'})
                 // console.log('phases', data)
                 break;
+            case 'getAddObjects':
+                addObjectsArray = data.addObjects;
+                data.addObjects.forEach(addObj => {
+                    let placemark = new ymaps.Placemark(addObj.dgis, {
+                        // balloonContentHeader: 'Выберите фазу',
+                        // balloonContentBody: 'Содержимое <em>балуна</em> метки',
+                        // balloonContentFooter: 'Подвал',
+                        hintContent: `[${addObj.region}, ${addObj.area}, ${addObj.id}]<br>` + addObj.description
+                    }, {
+                        iconLayout: createChipsLayout(function (zoom) {
+                            // Размер метки будет определяться функией с оператором switch.
+                            return calculate(zoom);
+                        }, 'testPoint'),
+                    });
+                    placemark.pos = addObj;
+                    //Функция для вызова АРМ нажатием на контроллер
+                    placemark.events.add('click', function (e) {
+                        handleAddObjClick(e.originalEvent.target.pos);
+                        console.log('testPoint click');
+                        // handlePlacemarkClick(map, trafficLight, placemark);
+                    });
+                    //Добавление метки контроллера на карту
+                    map.geoObjects.add(placemark);
+                })
+                break;
+            case 'createAddObj': {
+                if (data.result) {
+                    addObjectsArray.push(data.addObj);
+                    const addObj = data.addObj;
+                    let placemark = new ymaps.Placemark(addObj.dgis, {
+                        // balloonContentHeader: 'Выберите фазу',
+                        // balloonContentBody: 'Содержимое <em>балуна</em> метки',
+                        // balloonContentFooter: 'Подвал',
+                        hintContent: `[${addObj.region}, ${addObj.area}, ${addObj.id}]<br>` + addObj.description
+                    }, {
+                        iconLayout: createChipsLayout(function (zoom) {
+                            // Размер метки будет определяться функией с оператором switch.
+                            return calculate(zoom);
+                        }, 'testPoint'),
+                    });
+                    placemark.pos = addObj;
+                    //Функция для вызова АРМ нажатием на контроллер
+                    placemark.events.add('click', function (e) {
+                        handleAddObjClick(e.originalEvent.target.pos);
+                        console.log('testPoint click');
+                        // handlePlacemarkClick(map, trafficLight, placemark);
+                    });
+                    //Добавление метки контроллера на карту
+                    map.geoObjects.add(placemark);
+                } else {
+                    alert(data.msg)
+                }
+                break;
+            }
+            case 'deleteAddObj':
+                if (data.result) {
+                    map.geoObjects.each(el => {
+                        if (el.pos !== undefined) {
+                            if ((el.pos.region === data.addObj.region) &&
+                                (el.pos.area === data.addObj.area) &&
+                                (el.pos.id === data.addObj.id)) {
+                                map.geoObjects.remove(el)
+                            }
+                        }
+                    })
+                } else {
+                    alert('Не удалось удалить объект, обратитесь к администратору')
+                }
+                break;
             case 'jump':
                 map.setBounds([
                     [data.boxPoint.point0.Y, data.boxPoint.point0.X],
@@ -409,6 +460,21 @@ ymaps.ready(function () {
                 break;
         }
     };
+
+    function handleAddObjDelete(pos) {
+        if (confirm('Вы уверены? Объект будет безвозвратно удалён.')) {
+            ws.send(JSON.stringify({type: 'deleteAddObj', data: pos}))
+        }
+    }
+
+    function handleAddObjClick(pos) {
+        if (creatingMode) {
+            handleAddObjDelete(pos);
+        } else {
+            console.log('WORK IN PROGRESS');
+            // todo handle control mode
+        }
+    }
 
     //Выбор места для открытия на карте
     $('#locationButton').on('click', function () {
@@ -487,6 +553,19 @@ ymaps.ready(function () {
         autoOpen: false,
         buttons: {
             'Создать': function () {
+                if ($('#addId')[0].valueAsNumber < 10000) {
+                    if ($('#id_err').length === 0) $('#addIdForm').append('<div id="id_err" style="color: red">Неверный ID</div>')
+                } else {
+                    $('#id_err').remove()
+                }
+                if ($('#addDesc').val().length === 0) {
+                    if ($('#desc_err').length === 0) $('#addDescForm').append('<div id="desc_err" style="color: red">Пожалуйста, заполните поле</div>')
+                } else {
+                    $('#desc_err').remove()
+                }
+
+                if ($('div[id$="err"]').length !== 0) return;
+
                 ws.send(JSON.stringify({
                         type: 'createAddObj',
                         data: {
