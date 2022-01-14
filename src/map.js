@@ -34,7 +34,7 @@ ymaps.ready(function () {
 
     let jumpWasUsed = false;
 
-//Функция для открытия вкладки
+    //Функция для открытия вкладки
     function openPage(url) {
         window.open(location.origin + '/user/' + localStorage.getItem('login') + url);
     }
@@ -914,6 +914,18 @@ ymaps.ready(function () {
                 $('#workPlace')[0].innerText = 'АСУДД "Микро-М" ' + '\nАРМ';
                 if (data.message !== undefined) alert(data.message);
                 // location.href = location.origin;
+                break;
+            case 'checkConn':
+                if (data.statusBD !== undefined) {
+                    $('#databaseConnection').children().css({
+                        'background-color': ((data.statusBD) ? 'green' : 'red')
+                    });
+                }
+                if (data.statusS !== undefined) {
+                    $('#serverConnection').children().css({
+                        'background-color': ((data.statusS) ? 'green' : 'red')
+                    });
+                }
                 break;
             case 'checkConn':
                 if (data.statusBD !== undefined) {

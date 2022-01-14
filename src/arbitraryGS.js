@@ -741,7 +741,7 @@ ymaps.ready(function () {
         })
 
         $('#table').trigger('resize');
-        $($('.ui-dialog')[1]).css({top: ((window.innerHeight - $('.ui-dialog')[1].offsetHeight) / 2)})
+        $($('.ui-dialog')[3]).css({top: ((window.innerHeight - $('.ui-dialog')[3].offsetHeight) / 2)})
     }
 
     function handlePlacemarkClick(map, trafficLight) {
@@ -758,7 +758,7 @@ ymaps.ready(function () {
             currentTfId = getUniqueId(trafficLight);
             $('.ui-dialog-title')[1].innerText = trafficLight.description
         } else {
-            console.log('click;')
+            console.log('click');
         }
         // Команда на влкючение передачи фаз
         // controlSend(trafficLight.idevice, 4, 1)

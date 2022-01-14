@@ -43,7 +43,6 @@
             user-select: none;
         }
     </style>
-    <link rel="stylesheet" href="/file/web/css/chat.css">
     <script src="/file/web/js/deviceLog.js" type="text/javascript"></script>
     <link rel="icon"
           type="image/svg"
@@ -67,7 +66,7 @@
             <!--        <button id="timeButton1" class="btn btn-secondary ml-4 mt-2">30 минут</button>-->
             <button id="currentDay" class="btn btn-secondary ml-4 mt-2">Сутки</button>
             <button id="chosenTime" class="btn btn-secondary ml-4 mt-2">Выбранное время</button>
-            <button id="toggleTable" class="btn btn-secondary ml-4 mt-2">Спрятать таблицу</button>
+            <button id="toggleTable" class="btn btn-secondary ml-4 mt-2">Скрыть таблицу</button>
         </div>
 
         <div class="col-md-2 mt-3">
@@ -78,7 +77,7 @@
             </select>
         </div>
 
-        <div class="col-md-3 mt-3 ml-3" style="display: inline;">
+        <div class="col-md-3 mt-3" style="display: inline;">
             <label for="saveType">
                 <button class="btn btn-secondary" onclick="downloadLogs()">
                     Сохранить логи
@@ -88,6 +87,9 @@
                 <option value="text/plain">Text</option>
                 <option value="application/vnd.ms-excel">Excel</option>
             </select>
+        </div>
+        <div class="col-md-2 mt-3" style="display: inline;">
+            <button class="btn btn-secondary" onclick="openPage('/deviceJournal')">Внутренний журнал</button>
         </div>
     </div>
     <div class="row w-100">
@@ -130,8 +132,7 @@
                    data-sticky-header="true">
                 <thead>
                 <tr>
-                    <th data-field="time" data-sortable="false" data-visible="false" data-visible-search="false">Время
-                    </th>
+                    <th data-field="time" data-sortable="false" data-visible="false" data-visible-search="false">Время</th>
                     <th data-field="id" data-sortable="false" data-visible="false" data-visible-search="false">id</th>
                     <th data-field="dateStart" data-sortable="true" data-sorter="dateStartSorter">Время начала</th>
                     <th data-field="dateEnd" data-sortable="false">Время конца</th>

@@ -366,6 +366,10 @@ function switchColumnsByType(type) {
             //     phase: 7
             // })
             break;
+        case 2: // 2 - двери и лампы
+            $table.bootstrapTable('showAllColumns');
+            $table.bootstrapTable('hideColumn', ['time', 'id', 'device', 'arm', 'status', 'rez', 'phase', 'nk', 'ck', 'pk']);
+            break;
     }
 }
 
@@ -384,13 +388,9 @@ function validateForJournal(add, log) {
     return add;
 }
 
-const journalColumns = ['arm', 'pk', 'ck', 'nk', 'device', 'phase', 'rez', 'status']
-
 function validateColumns(hasJournal) {
-    // const hasJournal = row.message !== '';
     $('#logsTable').bootstrapTable(!hasJournal ? 'showColumn' : 'hideColumn', 'message')
-    if (hasJournal) switchColumnsByType(type)
-    // journalColumns.forEach(col => $('#logsTable').bootstrapTable(hasJournal ? 'showColumn' : 'hideColumn', col));
+    switchColumnsByType(type)
 }
 
 function colorizeCrosses() {
@@ -452,6 +452,7 @@ function downloadLogs() {
         let exportText = '';
         tableData.forEach(row => {
             delete row.time;
+            delete row.id;
             let shit = Object.values(row);
             shit.push(shit.shift());
             exportText += shit.join('\t') + '\n'
@@ -473,4 +474,9 @@ function dateStartSorter(aStart, bStart, aRow, bRow) {
         }
     }
     return 0;
+}
+
+//Функция для открытия вкладки
+function openPage(url) {
+    window.open(location.origin + '/user/' + localStorage.getItem('login') + url);
 }

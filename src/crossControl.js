@@ -1130,6 +1130,10 @@ function mainTabFill(data, firstLoadFlag) {
     setChange('tz', 'input', 'arrays.timedev');
     $('#summer').prop('checked', data.state.arrays.timedev.summer);
     setChange('summer', 'checkbox', 'arrays.timedev');
+    $('#journal').prop('checked', data.state.arrays.timedev.journal);
+    setChange('journal', 'checkbox', 'arrays.timedev');
+    $('#nogprs').prop('checked', data.state.arrays.timedev.nogprs);
+    setChange('nogprs', 'checkbox', 'arrays.timedev');
 
     $('#vpcpd').val((parseFloat(data.state.Model.vpcpdl + '.' + data.state.Model.vpcpdr) <= 12.3) ? 12.3 : 12.4);
     Number($('#vpcpd').val()) <= 12.3 ?
@@ -1907,43 +1911,52 @@ function buildPkTable(table, tableType, currPK) {
                         $(this).removeAttr('selected');
                     });
                     $(this).find('select').on('change', function (evt) {
-                        const difLen = $('#razlen').prop('checked');
+                        // При смене типа фазы используется удаление старого переключения и добавление нового
+                        const rowIndex = $(this).closest('tr')[0].rowIndex - 1;
+                        const valueSave = $('.duration' + rowIndex).val()
+                        $(this).closest('tr').addClass('success');
+                        $('#switchDel').trigger('click');
+                        $(`#pkTable tr[data-index=${rowIndex - 1}]`).addClass('success')
+                        $('#tf').val(evt.target.value).trigger('change')
+                        $('.duration' + rowIndex).val(valueSave).trigger('change')
 
-                        $('[class~=duration' + index + ']').prop('disabled', false);
-                        if ((evt.target.value === '1') || (evt.target.value === '8')) {
-                            // Фазы МГР и МДК всегда имеют № фазы = 0
-                            $('[class~=num' + index + ']')
-                                .val(0)
-                                .prop('disabled', true)
-                                .change();
-                        } else if ((evt.target.value === '2') || (evt.target.value === '3')) {
-                            // При смене типа на ТВП1 или ТВП2 вствляю фазы вместе с Зам`ом
-                            let saveStart = Number($('[class~=start' + index + ']').val());
-                            let saveStop = saveStart + Number($('[class~=duration' + index + ']').val());
-                            deleteSwitch(index);
-                            addPkSwitch(index - 1, Number(evt.target.value), (evt.target.value === '2') ? 2 : 3, saveStart, saveStop);
-                            addPkSwitch(index, 7, 1, saveStart, saveStop);
-                            $('#tc').val(saveStop).change();
-                        } else if (evt.target.value === '4') {
-                            // При смене типа на 1,2 ТВП вствляю связку со всеми Зам`ами
-                            let saveStart = Number($('[class~=start' + index + ']').val());
-                            let saveStop = saveStart + Number($('[class~=duration' + index + ']').val());
-                            deleteSwitch(index);
-                            addPkSwitch(index - 1, 4, 4, saveStart, saveStop);
-                            addPkSwitch(index, 5, 2, saveStart, saveStop);
-                            addPkSwitch(index + 1, 6, 3, saveStart, saveStop);
-                            addPkSwitch(index + 2, 7, 1, saveStart, saveStop);
-                            $('#tc').val(saveStop).change();
-                        } else {
-                            if ((evt.target.value === '5') || (evt.target.value === '6') || (evt.target.value === '7')) {
-                                // При смене типа на один из Зам`ов проверка возможности редакции длительности
-                                $('[class~=duration' + index + ']').prop('disabled', !difLen)
-                            }
-                            $('[class~=num' + index + ']')
-                                .val((Number($('[class~=num' + index + ']').val()) === 0) ? 1 : $('[class~=num' + index + ']').val())
-                                .prop('disabled', false)
-                                .change();
-                        }
+                        // const difLen = $('#razlen').prop('checked');
+                        //
+                        // $('[class~=duration' + index + ']').prop('disabled', false);
+                        // if ((evt.target.value === '1') || (evt.target.value === '8')) {
+                        //     // Фазы МГР и МДК всегда имеют № фазы = 0
+                        //     $('[class~=num' + index + ']')
+                        //         .val(0)
+                        //         .prop('disabled', true)
+                        //         .change();
+                        // } else if ((evt.target.value === '2') || (evt.target.value === '3')) {
+                        //     // При смене типа на ТВП1 или ТВП2 вствляю фазы вместе с Зам`ом
+                        //     let saveStart = Number($('[class~=start' + index + ']').val());
+                        //     let saveStop = saveStart + Number($('[class~=duration' + index + ']').val());
+                        //     deleteSwitch(index);
+                        //     addPkSwitch(index - 1, Number(evt.target.value), (evt.target.value === '2') ? 2 : 3, saveStart, saveStop);
+                        //     addPkSwitch(index, 7, 1, saveStart, saveStop);
+                        //     $('#tc').val(saveStop).change();
+                        // } else if (evt.target.value === '4') {
+                        //     // При смене типа на 1,2 ТВП вствляю связку со всеми Зам`ами
+                        //     let saveStart = Number($('[class~=start' + index + ']').val());
+                        //     let saveStop = saveStart + Number($('[class~=duration' + index + ']').val());
+                        //     deleteSwitch(index);
+                        //     addPkSwitch(index - 1, 4, 4, saveStart, saveStop);
+                        //     addPkSwitch(index, 5, 2, saveStart, saveStop);
+                        //     addPkSwitch(index + 1, 6, 3, saveStart, saveStop);
+                        //     addPkSwitch(index + 2, 7, 1, saveStart, saveStop);
+                        //     $('#tc').val(saveStop).change();
+                        // } else {
+                        //     if ((evt.target.value === '5') || (evt.target.value === '6') || (evt.target.value === '7')) {
+                        //         // При смене типа на один из Зам`ов проверка возможности редакции длительности
+                        //         $('[class~=duration' + index + ']').prop('disabled', !difLen)
+                        //     }
+                        //     $('[class~=num' + index + ']')
+                        //         .val((Number($('[class~=num' + index + ']').val()) === 0) ? 1 : $('[class~=num' + index + ']').val())
+                        //         .prop('disabled', false)
+                        //         .change();
+                        // }
                     });
                     $(this).find('option[value="' + record.tf + '"]').attr('selected', 'selected');
                     break;
@@ -2342,12 +2355,6 @@ function deleteSwitch(index) {
         // Для режима ПК
         let i = (checkLastLine(setDK[selected].sts[index])) ? 0 : index;
         let replCount = findReplacementCount(setDK[selected].sts, index);
-        if ((deletedTf === 2) || (deletedTf === 3) || (deletedTf === 4)) {
-            for (i = index; i < (index + replCount); i++) {
-                deleteSwitch(index);
-            }
-            i = (checkLastLine(setDK[selected].sts[index])) ? 0 : index;
-        }
         if (currentRow.trs || setDK[selected].sts[i].trs) currentRow.stop += Number($('#shift').val())
         setDK[selected].sts[i].stop += (currentRow.stop - currentRow.start);
         $(`[class~=duration${i - replCount}]`)
