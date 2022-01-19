@@ -255,18 +255,18 @@ ymaps.ready(function () {
     $('#fragmentDialog').dialog({
         autoOpen: false,
         buttons: {
+            'Открыть': function () {
+                const [x1, y1, x2, y2] = $('#fragment')[0].value.split(',').map(el => Number(el));
+                const bounds = [[x1, y1], [x2, y2]];
+                map.setBounds(bounds);
+
+                $(this).dialog('close');
+            },
             'Открыть в новой вкладке': function () {
                 const [x1, y1, x2, y2] = $('#fragment')[0].value.split(',').map(el => Number(el));
                 const bounds = [[x1, y1], [x2, y2]];
                 localStorage.setItem('fragment', JSON.stringify(bounds))
                 window.open(location.href);
-                $(this).dialog('close');
-            },
-            'Подтвердить': function () {
-                const [x1, y1, x2, y2] = $('#fragment')[0].value.split(',').map(el => Number(el));
-                const bounds = [[x1, y1], [x2, y2]];
-                map.setBounds(bounds);
-
                 $(this).dialog('close');
             },
             'Отмена': function () {

@@ -343,34 +343,41 @@ ymaps.ready(function () {
 
     function getPhasesSvg(trafficLights) {
         trafficLights.forEach((trafficLight, index) => {
+            getSvg(trafficLight).then(svgData => {
+                // todo Жду обновлённые картинки от Андрея
+                // let x2js = new X2JS();
+                // let data = x2js.xml2json(svgData);
+                // svg.push(data.svg.mphase.phase)
+                $('body').append('<div id="kostil" class="img-fluid" style="display: none" />');
+                $('#kostil').prepend(svgData.children[0].outerHTML.replace('let currentPhase', 'var currentPhase'));
+
+                const uniqueId = trafficLight.region + '/' + trafficLight.area + '/' + trafficLight.id;
+                if (typeof getPhasesMass === "function") {
+                    svg[uniqueId] = getPhasesMass()
+                } else {
+                    svg[uniqueId] = [];
+                }
+
+                if ((creatingFlag) && (svg[uniqueId] ?? true)) handleSelectChange(index);
+                $('#kostil').remove();
+            })
+        });
+    }
+
+    function getSvg(trafficLight) {
+        return new Promise(function (resolve) {
             $.ajax({
                 url: window.location.origin + '/file/static/cross/' + trafficLight.region + '/' + trafficLight.area + '/' + trafficLight.id + '/cross.svg',
                 type: 'GET',
                 success: function (svgData) {
-                    // todo Жду обновлённые картинки от Андрея
-                    // let x2js = new X2JS();
-                    // let data = x2js.xml2json(svgData);
-                    // svg.push(data.svg.mphase.phase)
-
-                    $('body').append('<div id="kostil" class="img-fluid" style="display: none" />');
-                    $('#kostil').prepend(svgData.children[0].outerHTML.replace('let currentPhase', 'var currentPhase'));
-
-                    const uniqueId = trafficLight.region + '/' + trafficLight.area + '/' + trafficLight.id;
-                    if (typeof getPhasesMass === "function") {
-                        svg[uniqueId] = getPhasesMass()
-                    } else {
-                        svg[uniqueId] = [];
-                    }
-
-                    if ((creatingFlag) && (svg[uniqueId] ?? true)) handleSelectChange(index);
-                    $('#kostil').remove();
+                    resolve(svgData)
                 },
                 error: function (request) {
-                    console.log(request.status + ' ' + request.responseText);
-                    alert(JSON.parse(request.responseText).message);
+                    console.log(request.status);
+                    // alert(JSON.parse(request.responseText).message);
                 }
             });
-        });
+        })
     }
 
     function setRouteArea(map, box, description, routeId) {
@@ -431,7 +438,7 @@ ymaps.ready(function () {
     function getStatus(position) {
         return tflights.find(element => (
             (element.region.num === position.region) && (element.area.num === position.area) && (element.ID === position.id)
-        )).tlsost.num;
+        ))?.tlsost.num;
     }
 
     function distanceBetweenPoints(x1, y1, x2, y2) {
@@ -667,7 +674,6 @@ ymaps.ready(function () {
     });
 
     $('#routes').on('change', function () {
-
         let [region, desc] = $('#routes').val().split('---');
         $('#endRouteButton').hide();
 
@@ -699,7 +705,7 @@ ymaps.ready(function () {
                         map.setCenter(currentRouteTflights.get(tr.rowIndex - 1)?.geometry.getCoordinates(), zoom);
                     });
                     tr.cells[1].innerHTML = '<div class="placemark"  style="background-image:url(\'' + location.origin +
-                        '/free/img/trafficLights/' + getStatus(route.listTL[i].pos) + '.svg\');' +
+                        '/free/img/trafficLights/' + (getStatus(route.listTL[i].pos) ?? 'empty') + '.svg\');' +
                         'background-repeat: no-repeat; background-size: 50%; min-height: 50px;"><h2 id="asterisk' + i + '">*</h2></div>';
                 });
             }
@@ -740,6 +746,7 @@ ymaps.ready(function () {
         // localStorage.setItem("maintab", "closed");
         switch (allData.type) {
             case 'mapInfo':
+                map.container.fitToViewport()
                 allRoutesList = data.routes;
                 regionInfo = data.regionInfo;
                 areaInfo = data.areaInfo;
@@ -1022,18 +1029,18 @@ ymaps.ready(function () {
     $('#fragmentDialog').dialog({
         autoOpen: false,
         buttons: {
+            'Открыть': function () {
+                const [x1, y1, x2, y2] = $('#fragment')[0].value.split(',').map(el => Number(el));
+                const bounds = [[x1, y1], [x2, y2]];
+                map.setBounds(bounds);
+
+                $(this).dialog('close');
+            },
             'Открыть в новой вкладке': function () {
                 const [x1, y1, x2, y2] = $('#fragment')[0].value.split(',').map(el => Number(el));
                 const bounds = [[x1, y1], [x2, y2]];
                 localStorage.setItem('fragment', JSON.stringify(bounds))
                 window.open(location.href);
-                $(this).dialog('close');
-            },
-            'Подтвердить': function () {
-                const [x1, y1, x2, y2] = $('#fragment')[0].value.split(',').map(el => Number(el));
-                const bounds = [[x1, y1], [x2, y2]];
-                map.setBounds(bounds);
-
                 $(this).dialog('close');
             },
             'Отмена': function () {

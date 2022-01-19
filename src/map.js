@@ -1141,12 +1141,12 @@ ymaps.ready(function () {
         }
         switch (type) {
             case 'jump':
-                $('#fragmentDialog').parent().find('button').filter((i, v) => v.innerText === 'Подтвердить').show()
+                $('#fragmentDialog').parent().find('button').filter((i, v) => v.innerText === 'Открыть').show()
                 $('#fragmentDialog').parent().find('button').filter((i, v) => v.innerText === 'Открыть в новой вкладке').show()
                 $('#fragmentDialog').parent().find('button').filter((i, v) => v.innerText === 'Удалить').hide()
                 break;
             case 'del':
-                $('#fragmentDialog').parent().find('button').filter((i, v) => v.innerText === 'Подтвердить').hide()
+                $('#fragmentDialog').parent().find('button').filter((i, v) => v.innerText === 'Открыть').hide()
                 $('#fragmentDialog').parent().find('button').filter((i, v) => v.innerText === 'Открыть в новой вкладке').hide()
                 $('#fragmentDialog').parent().find('button').filter((i, v) => v.innerText === 'Удалить').show()
                 break;
@@ -1156,18 +1156,18 @@ ymaps.ready(function () {
     $('#fragmentDialog').dialog({
         autoOpen: false,
         buttons: {
+            'Открыть': function () {
+                const [x1, y1, x2, y2] = $('#fragment')[0].value.split(',').map(el => Number(el));
+                const bounds = [[x1, y1], [x2, y2]];
+                map.setBounds(bounds);
+
+                $(this).dialog('close');
+            },
             'Открыть в новой вкладке': function () {
                 const [x1, y1, x2, y2] = $('#fragment')[0].value.split(',').map(el => Number(el));
                 const bounds = [[x1, y1], [x2, y2]];
                 localStorage.setItem('fragment', JSON.stringify(bounds))
                 window.open(location.origin);
-                $(this).dialog('close');
-            },
-            'Подтвердить': function () {
-                const [x1, y1, x2, y2] = $('#fragment')[0].value.split(',').map(el => Number(el));
-                const bounds = [[x1, y1], [x2, y2]];
-                map.setBounds(bounds);
-
                 $(this).dialog('close');
             },
             'Удалить': function () {
@@ -1231,9 +1231,8 @@ ymaps.ready(function () {
             $('#arbitraryZUButton').hide();
         }
 
-        // todo доделать экран характерных точек
-        // (xctrlFlag) ? $('#charPointsButton').show() : $('#charPointsButton').hide();
-        $('#charPointsButton').hide();
+        (xctrlFlag) ? $('#charPointsButton').show() : $('#charPointsButton').hide();
+        // $('#charPointsButton').hide();
     }
 
     let createChipsLayout = function (calculateSize, currnum, rotateDeg) {

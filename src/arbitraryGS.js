@@ -9,6 +9,7 @@ let boxRemember = {Y: 0, X: 0};
 let coordsSave = [];
 let fixationFlag = false;
 let fragments = [];
+let tflights = [];
 
 let ideviceSave = -1;
 
@@ -143,8 +144,8 @@ let addObjectsArray = [];
 let tfLinksArray = [];
 
 $(() => {
-    $('body').append('<div class="border border-dark" id="map" ' +
-        `style="max-height: 100%; max-width: 100%; position: relative; z-index: 1"></div>`
+    $('#tableCol').parent().prepend('<div class="col-md-9 border border-dark" id="map" ' +
+        `style="min-height: ${window.innerHeight}px; max-width: ${window.innerWidth}px; position: relative; z-index: 1"></div>`
     )
 })
 
@@ -164,6 +165,7 @@ ymaps.ready(function () {
 
     $('#controlModeButton')[0].disabled = true;
     // $('#phaseTableDialog').find('div.fixed-table-body').css('max-height', window.innerHeight * 0.8)
+    $('[class~=no-records-found] td').text('Записей не найдено');
 
     //Создание и первичная настройка карты
     map = new ymaps.Map('map', {
@@ -199,12 +201,16 @@ ymaps.ready(function () {
         creatingMode = true;
         $('#controlModeButton')[0].disabled = false;
         $('#createModeButton')[0].disabled = true;
+        $('.col-md-9').removeClass('col-md-9').addClass('col-md-12')
+        map.container.fitToViewport()
     });
 
     $('#controlModeButton').on('click', function () {
         creatingMode = false;
         $('#controlModeButton')[0].disabled = true;
         $('#createModeButton')[0].disabled = false;
+        $('.col-md-12').removeClass('col-md-12').addClass('col-md-9')
+        map.container.fitToViewport()
     });
 
     let closeReason = '';
@@ -236,6 +242,7 @@ ymaps.ready(function () {
         switch (allData.type) {
             case 'mapInfo':
                 fragments = data.fragments;
+                tflights = data.tflight;
                 //Заполнение поля выбора регионов для перемещения
                 for (let reg in data.regionInfo) {
                     $('#region').append(new Option(data.regionInfo[reg], reg));
@@ -291,6 +298,12 @@ ymaps.ready(function () {
                 if (data.tflight === null) {
                     console.log('null');
                 } else {
+                    tflights.forEach((tflight, index) => {
+                        if ((tflight.region.num === trafficLight.region.num) &&
+                            (tflight.area.num === trafficLight.area.num) && (tflight.ID === trafficLight.ID)) {
+                            tflights[index].tlsost = trafficLight.tlsost;
+                        }
+                    });
                     // console.log('Обновление');
                     //Обновление статуса контроллера происходит только при его изменении
                     data.tflight.forEach(trafficLight => {
@@ -526,18 +539,18 @@ ymaps.ready(function () {
     $('#fragmentDialog').dialog({
         autoOpen: false,
         buttons: {
+            'Открыть': function () {
+                const [x1, y1, x2, y2] = $('#fragment')[0].value.split(',').map(el => Number(el));
+                const bounds = [[x1, y1], [x2, y2]];
+                map.setBounds(bounds);
+
+                $(this).dialog('close');
+            },
             'Открыть в новой вкладке': function () {
                 const [x1, y1, x2, y2] = $('#fragment')[0].value.split(',').map(el => Number(el));
                 const bounds = [[x1, y1], [x2, y2]];
                 localStorage.setItem('fragment', JSON.stringify(bounds))
                 window.open(location.href);
-                $(this).dialog('close');
-            },
-            'Подтвердить': function () {
-                const [x1, y1, x2, y2] = $('#fragment')[0].value.split(',').map(el => Number(el));
-                const bounds = [[x1, y1], [x2, y2]];
-                map.setBounds(bounds);
-
                 $(this).dialog('close');
             },
             'Отмена': function () {

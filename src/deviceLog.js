@@ -60,7 +60,7 @@ $(function () {
             $('#timeStart').attr('value', (prettyNumbers(now.getUTCHours()) + ':' + prettyNumbers(now.getUTCMinutes())));
             $('#currentDay').on('click', () => {
                 now = new Date(new Date().getTime() - (new Date().getTimezoneOffset() * 60 * 1000));
-                let timeStart = $('#dateStart')[0].value + 'T' + $('#timeStart')[0].value + ':00Z';
+                let timeStart = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString();
                 let timeEnd = now.toISOString();
                 getLogs(timeStart, timeEnd, true);
             });
@@ -122,7 +122,7 @@ $(function () {
 });
 
 function toggleTable(state) {
-    $('#toggleTable').text(state ? 'Показать таблицу' : 'Спрятать таблицу');
+    $('#toggleTable').text(state ? 'Показать таблицу' : 'Скрыть таблицу');
     if (state) {
         $('.col-md-4').hide();
         $('.col-md-8').removeClass('col-md-8').addClass('col-md-12');
@@ -240,6 +240,9 @@ function buildLogsTable(data, chosenTimeFlag) {
                 if (!journalFlag) {
                     allData.push({
                         message: JSON.parse(dev).description,
+                        dateStart: JSON.parse(dev).description,
+                        dateEnd: JSON.parse(dev).description,
+                        duration: JSON.parse(dev).description,
                         id: log.id,
                     });
                 } else {
