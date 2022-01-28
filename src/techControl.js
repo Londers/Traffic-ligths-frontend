@@ -106,17 +106,17 @@ function filterTable(data) {
             // Без фильтров
             return crosses;
         case 1:
-            // Неисправности GPS
-            return crosses.filter(row => (row.gps !== '') && (row.gps !== 'Исправно'));
+            // Аварии 220, Выключенные УСДК
+            return crosses.filter(row => (row.status === 17 || row.status === 18));
         case 2:
             // Неисправности
             return crosses.filter(row => row.status >= 16);
         case 3:
+            // Неисправности GPS
+            return crosses.filter(row => (row.gps !== '') && (row.gps !== 'Исправно'));
+        case 4:
             // Отсутствие связи
             return crosses.filter(row => row.sv === '')
-        case 4:
-            // Аварии 220, Выключенные УСДК
-            return crosses.filter(row => (row.status === 17 || row.status === 18));
         case 5:
             // Управление из центра
             return crosses.filter(row => row.traffic !== '')

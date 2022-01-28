@@ -1081,7 +1081,7 @@ function handleKeyboard($this, event) {
 }
 
 function calcInputWidth(input) {
-    $(input).width(((($(input).val().length + 1) * 8.5)) + 'px');
+    $(input).width(((($(input).val().length + 2) * 8.5)) + 'px');
 }
 
 // Заполнение вкладки "Основные"

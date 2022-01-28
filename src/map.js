@@ -4,6 +4,38 @@ $(() => {
     $('body').append('<div class="border border-dark mx-1" id="map" ' +
         `style="max-height: 90%; max-width: 100%; position: relative; z-index: 1"></div>`
     )
+    // $('html').append(
+    //     '<div id="load">' +
+    //     '  <div>А</div>' +
+    //     '  <div>К</div>' +
+    //     '  <div>З</div>' +
+    //     '  <div>У</div>' +
+    //     '  <div>Р</div>' +
+    //     '  <div>Г</div>' +
+    //     '  <div>А</div>' +
+    //     '  <div>З</div>' +
+    //     '</div>'
+    // )
+    $('html').append('' +
+        '<div id="showLoading" class="text-center justify-content-center" ' +
+        'style="position: absolute;top: 0px;z-index: 3;width: 100%;height: 100%;background-color: floralwhite;user-select: none;">' +
+        '<div id="load">' +
+        '  <div>А</div>' +
+        '  <div>К</div>' +
+        '  <div>З</div>' +
+        '  <div>У</div>' +
+        '  <div>Р</div>' +
+        '  <div>Г</div>' +
+        '  <div>А</div>' +
+        '  <div>З</div>' +
+        '</div>' +
+        // '    <h1 style="' +
+        // '    position: absolute;' +
+        // '    z-index: 3;' +
+        // '    top: 45%;' +
+        // '    left: 45%;' +
+        // '">Загрузка...</h1>' +
+        '</div>')
 })
 
 ymaps.ready(function () {
@@ -16,7 +48,7 @@ ymaps.ready(function () {
     let userRegion;
     let areaInfo;
     let areaZone;
-    let fragments = [];
+    let fragments;
     let boxRemember = {Y: 0, X: 0};
     let authorizedFlag = false;
     let logDeviceFlag = false;
@@ -459,6 +491,8 @@ ymaps.ready(function () {
         openPage('/arbitraryGS');
     });
 
+    // в разработке
+    // $('#charPointsButton').hide()
     $('#charPointsButton').on('click', () => {
         openPage('/charPoints');
     });
@@ -561,6 +595,7 @@ ymaps.ready(function () {
     //Создание и первичная настройка карты
     // let map = new ymaps.Map('map', {
     map = new ymaps.Map('map', {
+        // bounds: [[46.3095967, 36.00983874945198], [56.0082434, 135.112502]],
         center: [54.9912, 73.3685],
         zoom: 19,
     });
@@ -690,6 +725,7 @@ ymaps.ready(function () {
         // localStorage.setItem("maintab", "closed");
         switch (allData.type) {
             case 'mapInfo': {
+                $('#showLoading').hide()
                 regionInfo = data.regionInfo;
                 areaInfo = data.areaInfo;
                 userRegion = data.region;
@@ -1231,6 +1267,7 @@ ymaps.ready(function () {
             $('#arbitraryZUButton').hide();
         }
 
+        // в разработке
         (xctrlFlag) ? $('#charPointsButton').show() : $('#charPointsButton').hide();
         // $('#charPointsButton').hide();
     }

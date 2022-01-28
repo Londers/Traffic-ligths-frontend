@@ -81,6 +81,7 @@ $(function () {
                 toggleTable($('.col-md-4').css('display') === 'block');
                 $('#logsTable').bootstrapTable('resetView');
             });
+            // берешь при сутках дату с экрана, надо брать сутки рукми, как ты недавно поменял на кнопке
 
             $('#type').on('change', () => {
                 type = Number($('#type').val());
@@ -99,11 +100,6 @@ $(function () {
                 let timeStart = $('#dateStart')[0].value + 'T' + $('#timeStart')[0].value + ':00Z';
                 let timeEnd = now.toISOString();
                 getLogs(timeStart, timeEnd, true, true);
-            }
-
-            if (!data.devices.some(dev => dev.region !== data.devices[0].region)) {
-                $('#table').bootstrapTable('checkAll');
-                $('#currentDay').trigger('click');
             }
         },
         // data: JSON.stringify(data.state),
@@ -179,7 +175,7 @@ function getLogs(start, end, chosenTimeFlag, remoteOpenFlag) {
         dataType: 'json',
         success: function (data) {
             dateSave = new Date();
-            buildLogsTable(data, chosenTimeFlag);
+            buildLogsTable(data, chosenTimeFlag, start, end);
             $('#logsTable').bootstrapTable('hideLoading');
             if (remoteOpenFlag) {
                 $('input[class$="search-input"]:first').val(localStorage.getItem('description')).trigger('blur');
@@ -224,7 +220,7 @@ function collapseDuplicates(data) {
     return collapsedData;
 }
 
-function buildLogsTable(data, chosenTimeFlag) {
+function buildLogsTable(data, chosenTimeFlag, start, end) {
     (data === undefined) ? data = dataSave : dataSave = data;
 
     let journalFlag = false;
