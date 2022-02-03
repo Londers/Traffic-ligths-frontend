@@ -55,23 +55,24 @@ $(function () {
                     (((now.getHours() * 60 + now.getMinutes() + now.getTimezoneOffset()) * 60 + now.getSeconds()) * 1000)
                     + now.getMilliseconds()
                 )
-            );// ((24 * 60) * 60 * 1000)); // - (now.getTimezoneOffset() * 60 * 1000));
+            );
             $('#dateStart').attr('value', (now.toISOString().slice(0, 10)));
             $('#timeStart').attr('value', (prettyNumbers(now.getUTCHours()) + ':' + prettyNumbers(now.getUTCMinutes())));
             $('#currentDay').on('click', () => {
-                now = new Date(new Date().getTime() - (new Date().getTimezoneOffset() * 60 * 1000));
-                let timeStart = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString();
-                let timeEnd = now.toISOString();
+                let timeStart = new Date(new Date().setHours(now.getTimezoneOffset() / -60, 0, 0, 0)).toISOString();
+                let timeEnd = new Date(new Date().getTime() - (new Date().getTimezoneOffset() * 60 * 1000)).toISOString();
                 getLogs(timeStart, timeEnd, true);
             });
 
             $('#chosenTime').on('click', () => {
-                // let now = new Date();
-                // now = new Date(now.getTime() - (now.getTimezoneOffset() * 60 * 1000));
                 let timeStart = $('#dateStart')[0].value + 'T' + $('#timeStart')[0].value + ':00Z';
                 let timeEnd = $('#dateEnd')[0].value + 'T' + $('#timeEnd')[0].value + ':00Z';
                 if ((new Date(timeStart).getTime()) >= (new Date(timeEnd).getTime())) {
                     alert('Неверно задано время');
+                    return;
+                } else if (((new Date(timeEnd) - new Date(timeStart)) / (1000 * 60 * 60 * 24)) >= 31)  {
+                    //Максимальный интервал для запроса 31 день
+                    alert('Интервал запроса не может превышать один месяц');
                     return;
                 }
                 getLogs(timeStart, timeEnd, false);
@@ -81,7 +82,6 @@ $(function () {
                 toggleTable($('.col-md-4').css('display') === 'block');
                 $('#logsTable').bootstrapTable('resetView');
             });
-            // берешь при сутках дату с экрана, надо брать сутки рукми, как ты недавно поменял на кнопке
 
             $('#type').on('change', () => {
                 type = Number($('#type').val());
@@ -102,17 +102,16 @@ $(function () {
                 getLogs(timeStart, timeEnd, true, true);
             }
         },
-        // data: JSON.stringify(data.state),
         error: function (request) {
             console.log(request.status + ' ' + request.responseText);
             alert(JSON.parse(request.responseText).message);
         }
     });
-    // });
     $('input[data-field="time"]').parent().remove();
     $('input[data-field="id"]').parent().remove();
     $('#logsTable').on('reorder-column.bs.table post-body.bs.table', function () {
         makeMergedDesc($('#logsTable').bootstrapTable('getData'))
+        makeMergedOldRecords()
         colorizeCrosses()
     })
 });
@@ -131,8 +130,6 @@ function toggleTable(state) {
 }
 
 function getLogs(start, end, chosenTimeFlag, remoteOpenFlag) {
-    // {ID: '', area: '', region: ''}
-    // console.log('start:' + start + '   end' + end);
     let toSend = {devices: [], timeStart: start, timeEnd: end};
     let selected = $('#table').bootstrapTable('getSelections');
     selected.forEach(cross => {
@@ -231,7 +228,7 @@ function buildLogsTable(data, chosenTimeFlag, start, end) {
 
     for (const dev in filteredData) {
         filteredData[dev].forEach((log, index) => {
-            if (log.text === '') journalFlag = true;
+            if (log.journal.rez !== '') journalFlag = true;
             if (index === 0) {
                 if (!journalFlag) {
                     allData.push({
@@ -314,7 +311,23 @@ function buildLogsTable(data, chosenTimeFlag, start, end) {
     if (journalFlag) makeMergedDesc(allData)
     toggleTable(journalFlag);
     colorizeCrosses();
+    makeMergedOldRecords();
     $('#logsTable').trigger('resize')
+}
+
+function makeMergedOldRecords() {
+    $('#logsTable').bootstrapTable('getData').forEach((row, index) => {
+        if ((row.message !== undefined) && (row.dateStart !== row.duration)) {
+            $('#logsTable').bootstrapTable('mergeCells',
+                {
+                    index: index,
+                    field: $('#logsTable').bootstrapTable('getVisibleColumns')[3].field,
+                    colspan: $('#logsTable').bootstrapTable('getVisibleColumns').length - 3,
+                    rowspan: 1
+                }
+            )
+        }
+    })
 }
 
 function makeMergedDesc(data) {
@@ -373,7 +386,16 @@ function switchColumnsByType(type) {
 }
 
 function validateForJournal(add, log) {
-    if (add.message === '') {
+    if (log.journal.rez === '') {
+        add.arm = add.message;
+        add.pk = add.message;
+        add.ck = add.message;
+        add.nk = add.message;
+        add.device = add.message;
+        add.phase = add.message;
+        add.rez = add.message;
+        add.status = add.message;
+    } else {
         delete add.message;
         add.arm = log.journal.arm;
         add.pk = log.journal.pk;

@@ -1269,7 +1269,10 @@ function vvTabFill(firstLoadFlag) {
         setChange('ite', 'input', 'arrays.SetTimeUse');
     }
 
-    $('#tuin').val(data.state.arrays.defstatis.lvs[0].period);
+    $('#tuin').val(
+        //не должно быть 0
+        data.state.arrays.defstatis.lvs[0].period === 0 ? 5 : data.state.arrays.defstatis.lvs[0].period
+    );
     if (firstLoadFlag) {
         $('#tuin').on('change', () => {
             data.state.arrays.defstatis.lvs[0].period = Number($('#tuin').val());
