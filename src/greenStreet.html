@@ -38,7 +38,7 @@
             document.getElementsByClassName("open-button")[0].style.display = "block";
         }
     </script>
-    <script src="/file/web/js/greenStreet.js" type="text/javascript"></script>
+    <script src="/file/web/Components/GreenStreet/greenStreet.js" type="text/javascript"></script>
     <link rel="icon"
           type="image/svg"
           href="/free/resources/trafficlight.svg"/>
@@ -220,10 +220,10 @@
 </div>
 <button class="open-button" onclick="openForm()" style="position: fixed; z-index: 2;">Открыть чат</button>
 <div class="form-popup" id="myForm">
-    <link rel="stylesheet" href="/file/web/css/chat.css">
+    <link rel="stylesheet" href="/file/web/Components/Chat/chat.css">
     <form class="form-container">
         <div id="root"></div>
-        <script src="/file/web/js/main.js"></script>
+        <script src="/file/web/Components/Chat/main.js"></script>
         <button type="button" class="btn cancel" onclick="closeForm()">Закрыть</button>
     </form>
 </div>
