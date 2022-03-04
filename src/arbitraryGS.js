@@ -10,7 +10,7 @@ let coordsSave = [];
 let fixationFlag = false;
 let fragments = [];
 let tflights = [];
-
+let zoom = 19
 let ideviceSave = -1;
 
 let creatingMode = false;
@@ -139,9 +139,11 @@ class wayPoint {
 
 let currentTfId = '';
 let currentTfLink = new tfLink();
-
 let addObjectsArray = [];
 let tfLinksArray = [];
+let routeList = [];
+let circlesMap = new Map();
+let svg = {};
 
 $(() => {
     $('#tableCol').parent().prepend('<div class="col-md-9 border border-dark" id="map" ' +
@@ -155,11 +157,106 @@ function getUniqueId(trafficLight) {
 }
 
 function getPhase(curr, from, to) {
-    return Object.values(tfLinksArray.find(tfl => tfl.id === curr).tflink)
-        .find(cp => cp.Id === from).getPhaseToObj(to);
+    return Object.values(tfLinksArray.find(tfl => tfl.id === curr).tflink).find(cp => cp.Id === from).getPhaseToObj(to);
 }
 
-let svg = {};
+
+function createCircle(region, area, id, description, coordinates) {
+    // Создаем круг.
+    let myCircle = new ymaps.Circle([
+        // Координаты центра круга.
+        coordinates,
+        // Радиус круга в метрах.
+        radiusCalculate(map.getZoom())
+    ], {
+        // Описываем свойства круга.
+        // Содержимое балуна.
+        // balloonContent: "Радиус круга - 10 км",
+        // Содержимое хинта.
+        hintContent: description
+    }, {
+        // Задаем опции круга.
+        // Включаем возможность перетаскивания круга.
+        draggable: false,
+        // Цвет заливки.
+        // Последний байт (77) определяет прозрачность.
+        // Прозрачность заливки также можно задать используя опцию "fillOpacity".
+        fillColor: "#DB709377",
+        // Цвет обводки.
+        strokeColor: "#990066",
+        // Прозрачность обводки.
+        strokeOpacity: 0.8,
+        // Ширина обводки в пикселях.
+        strokeWidth: 5
+    });
+
+    circlesMap.set(JSON.stringify({region: region, area: area, id: id, description: description}), myCircle);
+
+    // Добавляем круг на карту.
+    map.geoObjects.add(myCircle);
+}
+
+function deleteCircle(map, circle, pos, description) {
+    map.geoObjects.remove(circle);
+    circlesMap.delete(JSON.stringify(pos));
+    routeList.forEach((route, index) => {
+        if ((route.pos.region === pos.region) && (route.pos.area === pos.area) && (route.pos.id === pos.id)) routeList.splice(index, 1);
+    });
+    $('#table').bootstrapTable('remove', {field: 'desc', values: [description]});
+    $('#navTable').bootstrapTable('remove', {field: 'tflight', values: [description]});
+
+    makeSelects();
+}
+
+function deleteAllCircles() {
+    circlesMap.forEach((value, key) => {
+        map.geoObjects.remove(value);
+        circlesMap.delete(key);
+    });
+}
+
+function circlesControl(map) {
+    if (zoom !== map.getZoom()) {
+        circlesMap.forEach(circle => {
+            map.geoObjects.remove(circle);
+        });
+        circlesMap.forEach(circle => {
+            circle.geometry.setRadius(radiusCalculate(map.getZoom()));
+            map.geoObjects.add(circle);
+        });
+        zoom = map.getZoom();
+    }
+}
+
+function getPhases(index) {
+    let rowData = $('#table').bootstrapTable('getData')[index];
+    let returnData = {currPhase: -1, phases: []};
+
+    tflights.some(trafficLight => {
+        if ((trafficLight.region.num === rowData.region) && (trafficLight.area.num === rowData.area) && (trafficLight.ID === rowData.id)) {
+            returnData.currPhase = (rowData.phase.length === 1) ? rowData.phase[0] : 1;
+            returnData.phases = trafficLight.phases;
+        }
+    });
+
+    return returnData;
+}
+
+function makeSelects() {
+    $('#table tbody tr').each((i, tr) => {
+        $(tr).find('td').each((j, td) => {
+            if (td.cellIndex === 2) {
+                let phases = getPhases(tr.rowIndex - 1); // $(this)[0].innerText.split(',');
+                let optionsHtml = '';
+                phases.phases.forEach(phase => {
+                    optionsHtml +=
+                        `<option value="${phase}" ${((phase === phases.currPhase) ? ' selected="selected"' : '')}>${phase}</option>`;
+                });
+                $(td)[0].innerHTML = `<select id="cross${i}">${optionsHtml}</select>`;
+            }
+        })
+    })
+}
 
 ymaps.ready(function () {
 
@@ -167,10 +264,17 @@ ymaps.ready(function () {
     // $('#phaseTableDialog').find('div.fixed-table-body').css('max-height', window.innerHeight * 0.8)
     $('[class~=no-records-found] td').text('Записей не найдено');
 
+    const mapSettings = JSON.parse(localStorage.getItem('mapSettings'));
+    zoom = mapSettings.zoom
+
+    if ((localStorage.getItem('fragment') ?? '') !== '') {
+        mapSettings.bounds = JSON.parse(localStorage.getItem('fragment'));
+        localStorage.setItem('fragment', '');
+    }
     //Создание и первичная настройка карты
     map = new ymaps.Map('map', {
-        center: [54.9912, 73.3685],
-        zoom: 19
+        bounds: mapSettings.bounds,
+        zoom: mapSettings.zoom,
     });
 
     map.events.add('click', function (evt) {
@@ -178,6 +282,10 @@ ymaps.ready(function () {
         coordsSave = evt.get('coords');
         $('#creatingAddDialog').dialog('open');
         $('#creatingAddDialog input').val('')
+    });
+
+    map.events.add(['wheel', 'mousemove', 'click'], function () {
+        circlesControl(map);
     });
 
     $('#dropdownControlButton').trigger('click');
@@ -258,16 +366,6 @@ ymaps.ready(function () {
                     fillAreas($('#addArea'), $('#addRegion'), data.areaInfo);
                 });
 
-                if ((localStorage.getItem('fragment') ?? '') !== '') {
-                    map.setBounds(JSON.parse(localStorage.getItem('fragment')));
-                    localStorage.setItem('fragment', '');
-                } else {
-                    map.setBounds([
-                        [data.boxPoint.point0.Y, data.boxPoint.point0.X],
-                        [data.boxPoint.point1.Y, data.boxPoint.point1.X]
-                    ]);
-                }
-
                 //Разбор полученной от сервера информации
                 data.tflight.forEach(trafficLight => {
                     IDs.push(getUniqueId(trafficLight));
@@ -298,12 +396,6 @@ ymaps.ready(function () {
                 if (data.tflight === null) {
                     console.log('null');
                 } else {
-                    tflights.forEach((tflight, index) => {
-                        if ((tflight.region.num === trafficLight.region.num) &&
-                            (tflight.area.num === trafficLight.area.num) && (tflight.ID === trafficLight.ID)) {
-                            tflights[index].tlsost = trafficLight.tlsost;
-                        }
-                    });
                     // console.log('Обновление');
                     //Обновление статуса контроллера происходит только при его изменении
                     data.tflight.forEach(trafficLight => {
@@ -323,13 +415,20 @@ ymaps.ready(function () {
                             handlePlacemarkClick(map, trafficLight, placemark);
                         });
 
+                        tflights.forEach((tflight, index) => {
+                            if ((tflight.region.num === trafficLight.region.num) &&
+                                (tflight.area.num === trafficLight.area.num) && (tflight.ID === trafficLight.ID)) {
+                                tflights[index].tlsost = trafficLight.tlsost;
+                            }
+                        });
+
                         // Если открыто управление перекрёстком, замена объекта на карте произойдет по закрытию управления
-                        if (ideviceSave !== trafficLight.idevice) {
+                        if ((ideviceSave !== trafficLight.idevice) && (index !== -1)) {
                             //Замена метки контроллера со старым состоянием на метку с новым
                             map.geoObjects.splice(index, 1, placemark);
                         } else {
                             clearInterval(waiter);
-                            waiter = setInterval(() => {
+                            waiter = setTimeout(() => {
                                 if (ideviceSave === -1) {
                                     map.geoObjects.splice(index, 1, placemark);
                                     clearInterval(waiter);
@@ -484,6 +583,17 @@ ymaps.ready(function () {
         if (creatingMode) {
             handleAddObjDelete(pos);
         } else {
+            circlesMap.forEach((value, keyJson) => {
+                const key = JSON.parse(keyJson);
+                if ((key.region === pos.region) && (key.area === pos.area) && (key.id === pos.id)) {
+                    deleteCircle(map, value, key, pos.description);
+                    // returnFlag = true;
+                    // if (circlesMap.size === 0) {
+                    //     $('#phaseTableButton').hide();
+                    //     $('#createRouteButton')[0].disabled = true;
+                    // }
+                }
+            });
             console.log('WORK IN PROGRESS');
             // todo handle control mode
         }
@@ -759,7 +869,7 @@ ymaps.ready(function () {
 
     function handlePlacemarkClick(map, trafficLight) {
         console.log(map, trafficLight);
-
+        let returnFlag = false
         if (creatingMode) {
             $('#tableDialog').dialog('open');
             getPhasesSvg(trafficLight).then(
@@ -771,7 +881,22 @@ ymaps.ready(function () {
             currentTfId = getUniqueId(trafficLight);
             $('.ui-dialog-title')[1].innerText = trafficLight.description
         } else {
+            circlesMap.forEach((value, keyJson) => {
+                const key = JSON.parse(keyJson);
+                if ((key.region === trafficLight.region.num) && (key.area === trafficLight.area.num) && (key.id === trafficLight.ID)) {
+                    deleteCircle(map, value, key, trafficLight.description);
+                    returnFlag = true;
+                    // if (circlesMap.size === 0) {
+                    //     $('#phaseTableButton').hide();
+                    //     $('#createRouteButton')[0].disabled = true;
+                    // }
+                }
+            });
             console.log('click');
+
+            if (returnFlag) return
+            createCircle(trafficLight.region.num, trafficLight.area.num, trafficLight.ID, trafficLight.description,
+                [trafficLight.points.Y, trafficLight.points.X])
         }
         // Команда на влкючение передачи фаз
         // controlSend(trafficLight.idevice, 4, 1)
@@ -991,3 +1116,44 @@ let calculate = function (zoom) {
         // return 80;
     }
 };
+
+function radiusCalculate(zoom) {
+    switch (zoom) {
+        case 3:
+            return 32000;
+        case 4:
+            return 16000;
+        case 5:
+            return 8000;
+        case 6:
+            return 4000;
+        case 7:
+            return 2000;
+        case 8:
+            return 1000;
+        case 9:
+            return 750;
+        case 10:
+            return 500;
+        case 11:
+            return 400;
+        case 12:
+            return 300;
+        case 13:
+            return 250;
+        case 14:
+            return 200;
+        case 15:
+            return 150;
+        case 16:
+            return 100;
+        case 17:
+            return 75;
+        case 18:
+            return 50;
+        case 19:
+            return 40;
+        default:
+            return 30;
+    }
+}

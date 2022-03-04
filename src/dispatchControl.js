@@ -19,11 +19,16 @@ $(() => {
 })
 
 ymaps.ready(function () {
+    const mapSettings = JSON.parse(localStorage.getItem('mapSettings'));
 
+    if ((localStorage.getItem('fragment') ?? '') !== '') {
+        mapSettings.bounds = JSON.parse(localStorage.getItem('fragment'));
+        localStorage.setItem('fragment', '');
+    }
     //Создание и первичная настройка карты
     map = new ymaps.Map('map', {
-        center: [54.9912, 73.3685],
-        zoom: 19
+        bounds: mapSettings.bounds,
+        zoom: mapSettings.zoom,
     });
 
     $('#dropdownControlButton').trigger('click');
@@ -79,16 +84,6 @@ ymaps.ready(function () {
                 $('#regionForm').on('change', function () {
                     fillAreas($('#area'), $('#region'), data.areaInfo);
                 });
-
-                if ((localStorage.getItem('fragment') ?? '') !== '') {
-                    map.setBounds(JSON.parse(localStorage.getItem('fragment')));
-                    localStorage.setItem('fragment', '');
-                } else {
-                    map.setBounds([
-                        [data.boxPoint.point0.Y, data.boxPoint.point0.X],
-                        [data.boxPoint.point1.Y, data.boxPoint.point1.X]
-                    ]);
-                }
 
                 //Разбор полученной от сервера информации
                 data.tflight.forEach(trafficLight => {

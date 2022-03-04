@@ -36,6 +36,45 @@ ymaps.ready(function () {
         return color;
     }
 
+    function createCircle(region, area, id, description, coordinates) {
+        // Создаем круг.
+        let myCircle = new ymaps.Circle([
+            // Координаты центра круга.
+            coordinates,
+            // Радиус круга в метрах.
+            radiusCalculate(map.getZoom())
+        ], {
+            // Описываем свойства круга.
+            // Содержимое балуна.
+            // balloonContent: "Радиус круга - 10 км",
+            // Содержимое хинта.
+            hintContent: description
+        }, {
+            // Задаем опции круга.
+            // Включаем возможность перетаскивания круга.
+            draggable: false,
+            // Цвет заливки.
+            // Последний байт (77) определяет прозрачность.
+            // Прозрачность заливки также можно задать используя опцию "fillOpacity".
+            fillColor: "#DB709377",
+            // Цвет обводки.
+            strokeColor: "#990066",
+            // Прозрачность обводки.
+            strokeOpacity: 0.8,
+            // Ширина обводки в пикселях.
+            strokeWidth: 5
+        });
+
+        circlesMap.set(JSON.stringify({region: region, area: area, id: id, description: description}), myCircle);
+        if (circlesMap.size === 1) {
+            $('#phaseTableButton').show();
+            $('#createRouteButton')[0].disabled = false;
+        }
+
+        // Добавляем круг на карту.
+        map.geoObjects.add(myCircle);
+    }
+
     function deleteCircle(map, circle, pos, description) {
         map.geoObjects.remove(circle);
         circlesMap.delete(JSON.stringify(pos));
@@ -138,42 +177,7 @@ ymaps.ready(function () {
             pos: {region: region, area: area, id: id}
         });
 
-        // Создаем круг.
-        let myCircle = new ymaps.Circle([
-            // Координаты центра круга.
-            coordinates,
-            // Радиус круга в метрах.
-            radiusCalculate(map.getZoom())
-        ], {
-            // Описываем свойства круга.
-            // Содержимое балуна.
-            // balloonContent: "Радиус круга - 10 км",
-            // Содержимое хинта.
-            hintContent: description
-        }, {
-            // Задаем опции круга.
-            // Включаем возможность перетаскивания круга.
-            draggable: false,
-            // Цвет заливки.
-            // Последний байт (77) определяет прозрачность.
-            // Прозрачность заливки также можно задать используя опцию "fillOpacity".
-            fillColor: "#DB709377",
-            // Цвет обводки.
-            strokeColor: "#990066",
-            // Прозрачность обводки.
-            strokeOpacity: 0.8,
-            // Ширина обводки в пикселях.
-            strokeWidth: 5
-        });
-
-        circlesMap.set(JSON.stringify({region: region, area: area, id: id, description: description}), myCircle);
-        if (circlesMap.size === 1) {
-            $('#phaseTableButton').show();
-            $('#createRouteButton')[0].disabled = false;
-        }
-
-        // Добавляем круг на карту.
-        map.geoObjects.add(myCircle);
+        createCircle(region, area, id, description, coordinates)
 
         //Заполнение структуры для дальнейшей записи в таблицу
         let tflight = [{
