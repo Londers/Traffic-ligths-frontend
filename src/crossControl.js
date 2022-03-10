@@ -97,12 +97,12 @@ $(() => {
 
         ws.onclose = function (evt) {
             console.log('disconnected', evt);
-            alert('Ошибка соединения: ' + closeReason);
+            // alert('Ошибка соединения: ' + closeReason);
             window.close();
         };
 
         ws.onerror = function (evt) {
-            alert(`Ошибка соединения WebSocket, ${evt.reason}`);
+            // alert(`Ошибка соединения WebSocket, ${evt.reason}`);
         }
 
         let changeId = false;
@@ -115,7 +115,7 @@ $(() => {
                 case 'sendB':
                     console.log('sendB');
                     if (!messageData.status) {
-                        alert(messageData.message);
+                        // alert(messageData.message);
                         return;
                     }
                     // if (messageData.state.id !== unmodifiedData.state.id) {
@@ -152,7 +152,7 @@ $(() => {
                 case 'createB':
                     console.log('createB');
                     if (!messageData.status) {
-                        alert(messageData.result.join('\n'))
+                        // alert(messageData.result.join('\n'))
                     } else {
                         location.href = location.pathname + location.search.replace('ID=' + unmodifiedData.state.id, 'ID=' + $('#id').val());
                     }
@@ -516,7 +516,7 @@ $(() => {
             error: function (request) {
                 // console.log(request.status + ' ' + request.responseText);
                 console.log(request.status + ' ' + request.responseText);
-                alert(JSON.parse(request.responseText).message);
+                // alert(JSON.parse(request.responseText).message);
                 window.location.href = window.location.origin;
             }
         });

@@ -735,11 +735,11 @@ ymaps.ready(function () {
 
     ws.onclose = function (evt) {
         console.log('disconnected', evt);
-        alert('Ошибка соединения: ' + closeReason);
+        // alert('Ошибка соединения: ' + closeReason);
     };
 
     ws.onerror = function (evt) {
-        alert(`Ошибка соединения WebSocket, ${evt.reason}`);
+        // alert(`Ошибка соединения WebSocket, ${evt.reason}`);
     }
 
     //Функция для обновления статусов контроллеров в реальном времени
@@ -936,7 +936,7 @@ ymaps.ready(function () {
             }
             case 'createRoute':
                 if (data.error) {
-                    alert(data.error);
+                    // alert(data.error);
                     return;
                 }
                 allRoutesList.push(data.route);

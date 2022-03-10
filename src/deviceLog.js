@@ -104,7 +104,7 @@ $(function () {
         },
         error: function (request) {
             console.log(request.status + ' ' + request.responseText);
-            alert(JSON.parse(request.responseText).message);
+            // alert(JSON.parse(request.responseText).message);
         }
     });
     $('input[data-field="time"]').parent().remove();
@@ -182,7 +182,7 @@ function getLogs(start, end, chosenTimeFlag, remoteOpenFlag) {
         },
         error: function (request) {
             console.log(request.status + ' ' + request.responseText);
-            alert(JSON.parse(request.responseText).message);
+            // alert(JSON.parse(request.responseText).message);
         }
     });
     console.log(toSend);

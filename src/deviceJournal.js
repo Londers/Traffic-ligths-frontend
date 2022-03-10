@@ -36,7 +36,7 @@ $(function () {
         },
         error: function (request) {
             console.log(request.status + ' ' + request.responseText);
-            alert(JSON.parse(request.responseText).message);
+            // alert(JSON.parse(request.responseText).message);
         }
     });
 
@@ -72,7 +72,7 @@ function getJournals() {
         },
         error: function (request) {
             console.log(request.status + ' ' + request.responseText);
-            alert(JSON.parse(request.responseText).message);
+            // alert(JSON.parse(request.responseText).message);
         }
     });
 }
@@ -101,7 +101,7 @@ function clearJournals() {
         },
         error: function (request) {
             console.log(request.status + ' ' + request.responseText);
-            alert(JSON.parse(request.responseText).message);
+            // alert(JSON.parse(request.responseText).message);
         }
     });
 }

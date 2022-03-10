@@ -61,7 +61,7 @@ $(function () {
             //     $('#newPasswordForm').append('<div style="color: red;" id="newPasswordMsg"><h5>Пароль содержит недопустимые символы</h5></div>');
             // }
             console.log(request.status + ' ' + request.responseText);
-            alert(JSON.parse(request.responseText).message);
+            // alert(JSON.parse(request.responseText).message);
         }
     });
 
@@ -80,7 +80,7 @@ $(function () {
             // data: JSON.stringify(toSend),
             error: function (request) {
                 console.log(request.status + ' ' + request.responseText);
-                alert(JSON.parse(request.responseText).message);
+                // alert(JSON.parse(request.responseText).message);
             }
         });
     });

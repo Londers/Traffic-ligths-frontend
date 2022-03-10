@@ -383,7 +383,7 @@ ymaps.ready(function () {
             },
             error: function (request) {
                 console.log(request.status + ' ' + request.responseText);
-                alert(JSON.parse(request.responseText).message);
+                // alert(JSON.parse(request.responseText).message);
             }
         });
 
@@ -405,7 +405,7 @@ ymaps.ready(function () {
                 $('#newLicenseKey').parent().find('p').remove();
                 $('#newLicenseKey').parent().append('<p style="color: red;">' + request.responseJSON.message + '</p>');
                 console.log(request.status + ' ' + request.responseText);
-                alert(JSON.parse(request.responseText).message);
+                // alert(JSON.parse(request.responseText).message);
             }
         });
     });
@@ -549,7 +549,7 @@ ymaps.ready(function () {
                     success: function (data) {
                         console.log(data.message);
                         $('#changeDialog').dialog('close');
-                        // alert('Пожалуйста, войдите в систему снова');
+                        alert('Пожалуйста, войдите в систему снова');
                         authorizedFlag = false;
                         manageFlag = false;
                         logDeviceFlag = false;
@@ -569,7 +569,7 @@ ymaps.ready(function () {
                             $('#newPasswordForm').append('<div style="color: red;" id="newPasswordMsg"><h5>Пароль содержит недопустимые символы</h5></div>');
                         }
                         console.log(request.status + ' ' + request.responseText);
-                        alert(JSON.parse(request.responseText).message);
+                        // alert(JSON.parse(request.responseText).message);
                     }
                 });
             },
@@ -691,12 +691,12 @@ ymaps.ready(function () {
 
     ws.onclose = function (evt) {
         console.log('disconnected', evt);
-        alert('Ошибка соединения: ' + closeReason);
+        // alert('Ошибка соединения: ' + closeReason);
         setTimeout(() => location.reload(), 2000);
     };
 
     ws.onerror = function (evt) {
-        alert(`Ошибка соединения WebSocket, ${evt.reason}`);
+        // alert(`Ошибка соединения WebSocket, ${evt.reason}`);
     }
 
     // При наличи ошибков входов и/или статистики меняет картинку статуса на картинку с ошибкой
@@ -887,7 +887,7 @@ ymaps.ready(function () {
                             },
                             error: function (request) {
                                 console.log(request.status + ' ' + request.responseText);
-                                alert(JSON.parse(request.responseText).message);
+                                // alert(JSON.parse(request.responseText).message);
                             }
                         });
                     } else {
@@ -948,7 +948,7 @@ ymaps.ready(function () {
                 $('#password').val('');
                 deleteAreasLayout(map);
                 $('#workPlace')[0].innerText = 'АСУДД "Микро-М" ' + '\nАРМ';
-                if (data.message !== undefined) alert(data.message);
+                if (data.message !== undefined) // alert(data.message);
                 // location.href = location.origin;
                 break;
             case 'checkConn':

@@ -152,7 +152,7 @@ $(function () {
 
     ws.onerror = function (evt) {
         console.log('WebSocket error:', evt);
-        alert('Произошла ошибка WebSocket: ' + JSON.stringify(evt));
+        // alert('Произошла ошибка WebSocket: ' + JSON.stringify(evt));
         // window.close();
     };
 
@@ -216,7 +216,7 @@ $(function () {
 
     ws.onclose = function (evt) {
         console.log('disconnected', evt);
-        alert('Соединение разорвано: ' + closeReason);
+        // alert('Соединение разорвано: ' + closeReason);
     };
 
     //Всплывающее окно для изменения настроек GPRS

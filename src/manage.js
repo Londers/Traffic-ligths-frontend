@@ -79,7 +79,7 @@ $(function () {
                     data: JSON.stringify(toSend),
                     error: function (request) {
                         console.log(request.status + ' ' + request.responseText);
-                        alert(JSON.parse(request.responseText).message);
+                        // alert(JSON.parse(request.responseText).message);
                     }
                 });
 
@@ -146,7 +146,7 @@ $(function () {
                     data: JSON.stringify(toSend),
                     error: function (request) {
                         console.log(request.status + ' ' + request.responseText);
-                        alert(JSON.parse(request.responseText).message);
+                        // alert(JSON.parse(request.responseText).message);
                     }
                 });
             },
@@ -261,7 +261,7 @@ $(function () {
             data: JSON.stringify(loginToSend),
             error: function (request) {
                 console.log(request.status + ' ' + request.responseText);
-                alert(JSON.parse(request.responseText).message);
+                // alert(JSON.parse(request.responseText).message);
             }
         });
     });
@@ -329,7 +329,7 @@ $(function () {
             data: JSON.stringify({login: login[0]}),
             error: function (request) {
                 console.log(request.status + ' ' + request.responseText);
-                alert(JSON.parse(request.responseText).message);
+                // alert(JSON.parse(request.responseText).message);
             }
         });
     });
@@ -433,7 +433,7 @@ function getUsers($table) {
         },
         error: function (request) {
             console.log(request.status + ' ' + request.responseText);
-            alert(JSON.parse(request.responseText).message);
+            // alert(JSON.parse(request.responseText).message);
         }
     });
 

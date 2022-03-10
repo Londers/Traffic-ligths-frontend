@@ -41,7 +41,7 @@ function load($table, firstLoadFlag) {
 		},
 		error: function (request) {
             console.log(request.status + ' ' + request.responseText);
-            alert(JSON.parse(request.responseText).message);
+            // alert(JSON.parse(request.responseText).message);
         }
 	});
 	if(firstLoadFlag) {

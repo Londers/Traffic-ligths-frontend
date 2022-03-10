@@ -23,7 +23,7 @@ $(document).ready(function () {
 		},
 		error: function (request) {
 			console.log(request.status + ' ' + request.responseText);
-			alert(JSON.parse(request.responseText).message);
+			// alert(JSON.parse(request.responseText).message);
 		}
 	});
 
@@ -44,7 +44,7 @@ function getLog(logName, $table) {
 		},
 		error: function (request) {
 			console.log(request.status + ' ' + request.responseText);
-			alert(JSON.parse(request.responseText).message);
+			// alert(JSON.parse(request.responseText).message);
 			//			location.href = window.location.origin;
 		}
 	});
