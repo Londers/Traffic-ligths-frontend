@@ -10,10 +10,12 @@ let coordsSave = [];
 let fixationFlag = false;
 let fragments = [];
 let tflights = [];
+let routeTFLights = [];
 let zoom = 19
 let ideviceSave = -1;
 
 let creatingMode = false;
+let executionFlag = false;
 
 class tfLink {
     constructor() {
@@ -137,6 +139,69 @@ class wayPoint {
     }
 }
 
+class LinkedList {
+    constructor() {
+        this.nodes = [];
+    }
+
+    get size() {
+        return this.nodes.length;
+    }
+
+    get head() {
+        return this.size ? this.nodes[0] : null;
+    }
+
+    get tail() {
+        return this.size ? this.nodes[this.size - 1] : null;
+    }
+
+    insertAt(index, value) {
+        const previousNode = this.nodes[index - 1] || null;
+        const nextNode = this.nodes[index] || null;
+        const node = {value, next: nextNode};
+
+        if (previousNode) previousNode.next = node;
+        this.nodes.splice(index, 0, node);
+    }
+
+    insertFirst(value) {
+        this.insertAt(0, value);
+    }
+
+    insertLast(value) {
+        this.insertAt(this.size, value);
+    }
+
+    getAt(index) {
+        return this.nodes[index];
+    }
+
+    removeAt(index) {
+        const previousNode = this.nodes[index - 1];
+        const nextNode = this.nodes[index + 1] || null;
+
+        if (previousNode) previousNode.next = nextNode;
+
+        return this.nodes.splice(index, 1);
+    }
+
+    clear() {
+        this.nodes = [];
+    }
+
+    reverse() {
+        this.nodes = this.nodes.reduce(
+            (acc, {value}) => [{value, next: acc[0] || null}, ...acc],
+            []
+        );
+    }
+
+    * [Symbol.iterator]() {
+        yield* this.nodes;
+    }
+}
+
 let currentTfId = '';
 let currentTfLink = new tfLink();
 let addObjectsArray = [];
@@ -156,7 +221,7 @@ function getUniqueId(trafficLight) {
     return trafficLight.region.num + '-' + trafficLight.area.num + '-' + trafficLight.ID;
 }
 
-function getPhase(curr, from, to) {
+function getPhase(from, curr, to) {
     return Object.values(tfLinksArray.find(tfl => tfl.id === curr).tflink).find(cp => cp.Id === from).getPhaseToObj(to);
 }
 
@@ -191,7 +256,7 @@ function createCircle(region, area, id, description, coordinates) {
     });
 
     circlesMap.set(JSON.stringify({region: region, area: area, id: id, description: description}), myCircle);
-
+    if (circlesMap.size > 2) $('#startRouteButton')[0].hidden = false
     // Добавляем круг на карту.
     map.geoObjects.add(myCircle);
 }
@@ -206,6 +271,8 @@ function deleteCircle(map, circle, pos, description) {
     $('#navTable').bootstrapTable('remove', {field: 'tflight', values: [description]});
 
     makeSelects();
+
+    if (circlesMap.size === 0) $('#startRouteButton')[0].hidden = true
 }
 
 function deleteAllCircles() {
@@ -258,9 +325,54 @@ function makeSelects() {
     })
 }
 
-ymaps.ready(function () {
+const sendPhasesMap = new LinkedList();
 
+function fillTFLightsTable() {
+    const tableContent = [];
+    routeTFLights.forEach((tfl, index) => {
+        if ((index !== 0) && (index < (routeTFLights.length - 1))) {
+            tableContent.push({
+                id: index + 1,
+                status: tfl.tlsost.num,
+                tflight: tfl.description,
+                idevice: tfl.idevice,
+            });
+        }
+        sendPhasesMap.insertFirst({id: getUniqueId(tfl), phase: -1})
+    })
+
+    // sendPhasesMap.forEach()
+
+    // Object.keys(sendPhasesMap).forEach((id, index) => {
+    //     if ((index > 0) && (index < (sendPhasesMap.size - 1))) {
+    //         sendPhasesMap[id] = getPhase(Object.keys(sendPhasesMap)[index - 1], id, Object.keys(sendPhasesMap)[index + 1])
+    //     }
+    // })
+
+    console.log(sendPhasesMap)
+
+    $('#navTable').bootstrapTable('load', tableContent)
+}
+
+ymaps.ready(function () {
     $('#controlModeButton')[0].disabled = true;
+    $('#startRouteButton')[0].hidden = true
+    $('#endRouteButton')[0].hidden = true
+
+    $('#startRouteButton').on('click', () => {
+        executionFlag = true
+        $('#endRouteButton')[0].hidden = !$('#endRouteButton')[0].hidden
+        $('#startRouteButton')[0].hidden = true
+        deleteAllCircles();
+        fillTFLightsTable()
+    })
+
+    $('#endRouteButton').on('click', () => {
+        executionFlag = false
+        $('#endRouteButton')[0].hidden = true
+        $('#startRouteButton')[0].hidden = false
+    })
+
     // $('#phaseTableDialog').find('div.fixed-table-body').css('max-height', window.innerHeight * 0.8)
     $('[class~=no-records-found] td').text('Записей не найдено');
 
@@ -453,31 +565,41 @@ ymaps.ready(function () {
                     tfLinksArray.push({id: link.id, tflink});
                 });
                 break;
-            //  case 'repaint':
-            //     map.geoObjects.removeAll();
-            //     //Разбор полученной от сервера информации
-            //     data.tflight.forEach(trafficLight => {
-            //         IDs.push(trafficLight.region.num + '-' + trafficLight.area.num + '-' + trafficLight.ID);
-            //         //Создание меток контроллеров на карте
-            //         let placemark = new ymaps.Placemark([trafficLight.points.Y, trafficLight.points.X], {
-            //             balloonContent: 'balloon',
-            //             hintContent: trafficLight.description + '<br>' + trafficLight.idevice
-            //         }, {
-            //             iconLayout: createChipsLayout(function (zoom) {
-            //                 // Размер метки будет определяться функией с оператором switch.
-            //                 return calculate(zoom);
-            //             }, trafficLight.tlsost.num),
-            //         });
-            //         //Функция для вызова АРМ нажатием на контроллер
-            //         placemark.events.add('click', function () {
-            //             handlePlacemarkClick(map, trafficLight);
-            //         });
-            //         //Добавление метки контроллера на карту
-            //         map.geoObjects.add(placemark);
-            //     });
-            //     areaZone = data.areaZone;
-            //     createAreasLayout(map);
-            //     break;
+            case 'repaint': {
+                let execWaiter = setInterval(() => {
+                    if (!executionFlag) {
+                        map.geoObjects.removeAll();
+                        //Разбор полученной от сервера информации
+                        data.tflight.forEach(trafficLight => {
+                            IDs.push(trafficLight.region.num + '-' + trafficLight.area.num + '-' + trafficLight.ID);
+                            //Создание меток контроллеров на карте
+                            let placemark = new ymaps.Placemark([trafficLight.points.Y, trafficLight.points.X], {
+                                hintContent: trafficLight.description
+                            }, {
+                                iconLayout: createChipsLayout(function (zoom) {
+                                    // Размер метки будет определяться функией с оператором switch.
+                                    return calculate(zoom);
+                                }, trafficLight.tlsost.num),
+                            });
+                            placemark.pos = {
+                                region: trafficLight.region.num,
+                                area: trafficLight.area.num,
+                                id: trafficLight.ID
+                            };
+                            //Функция для вызова АРМ нажатием на контроллер
+                            placemark.events.add('click', function () {
+                                handleClick(map, trafficLight);
+                            });
+                            //Добавление метки контроллера на карту
+                            map.geoObjects.add(placemark);
+                        });
+                        // areaZone = data.areaZone;
+                        // createAreasLayout(map);
+                        clearInterval(execWaiter);
+                    }
+                }, 5000);
+                break;
+            }
             case 'phases':
                 if (data.phases[0].phase === 9) return;
                 $('#table tbody tr[style="background-color: lightgreen;"]').css({backgroundColor: 'white'})
@@ -579,23 +701,42 @@ ymaps.ready(function () {
         }
     }
 
+    function imitateTFLFromADdObj(addObj) {
+        return {
+            ID: addObj.id,
+            area: {num: toString(addObj.area)},
+            region: {num: toString(addObj.region)},
+            description: addObj.description
+        }
+    }
+
     function handleAddObjClick(pos) {
+        let returnFlag = false
         if (creatingMode) {
             handleAddObjDelete(pos);
-        } else {
+        } else if (!executionFlag) {
             circlesMap.forEach((value, keyJson) => {
                 const key = JSON.parse(keyJson);
                 if ((key.region === pos.region) && (key.area === pos.area) && (key.id === pos.id)) {
                     deleteCircle(map, value, key, pos.description);
-                    // returnFlag = true;
+                    returnFlag = true;
                     // if (circlesMap.size === 0) {
-                    //     $('#phaseTableButton').hide();
+                    //     $('#phaseTableButton')[0].hidden = true;
                     //     $('#createRouteButton')[0].disabled = true;
                     // }
                 }
             });
-            console.log('WORK IN PROGRESS');
-            // todo handle control mode
+
+            const index = routeTFLights.findIndex(tflight => JSON.stringify(tflight) === JSON.stringify(imitateTFLFromADdObj(pos)))
+            if (index === -1) {
+                routeTFLights.push(imitateTFLFromADdObj(pos))
+            } else {
+                routeTFLights.splice(index, 1)
+            }
+
+            if (returnFlag) return
+            createCircle(pos.region, pos.area, pos.id, pos.description,
+                [pos.dgis[0], pos.dgis[1]])
         }
     }
 
@@ -815,7 +956,7 @@ ymaps.ready(function () {
                 let phase = 1;
                 if (tfLinksArray.some(tfl => tfl.id === getUniqueId(trafficLight))) {
                     const tfl = tfLinksArray.find(tflink => tflink.id === getUniqueId(trafficLight)).tflink;
-                    phase = getPhase(getUniqueId(trafficLight), tfl[directions[i].en].Id, $($('td.to')[i]).find('div')[j].innerText) ?? 1
+                    phase = getPhase(tfl[directions[i].en].Id, getUniqueId(trafficLight), $($('td.to')[i]).find('div')[j].innerText) ?? 1
                 }
                 const wayPointsArr = currentTfLink[directions[i].en].WayPointsArray ?? [];
                 if (wayPointsArr.some(wp => wp.Id === val.innerText)) {
@@ -880,6 +1021,8 @@ ymaps.ready(function () {
             fillTable(trafficLight);
             currentTfId = getUniqueId(trafficLight);
             $('.ui-dialog-title')[1].innerText = trafficLight.description
+        } else if (executionFlag) {
+            console.log("send phase")
         } else {
             circlesMap.forEach((value, keyJson) => {
                 const key = JSON.parse(keyJson);
@@ -887,12 +1030,19 @@ ymaps.ready(function () {
                     deleteCircle(map, value, key, trafficLight.description);
                     returnFlag = true;
                     // if (circlesMap.size === 0) {
-                    //     $('#phaseTableButton').hide();
+                    //     $('#phaseTableButton')[0].hidden = true;
                     //     $('#createRouteButton')[0].disabled = true;
                     // }
                 }
             });
             console.log('click');
+
+            const index = routeTFLights.findIndex(tflight => JSON.stringify(tflight) === JSON.stringify(trafficLight))
+            if (index === -1) {
+                routeTFLights.push(trafficLight)
+            } else {
+                routeTFLights.splice(index, 1)
+            }
 
             if (returnFlag) return
             createCircle(trafficLight.region.num, trafficLight.area.num, trafficLight.ID, trafficLight.description,
