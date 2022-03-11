@@ -220,9 +220,12 @@ function getUniqueId(trafficLight) {
 }
 
 function getPhase(from, curr, to) {
-    return Object.values(tfLinksArray.find(tfl => tfl.id === curr).tflink).find(cp => cp.Id === from).getPhaseToObj(to);
+    if (tfLinksArray.find(tfl => tfl.id === curr) === undefined) {
+        alert('Отсуствует массив связности на перкрёстке' + curr)
+        return undefined;
+    }
+    return Object.values(tfLinksArray.find(tfl => tfl.id === curr).tflink).find(cp => cp.Id === from)?.getPhaseToObj(to);
 }
-
 
 function createCircle(region, area, id, description, coordinates) {
     // Создаем круг.
@@ -332,7 +335,7 @@ function fillTFLightsTable() {
             tableContent.push({
                 id: index,
                 status: tfl.tlsost.num,
-                phase: getPhase(getUniqueId(routeTFLights[index - 1]), getUniqueId(tfl), getUniqueId(routeTFLights[index + 1])),
+                toPhase: getPhase(getUniqueId(routeTFLights[index - 1]), getUniqueId(tfl), getUniqueId(routeTFLights[index + 1])),
                 tflight: tfl.description,
                 idevice: tfl.idevice,
             });
@@ -350,10 +353,27 @@ function fillTFLightsTable() {
 
     // console.log(sendPhasesMap)
 
-    $('#navTable').bootstrapTable('load', tableContent)
+    $('#navTable').bootstrapTable('load', tableContent);
+    fillStatuses();
+    fillPhases();
+}
+
+function fillStatuses() {
+    $('#navTable').bootstrapTable('getData').map(row => row.status).forEach((status, index) => {
+        $($('#navTable tr')[index + 1]).find('td')[1].innerHTML = '<div class="placemark"  style="background-image:url(\'' + location.origin +
+            `/free/img/trafficLights/${status}.svg');` +
+            `background-repeat: no-repeat; background-size: 50%; min-height: 50px;"><h2 id="asterisk${index}">*</h2></div>`;
+    })
+}
+
+function fillPhases() {
+    $('#navTable').bootstrapTable('getData').forEach(row => {
+
+    })
 }
 
 let lastRoute;
+
 function createRoute() {
     if (lastRoute !== undefined) map.geoObjects.remove(lastRoute)
     let coordinates = [];
@@ -409,6 +429,12 @@ ymaps.ready(function () {
 
     $('#endRouteButton').on('click', () => {
         executionFlag = false
+        if (lastRoute !== undefined) {
+            map.geoObjects.remove(lastRoute);
+            lastRoute = undefined;
+            routeTFLights = [];
+            $('#navTable').bootstrapTable('removeAll')
+        }
         $('#endRouteButton')[0].hidden = true
         $('#startRouteButton')[0].hidden = false
     })
@@ -493,6 +519,31 @@ ymaps.ready(function () {
     }
 
 
+    function createAddObjects() {
+        addObjectsArray?.forEach(addObj => {
+            let placemark = new ymaps.Placemark(addObj.dgis, {
+                // balloonContentHeader: 'Выберите фазу',
+                // balloonContentBody: 'Содержимое <em>балуна</em> метки',
+                // balloonContentFooter: 'Подвал',
+                hintContent: `[${addObj.region}, ${addObj.area}, ${addObj.id}]<br>` + addObj.description
+            }, {
+                iconLayout: createChipsLayout(function (zoom) {
+                    // Размер метки будет определяться функией с оператором switch.
+                    return calculate(zoom);
+                }, 'testPoint'),
+            });
+            placemark.pos = addObj;
+            //Функция для вызова АРМ нажатием на контроллер
+            placemark.events.add('click', function (e) {
+                handleAddObjClick(e.originalEvent.target.pos);
+                console.log('testPoint click');
+                // handlePlacemarkClick(map, trafficLight, placemark);
+            });
+            //Добавление метки контроллера на карту
+            map.geoObjects.add(placemark);
+        })
+    }
+
     //Функция для обновления статусов контроллеров в реальном времени
     ws.onmessage = function (evt) {
         let allData = JSON.parse(evt.data);
@@ -551,7 +602,7 @@ ymaps.ready(function () {
                     // console.log('Обновление');
                     //Обновление статуса контроллера происходит только при его изменении
                     data.tflight.forEach(trafficLight => {
-                        let index = IDs.indexOf(getUniqueId(trafficLight));
+                        // let index = IDs.indexOf(getUniqueId(trafficLight));
                         //Создание меток контроллеров на карте
                         let placemark = new ymaps.Placemark([trafficLight.points.Y, trafficLight.points.X], {
                             // balloonContent: 'Отсутсвует картинка перекрёстка',
@@ -595,6 +646,7 @@ ymaps.ready(function () {
                 let execWaiter = setInterval(() => {
                     if (!executionFlag) {
                         map.geoObjects.removeAll();
+                        createAddObjects();
                         //Разбор полученной от сервера информации
                         data.tflight.forEach(trafficLight => {
                             IDs.push(trafficLight.region.num + '-' + trafficLight.area.num + '-' + trafficLight.ID);
@@ -634,28 +686,7 @@ ymaps.ready(function () {
                 break;
             case 'getAddObjects':
                 addObjectsArray = data.addObjects;
-                data.addObjects?.forEach(addObj => {
-                    let placemark = new ymaps.Placemark(addObj.dgis, {
-                        // balloonContentHeader: 'Выберите фазу',
-                        // balloonContentBody: 'Содержимое <em>балуна</em> метки',
-                        // balloonContentFooter: 'Подвал',
-                        hintContent: `[${addObj.region}, ${addObj.area}, ${addObj.id}]<br>` + addObj.description
-                    }, {
-                        iconLayout: createChipsLayout(function (zoom) {
-                            // Размер метки будет определяться функией с оператором switch.
-                            return calculate(zoom);
-                        }, 'testPoint'),
-                    });
-                    placemark.pos = addObj;
-                    //Функция для вызова АРМ нажатием на контроллер
-                    placemark.events.add('click', function (e) {
-                        handleAddObjClick(e.originalEvent.target.pos);
-                        console.log('testPoint click');
-                        // handlePlacemarkClick(map, trafficLight, placemark);
-                    });
-                    //Добавление метки контроллера на карту
-                    map.geoObjects.add(placemark);
-                })
+                createAddObjects()
                 break;
             case 'createAddObj': {
                 if (data.result) {
