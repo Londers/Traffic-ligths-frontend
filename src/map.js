@@ -491,11 +491,9 @@ ymaps.ready(function () {
         openPage('/arbitraryGS');
     });
 
-    // в разработке
-    $('#charPointsButton').hide()
-    // $('#charPointsButton').on('click', () => {
-    //     openPage('/charPoints');
-    // });
+    $('#charPointsButton').on('click', () => {
+        openPage('/charPoints');
+    });
 
     $('#dropdownConnectionButton').on('click', function () {
         if ($('#dropdownConnectionButton').attr('aria-expanded') === 'true') {
@@ -1267,9 +1265,7 @@ ymaps.ready(function () {
             $('#arbitraryZUButton').hide();
         }
 
-        // в разработке
-        // (xctrlFlag) ? $('#charPointsButton').show() : $('#charPointsButton').hide();
-        $('#charPointsButton').hide();
+        (xctrlFlag) ? $('#charPointsButton').show() : $('#charPointsButton').hide();
     }
 
     let createChipsLayout = function (calculateSize, currnum, rotateDeg) {

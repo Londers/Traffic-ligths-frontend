@@ -95,23 +95,7 @@ ymaps.ready(function () {
     }
 
     function createIdeviceArray() {
-        let tflist = [];
-        let idevices = [];
-        let [region, desc] = $('#routes').val().split('---');
-
-        allRoutesList.forEach(route => {
-            if ((route.region === region) && (route.description === desc)) {
-                tflist = route.listTL;
-            }
-        });
-
-        tflist.forEach(tf => {
-            tflights.forEach(element => {
-                if ((element.region.num === tf.pos.region) && (element.area.num === tf.pos.area) && (element.ID === tf.pos.id)) idevices.push(element.idevice);
-            });
-        });
-
-        return idevices;
+        return Array.from(currentRouteTflights.values()).map(tfl => tfl.idevice)
     }
 
     function handlePhaseCommand(map, idevice) {
@@ -245,7 +229,7 @@ ymaps.ready(function () {
             setTimeout(() => handleSelectChange(rowIndex, true), 1000);
             return;
         }
-        if (currSvg[value - 1] === undefined) $('#cross' + rowIndex).closest('td').next('td')[0].innerHTML = '<td>-</td>';
+        if (currSvg.find(phase => phase.num === value)?.phase === undefined) $('#cross' + rowIndex).closest('td').next('td')[0].innerHTML = '<td>-</td>';
 
         currSvg.forEach(pic => {
             if (pic.num === value) $('#cross' + rowIndex).closest('td').next('td')[0].innerHTML =
@@ -345,6 +329,7 @@ ymaps.ready(function () {
         }
     }
 
+    let svg = {};
     function getPhasesSvg(trafficLights) {
         trafficLights.forEach((trafficLight, index) => {
             getSvg(trafficLight).then(svgData => {
@@ -431,8 +416,6 @@ ymaps.ready(function () {
             $(td).find('select option[selected=selected]').trigger('click');
         })
     }
-
-    let svg = {};
 
     function findIndex(idevice) {
         if ($('#tableCol')[0].style.display === 'none') return -1;
@@ -572,7 +555,7 @@ ymaps.ready(function () {
             $('#createRouteButton')[0].disabled = true;
             $('#phaseTableDialog').dialog('close');
         }
-        delete svg[(pos.region + '/' + pos.area + '/' + pos.id)];
+        delete svg[pos.region + '/' + pos.area + '/' + pos.id];
         currListTL = currListTL.filter(tl => JSON.stringify(tl.pos) !== JSON.stringify(pos))
         routeList = routeList.filter(tl => JSON.stringify(tl.pos) !== JSON.stringify(pos))
         $('#table').bootstrapTable('remove', {field: 'state', values: [true]});
@@ -829,9 +812,8 @@ ymaps.ready(function () {
                     // console.log('Обновление');
                     //Обновление статуса контроллера происходит только при его изменении
                     data.tflight.forEach(trafficLight => {
-                        let id = trafficLight.ID;
-                        let index = IDs.indexOf(trafficLight.region.num + '-' + trafficLight.area.num + '-' + id);
-                        let placemark = new ymaps.Placemark([trafficLight.points.Y, trafficLight.points.X], {
+                        const index = IDs.indexOf(trafficLight.region.num + '-' + trafficLight.area.num + '-' + trafficLight.ID);
+                        const placemark = new ymaps.Placemark([trafficLight.points.Y, trafficLight.points.X], {
                             hintContent: trafficLight.description
                         }, {
                             iconLayout: createChipsLayout(function (zoom) {
@@ -856,9 +838,6 @@ ymaps.ready(function () {
                         if (tableIndex !== -1) {
                             $('#navTable tbody tr').each((i, tr) => {
                                 if (i === tableIndex) {
-                                    // tr.cells[1].innerHTML = '<div class="placemark"  style="background-image:url(\'' + location.origin +
-                                    //     '/free/img/trafficLights/' + trafficLight.tlsost.num + '.svg\');' +
-                                    //     'background-repeat: no-repeat; background-size: 50%; min-height: 50px;"></div>';
                                     $(tr.cells[1]).children().closest('div').css('background-image',
                                         `url('${location.origin}/free/img/trafficLights/${trafficLight.tlsost.num}.svg')`)
                                     asteriskControl($('#navTable').bootstrapTable('getData')[i].idevice, true)
@@ -910,7 +889,6 @@ ymaps.ready(function () {
                 ]);
                 break;
             case 'phases': {
-                // let arr = [{idevice: 159519, phase: 2}];
                 const tableData = $('#navTable').bootstrapTable('getData');
                 tableData.forEach((row, rowIndex) => {
                     data.phases.forEach(phaseRow => {
@@ -921,13 +899,13 @@ ymaps.ready(function () {
 
                             $('#navTable tbody tr')[rowIndex].cells[2].innerHTML =
                                 (phaseRow.phase === 9) ? 'Пром. такт' :
-                                    ((currSvg[phaseRow.phase - 1]) === undefined) ? 'Отсуствует картинка фазы' :
-                                        `<svg width="100%" height="100%"` +
-                                        `style="max-height: 50px; max-width: 50px; min-height: 30px; min-width: 30px;" xmlns="http://www.w3.org/2000/svg"` +
-                                        `xmlns:xlink="http://www.w3.org/1999/xlink">` +
-                                        `<image x="0" y="0" width="100%" height="100%"` +
-                                        `style="max-height: 50px; max-width: 50px; min-height: 30px; min-width: 30px;"` +
-                                        `xlink:href="data:image/png;base64,${currSvg[phaseRow.phase - 1].phase}"></image>` +
+                                    ((currSvg.find(phase => phase.num === phaseRow.phase.toString())?.phase) === undefined) ? `Отсутствует картинка фазы (${phaseRow.phase})` :
+                                        `<svg width="100%" height="100%" ` +
+                                        `style="max-height: 50px; max-width: 50px; min-height: 30px; min-width: 30px;" xmlns="http://www.w3.org/2000/svg" ` +
+                                        `xmlns:xlink="http://www.w3.org/1999/xlink"> ` +
+                                        `<image x="0" y="0" width="100%" height="100%" ` +
+                                        `style="max-height: 50px; max-width: 50px; min-height: 30px; min-width: 30px;" ` +
+                                        `xlink:href="data:image/png;base64,${currSvg.find(phase => phase.num === phaseRow.phase.toString()).phase}"></image>` +
                                         `</svg>`
                         }
                     })
@@ -983,7 +961,7 @@ ymaps.ready(function () {
                 ws.close(1000);
                 break;
             case 'close':
-                closeReason = 'WS Closed by server';
+                // closeReason = 'WS Closed by server';
                 ws.close(1000);
                 window.close();
                 break;

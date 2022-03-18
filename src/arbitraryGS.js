@@ -137,91 +137,30 @@ class wayPoint {
     }
 }
 
-// class LinkedList {
-//     constructor() {
-//         this.nodes = [];
-//     }
-//
-//     get size() {
-//         return this.nodes.length;
-//     }
-//
-//     get head() {
-//         return this.size ? this.nodes[0] : null;
-//     }
-//
-//     get tail() {
-//         return this.size ? this.nodes[this.size - 1] : null;
-//     }
-//
-//     insertAt(index, value) {
-//         const previousNode = this.nodes[index - 1] || null;
-//         const nextNode = this.nodes[index] || null;
-//         const node = {value, next: nextNode};
-//
-//         if (previousNode) previousNode.next = node;
-//         this.nodes.splice(index, 0, node);
-//     }
-//
-//     insertFirst(value) {
-//         this.insertAt(0, value);
-//     }
-//
-//     insertLast(value) {
-//         this.insertAt(this.size, value);
-//     }
-//
-//     getAt(index) {
-//         return this.nodes[index];
-//     }
-//
-//     removeAt(index) {
-//         const previousNode = this.nodes[index - 1];
-//         const nextNode = this.nodes[index + 1] || null;
-//
-//         if (previousNode) previousNode.next = nextNode;
-//
-//         return this.nodes.splice(index, 1);
-//     }
-//
-//     clear() {
-//         this.nodes = [];
-//     }
-//
-//     reverse() {
-//         this.nodes = this.nodes.reduce(
-//             (acc, {value}) => [{value, next: acc[0] || null}, ...acc],
-//             []
-//         );
-//     }
-//
-//     * [Symbol.iterator]() {
-//         yield* this.nodes;
-//     }
-// }
-
 let currentTfId = '';
 let currentTfLink = new tfLink();
 let addObjectsArray = [];
 let tfLinksArray = [];
 let routeList = [];
 let circlesMap = new Map();
+let loopFuncMap = new Map();
+let sendedPhaseSave = new Map();
 let svg = {};
 
 $(() => {
-    $('#tableCol').parent().prepend('<div class="col-md-9 border border-dark" id="map" ' +
+    $('#tableCol').parent().prepend('<div class="col-md-12 border border-dark" id="map" ' +
         `style="min-height: ${window.innerHeight}px; max-width: ${window.innerWidth}px; position: relative; z-index: 1"></div>`
     )
 })
 
 // Извлечение уникальной связки region-area-id
-function getUniqueId(trafficLight) {
-    return trafficLight.region.num + '-' + trafficLight.area.num + '-' + trafficLight.ID;
+function getUniqueId(trafficLight, custom) {
+    return trafficLight.region.num + (custom ?? '-') + trafficLight.area.num + (custom ?? '-') + trafficLight.ID;
 }
 
 function getPhase(from, curr, to) {
     if (tfLinksArray.find(tfl => tfl.id === curr) === undefined) {
-        alert('Отсуствует массив связности на перкрёстке' + curr)
+        alert('Отсутствует массив связности на перкрёстке ' + curr)
         return undefined;
     }
     return Object.values(tfLinksArray.find(tfl => tfl.id === curr).tflink).find(cp => cp.Id === from)?.getPhaseToObj(to);
@@ -314,7 +253,7 @@ function makeSelects() {
     $('#table tbody tr').each((i, tr) => {
         $(tr).find('td').each((j, td) => {
             if (td.cellIndex === 2) {
-                let phases = getPhases(tr.rowIndex - 1); // $(this)[0].innerText.split(',');
+                let phases = getPhases(tr.rowIndex - 1);
                 let optionsHtml = '';
                 phases.phases.forEach(phase => {
                     optionsHtml +=
@@ -326,8 +265,6 @@ function makeSelects() {
     })
 }
 
-// const sendPhasesMap = new LinkedList();
-
 function fillTFLightsTable() {
     const tableContent = [];
     routeTFLights.forEach((tfl, index) => {
@@ -336,26 +273,15 @@ function fillTFLightsTable() {
                 id: index,
                 status: tfl.tlsost.num,
                 toPhase: getPhase(getUniqueId(routeTFLights[index - 1]), getUniqueId(tfl), getUniqueId(routeTFLights[index + 1])),
+                fromPhase: -1,
                 tflight: tfl.description,
                 idevice: tfl.idevice,
             });
         }
-        // sendPhasesMap.insertFirst({id: getUniqueId(tfl), phase: -1})
     })
-
-    // sendPhasesMap.forEach()
-
-    // Object.keys(sendPhasesMap).forEach((id, index) => {
-    //     if ((index > 0) && (index < (sendPhasesMap.size - 1))) {
-    //         sendPhasesMap[id] = getPhase(Object.keys(sendPhasesMap)[index - 1], id, Object.keys(sendPhasesMap)[index + 1])
-    //     }
-    // })
-
-    // console.log(sendPhasesMap)
 
     $('#navTable').bootstrapTable('load', tableContent);
     fillStatuses();
-    fillPhases();
 }
 
 function fillStatuses() {
@@ -366,10 +292,42 @@ function fillStatuses() {
     })
 }
 
-function fillPhases() {
-    $('#navTable').bootstrapTable('getData').forEach(row => {
+function fillPhases(phases) {
+    const tableData = $('#navTable').bootstrapTable('getData');
+    tableData.forEach((row, rowIndex) => {
+        phases.forEach(phaseRow => {
+            if (phaseRow.device === row.idevice) {
 
-    })
+                const tfl = routeTFLights.find(tf => tf.idevice === row.idevice)
+                const currSvg = svg[getUniqueId(tfl, '/')];
+
+                if (sendedPhaseSave.get(tfl.idevice) && (phaseRow.phase === Number($('#navTable').bootstrapTable('getData')[rowIndex].toPhase))) {
+                    asteriskControl(tfl.idevice, true)
+                }
+                $('#navTable tbody tr')[rowIndex].cells[3].innerHTML =
+                    (phaseRow.phase === 9) ? 'Пром. такт' :
+                        ((currSvg.find(phase => phase.num === phaseRow.phase.toString())?.phase) === undefined) ? `Отсутствует картинка фазы (${phaseRow.phase})` :
+                            `<svg width="100%" height="100%" ` +
+                            `style="max-height: 50px; max-width: 50px; min-height: 30px; min-width: 30px;" xmlns="http://www.w3.org/2000/svg" ` +
+                            `xmlns:xlink="http://www.w3.org/1999/xlink"> ` +
+                            `<image x="0" y="0" width="100%" height="100%" ` +
+                            `style="max-height: 50px; max-width: 50px; min-height: 30px; min-width: 30px;" ` +
+                            `xlink:href="data:image/png;base64,${currSvg.find(phase => phase.num === phaseRow.phase.toString()).phase}"></image>` +
+                            `</svg>`
+            }
+        })
+    });
+    $('#navTable').trigger('resize')
+}
+
+function asteriskControl(idevice, sended) {
+    if (executionFlag) {
+        $('#asterisk' + $('#navTable').bootstrapTable('getData').findIndex(row => row.idevice === idevice)).css('color', sended ? 'green' : 'red');
+    }
+}
+
+function createIdeviceArray() {
+    return routeTFLights.slice(1, routeTFLights.length - 1).map(tfl => tfl.idevice)
 }
 
 let lastRoute;
@@ -399,12 +357,6 @@ function createRoute() {
     makeSelects();
 }
 
-function getStatus(position) {
-    return tflights.find(element => (
-        (element.region.num === position.region) && (element.area.num === position.area) && (element.ID === position.id)
-    ))?.tlsost.num;
-}
-
 ymaps.ready(function () {
     $('#controlModeButton')[0].disabled = true;
     $('#startRouteButton')[0].hidden = true
@@ -414,6 +366,11 @@ ymaps.ready(function () {
         executionFlag = true
         $('#endRouteButton')[0].hidden = !$('#endRouteButton')[0].hidden
         $('#startRouteButton')[0].hidden = true
+
+        $('.col-md-12').removeClass('col-md-12').addClass('col-md-8')
+        map.container.fitToViewport()
+        $('#tableCol')[0].hidden = false
+
         deleteAllCircles();
         fillTFLightsTable();
         createRoute();
@@ -421,10 +378,17 @@ ymaps.ready(function () {
             $(tr).on('click', () => {
                 map.setCenter([routeTFLights[tr.rowIndex]?.points.Y, routeTFLights[tr.rowIndex]?.points.X], map.getZoom());
             });
-            // tr.cells[1].innerHTML = '<div class="placemark"  style="background-image:url(\'' + location.origin +
-            //     '/free/img/trafficLights/' + (getStatus(routeTFLights[i + 1]) ?? 'empty') + '.svg\');' +
-            //     'background-repeat: no-repeat; background-size: 50%; min-height: 50px;"><h2 id="asterisk' + i + '">*</h2></div>';
         });
+        getPhasesSvg().then((success) => {
+            if (success) {
+                replacePhasesWithSvg()
+            }
+            $('#navTable').trigger('resize')
+        }).catch((errorTfl) => {
+            console.log('Ошибка получения svg', errorTfl)
+        })
+        $($('#navTable tbody tr')[0]).trigger('click');
+        ws.send(JSON.stringify({type: 'route', devices: createIdeviceArray(), turnOn: true}));
     })
 
     $('#endRouteButton').on('click', () => {
@@ -436,7 +400,15 @@ ymaps.ready(function () {
             $('#navTable').bootstrapTable('removeAll')
         }
         $('#endRouteButton')[0].hidden = true
-        $('#startRouteButton')[0].hidden = false
+
+        $('.col-md-8').removeClass('col-md-8').addClass('col-md-12')
+        map.container.fitToViewport()
+        $('#tableCol')[0].hidden = true
+
+        for (let [key] of sendedPhaseSave) modifiedControlSend({id: key, cmd: 9, param: 9});
+        sendedPhaseSave = new Map();
+        $('#createModeButton')[0].disabled = false;
+        ws.send(JSON.stringify({type: 'route', devices: [], turnOn: false}));
     })
 
     // $('#phaseTableDialog').find('div.fixed-table-body').css('max-height', window.innerHeight * 0.8)
@@ -466,6 +438,19 @@ ymaps.ready(function () {
         circlesControl(map);
     });
 
+    $('#map').on('mousedown', function (evt) {
+        if (evt.which === 3) {
+            let sended = false;
+            sendedPhaseSave.forEach((value, key) => {
+                if (value && !sended) {
+                    sendedPhaseSave.set(key, false);
+                    modifiedControlSend({id: key, cmd: 9, param: 9});
+                    sended = true;
+                }
+            })
+        }
+    });
+
     $('#dropdownControlButton').trigger('click');
 
     $('#fixationButton').on('click', function () {
@@ -486,17 +471,14 @@ ymaps.ready(function () {
     $('#createModeButton').on('click', function () {
         creatingMode = true;
         $('#controlModeButton')[0].disabled = false;
+        $('#startRouteButton')[0].hidden = true;
         $('#createModeButton')[0].disabled = true;
-        $('.col-md-9').removeClass('col-md-9').addClass('col-md-12')
-        map.container.fitToViewport()
     });
 
     $('#controlModeButton').on('click', function () {
         creatingMode = false;
         $('#controlModeButton')[0].disabled = true;
         $('#createModeButton')[0].disabled = false;
-        $('.col-md-12').removeClass('col-md-12').addClass('col-md-9')
-        map.container.fitToViewport()
     });
 
     let closeReason = '';
@@ -598,11 +580,13 @@ ymaps.ready(function () {
             case 'tflight':
                 if (data.tflight === null) {
                     console.log('null');
-                } else {
+                    // } else if(data){ //
+
+                } else { //  tflights всё верно, на карте хуйня не меняется
                     // console.log('Обновление');
                     //Обновление статуса контроллера происходит только при его изменении
                     data.tflight.forEach(trafficLight => {
-                        // let index = IDs.indexOf(getUniqueId(trafficLight));
+                        let index = IDs.indexOf(getUniqueId(trafficLight));
                         //Создание меток контроллеров на карте
                         let placemark = new ymaps.Placemark([trafficLight.points.Y, trafficLight.points.X], {
                             // balloonContent: 'Отсутсвует картинка перекрёстка',
@@ -618,12 +602,25 @@ ymaps.ready(function () {
                             handlePlacemarkClick(map, trafficLight, placemark);
                         });
 
+                        //Замена метки контроллера со старым состоянием на метку с новым
+                        map.geoObjects.splice(index, 1, placemark);
+
                         tflights.forEach((tflight, index) => {
                             if ((tflight.region.num === trafficLight.region.num) &&
                                 (tflight.area.num === trafficLight.area.num) && (tflight.ID === trafficLight.ID)) {
                                 tflights[index].tlsost = trafficLight.tlsost;
                             }
                         });
+
+                        let tableIndex = executionFlag ? $('#navTable').bootstrapTable('getData').findIndex(row => row.idevice === trafficLight.idevice) : -1;
+                        if (tableIndex !== -1) {
+                            $('#navTable tbody tr').each((i, tr) => {
+                                if (i === tableIndex) {
+                                    $(tr.cells[1]).children().closest('div').css('background-image',
+                                        `url('${location.origin}/free/img/trafficLights/${trafficLight.tlsost.num}.svg')`)
+                                }
+                            });
+                        }
                     })
                 }
                 break;
@@ -679,13 +676,10 @@ ymaps.ready(function () {
                 break;
             }
             case 'phases':
-                if (data.phases[0].phase === 9) return;
-                $('#table tbody tr[style="background-color: lightgreen;"]').css({backgroundColor: 'white'})
-                $(`#table tbody td:hidden:contains("${data.phases[0].phase}")`).parent().css({backgroundColor: 'lightgreen'})
-                // console.log('phases', data)
+                fillPhases(data.phases)
                 break;
             case 'getAddObjects':
-                addObjectsArray = data.addObjects;
+                addObjectsArray = data.addObjects ?? [];
                 createAddObjects()
                 break;
             case 'createAddObj': {
@@ -769,7 +763,7 @@ ymaps.ready(function () {
     }
 
     function handleAddObjClick(pos) {
-        let returnFlag = false
+        let deletedFlag = false
         if (creatingMode) {
             handleAddObjDelete(pos);
         } else if (!executionFlag) {
@@ -777,11 +771,7 @@ ymaps.ready(function () {
                 const key = JSON.parse(keyJson);
                 if ((key.region === pos.region) && (key.area === pos.area) && (key.id === pos.id)) {
                     deleteCircle(map, value, key, pos.description);
-                    returnFlag = true;
-                    // if (circlesMap.size === 0) {
-                    //     $('#phaseTableButton')[0].hidden = true;
-                    //     $('#createRouteButton')[0].disabled = true;
-                    // }
+                    deletedFlag = true;
                 }
             });
 
@@ -792,9 +782,10 @@ ymaps.ready(function () {
                 routeTFLights.splice(index, 1)
             }
 
-            if (returnFlag) return
-            createCircle(pos.region, pos.area, pos.id, pos.description,
-                [pos.dgis[0], pos.dgis[1]])
+            if (!deletedFlag) {
+                createCircle(pos.region, pos.area, pos.id, pos.description, [pos.dgis[0], pos.dgis[1]])
+            }
+            $('#createModeButton')[0].disabled = circlesMap.size !== 0
         }
     }
 
@@ -971,7 +962,74 @@ ymaps.ready(function () {
         currentTfId = '';
     }
 
-    function getPhasesSvg(trafficLight) {
+    function replacePhasesWithSvg() {
+        $('#navTable').bootstrapTable('getData').forEach((row, index) => {
+            const tfl = routeTFLights.find(tf => tf.idevice === row.idevice)
+            const currSvg = svg[getUniqueId(tfl, '/')];
+            if (row.toPhase === undefined) {
+                alert('Отсутствует фаза в массиве связности на перкрёстке ' + row.idevice)
+                $('#endRouteButton').trigger('click')
+                return
+            }
+
+            $('#navTable tbody tr')[index].cells[2].innerHTML = ((currSvg?.find(phase => phase.num === row.toPhase)?.phase) === undefined) ?
+                (`Отсутствует картинка фазы (${row.toPhase})`) :
+                (`<svg width="100%" height="100%" ` +
+                    `style="max-height: 50px; max-width: 50px; min-height: 30px; min-width: 30px;" xmlns="http://www.w3.org/2000/svg" ` +
+                    `xmlns:xlink="http://www.w3.org/1999/xlink"> ` +
+                    `<image x="0" y="0" width="100%" height="100%" ` +
+                    `style="max-height: 50px; max-width: 50px; min-height: 30px; min-width: 30px;" ` +
+                    `xlink:href="data:image/png;base64,${currSvg.find(phase => phase.num === row.toPhase).phase}"></image>` +
+                    `</svg>`)
+            $('#navTable tbody tr')[index].cells[3].innerHTML = 'Ожидание фазы';
+        })
+    }
+
+    function getPhasesSvg() {
+        let count = routeTFLights.length - 2;
+        return new Promise(function (resolve, reject) {
+            routeTFLights.slice(1, routeTFLights.length - 1).forEach(trafficLight => {
+                getSvgData(trafficLight).then(svgData => {
+                    // todo Жду обновлённые картинки от Андрея
+                    // let x2js = new X2JS();
+                    // let data = x2js.xml2json(svgData);
+                    // svg.push(data.svg.mphase.phase)
+                    $('body').append('<div id="kostil" class="img-fluid" style="display: none" />');
+                    $('#kostil').prepend(svgData.children[0].outerHTML.replace('let currentPhase', 'var currentPhase'));
+
+                    const uniqueId = getUniqueId(trafficLight, '/');
+                    if (typeof getPhasesMass === "function") {
+                        svg[uniqueId] = getPhasesMass()
+                    } else {
+                        svg[uniqueId] = [];
+                    }
+                    $('#kostil').remove();
+                    if (--count === 0) resolve(true)
+                }).catch((errorTfl) => {
+                    reject(errorTfl)
+                })
+            });
+        })
+    }
+
+    function getSvgData(trafficLight) {
+        return new Promise(function (resolve, reject) {
+            $.ajax({
+                url: window.location.origin + '/file/static/cross/' + trafficLight.region.num + '/' + trafficLight.area.num + '/' + trafficLight.ID + '/cross.svg',
+                type: 'GET',
+                success: function (svgData) {
+                    resolve(svgData)
+                },
+                error: function (request) {
+                    console.error(request.status);
+                    reject(trafficLight)
+                    // alert(JSON.parse(request.responseText).message);
+                }
+            });
+        })
+    }
+
+    function getSingleSvg(trafficLight) {
         return new Promise(function (resolve) {
             $.ajax({
                 url: window.location.origin + '/file/static/cross/' + trafficLight.region.num + '/' + trafficLight.area.num + '/' + trafficLight.ID + '/cross.svg',
@@ -1009,7 +1067,7 @@ ymaps.ready(function () {
                 optionsHTML += `<option value="${phase}">${phase}</option>`;
             });
             $($('td.to')[i]).find('div').each((j, val) => {
-                $(td).append(`<select id="phase${i}-${j}">${optionsHTML}</select>`)
+                $(td).append(`<div><select id="phase${i}-${j}">${optionsHTML}</select></div>`)
 
                 let phase = 1;
                 if (tfLinksArray.some(tfl => tfl.id === getUniqueId(trafficLight))) {
@@ -1035,10 +1093,10 @@ ymaps.ready(function () {
         currentTfLink[currDir].WayPointsArray.find(wp => wp.Id === to).phase = value;
     }
 
-    function fillPhases(trafficLight) {
+    function fillSinglePhases(trafficLight) {
         $('#phaseContainer').empty()
-        let currSvg = svg[trafficLight.region.num + '/' + trafficLight.area.num + '/' + trafficLight.ID];
-        let width = $('#phaseContainer').width() / 3;
+        const currSvg = svg[getUniqueId(trafficLight, '/')];
+        const width = $('#phaseContainer').width() / 3;
 
         for (let i = 0; i <= Math.floor((currSvg.length - 1) / 4); i++) {
             $('#phaseContainer').append(`<div id="miniContainer${i}" 
@@ -1068,32 +1126,45 @@ ymaps.ready(function () {
 
     function handlePlacemarkClick(map, trafficLight) {
         console.log(map, trafficLight);
-        let returnFlag = false
+        let deletedFlag = false
         if (creatingMode) {
             $('#tableDialog').dialog('open');
-            getPhasesSvg(trafficLight).then(
+            getSingleSvg(trafficLight).then(
                 (success) => {
-                    if (success) fillPhases(trafficLight)
+                    if (success) fillSinglePhases(trafficLight)
                 }
             )
             fillTable(trafficLight);
             currentTfId = getUniqueId(trafficLight);
             $('.ui-dialog-title')[1].innerText = trafficLight.description
         } else if (executionFlag) {
-            console.log("send phase")
+            // if (!sendedPhaseSave.get(trafficLight.idevice)) return
+            sendedPhaseSave.set(trafficLight.idevice, true);
+
+            let navTable = $('#navTable').bootstrapTable('getData');
+            let index = -1;
+            navTable.forEach((row, rowIndex) => {
+                if (row.idevice === trafficLight.idevice) index = rowIndex;
+            });
+            if (navTable.length > (index + 1)) $($('#navTable tbody tr')[index + 1]).trigger('click');
+
+            modifiedControlSend({
+                id: trafficLight.idevice,
+                cmd: 9,
+                param: Number($('#navTable').bootstrapTable('getData').find(row => row.idevice === trafficLight.idevice).toPhase)
+            });
         } else {
             circlesMap.forEach((value, keyJson) => {
                 const key = JSON.parse(keyJson);
                 if ((key.region === trafficLight.region.num) && (key.area === trafficLight.area.num) && (key.id === trafficLight.ID)) {
                     deleteCircle(map, value, key, trafficLight.description);
-                    returnFlag = true;
+                    deletedFlag = true;
                     // if (circlesMap.size === 0) {
                     //     $('#phaseTableButton')[0].hidden = true;
                     //     $('#createRouteButton')[0].disabled = true;
                     // }
                 }
             });
-            console.log('click');
 
             const index = routeTFLights.findIndex(tflight => JSON.stringify(tflight) === JSON.stringify(trafficLight))
             if (index === -1) {
@@ -1102,9 +1173,11 @@ ymaps.ready(function () {
                 routeTFLights.splice(index, 1)
             }
 
-            if (returnFlag) return
-            createCircle(trafficLight.region.num, trafficLight.area.num, trafficLight.ID, trafficLight.description,
-                [trafficLight.points.Y, trafficLight.points.X])
+            if (!deletedFlag) {
+                createCircle(trafficLight.region.num, trafficLight.area.num, trafficLight.ID, trafficLight.description,
+                    [trafficLight.points.Y, trafficLight.points.X])
+            }
+            $('#createModeButton')[0].disabled = circlesMap.size !== 0
         }
         // Команда на влкючение передачи фаз
         // controlSend(trafficLight.idevice, 4, 1)
@@ -1242,12 +1315,30 @@ ymaps.ready(function () {
             }
         }
     }
-})
 
-//Отправка выбранной команды на сервер
-function controlSend(idevice, cmd, num) {
-    ws.send(JSON.stringify({type: 'dispatch', id: idevice, cmd: cmd, param: num}));
-}
+    function controlSend(toSend) {
+        ws.send(JSON.stringify({type: 'dispatch', id: toSend.id, cmd: toSend.cmd, param: toSend.param}));
+    }
+
+    function modifiedControlSend(toSend) {
+        let loopFunc;
+        if (loopFuncMap.get(toSend.id)) {
+            clearInterval(loopFuncMap.get(toSend.id));
+            loopFuncMap.set(toSend.id, undefined)
+        }
+
+        controlSend(toSend);
+
+        if (toSend.param !== 9) {
+            loopFunc = window.setInterval(function () {
+                controlSend(toSend);
+            }, 60000);
+            loopFuncMap.set(toSend.id, loopFunc);
+        }
+
+        asteriskControl(toSend.id, false);
+    }
+})
 
 let createChipsLayout = function (calculateSize, currnum) {
     if (currnum === 0) {

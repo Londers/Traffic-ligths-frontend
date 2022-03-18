@@ -82,6 +82,13 @@ $(() => {
         if (e.target === document.activeElement) e.preventDefault();
     })
 
+    $('a[id$="CopyButton"]').attr('title', 'Копировать')
+    $('a[id$="PasteButton"]').attr('title', 'Вставить')
+    $('a[id$="ReloadButton"]').attr('title', 'Загрузить')
+    $('a[id$="NewButton"]').attr('title', 'Создать')
+    $('#skAddButton').attr('title', 'Добавить строку')
+    $('#skSubButton').attr('title', 'Удалить строку')
+
     if (localStorage.getItem('copyArr') === null) {
         localStorage.setItem('copyArr', JSON.stringify({'pk': [], 'sk': [], 'nk': [], 'gk': [], 'kv': []}));
     }
