@@ -109,9 +109,9 @@ function clearJournals() {
 function buildJournalsTable(data) {
     Object.entries(data.deviceJournals).forEach(([idevice, journal]) => {
         journal.forEach((rec, i) => journal[i].time = new Date(rec.time).toLocaleString('ru-RU'));
-        journal.sort((a, b) => {
-            return new Date(b.time).getTime() - new Date(a.time).getTime()
-        });
+        journal = journal.sort((a, b) => {
+            return new Date(a.time).getTime() - new Date(b.time).getTime()
+        }).reverse();
         journal.unshift({time: findDescriptionByIdevice(Number(idevice))})
         $('#journalsTable').bootstrapTable('append', journal)
     })

@@ -18,7 +18,6 @@ function sortByID(a, b) {
 
 // Отправить обновленную информацию GPRS
 function sendGPRS() {
-    // let toSend = {ip: '', port: ''};
     let gprsFlag = $('#changeGPRS').prop('checked');
     let exchangeFlag = $('#exchangeTime').prop('checked');
     let modeFlag = $('#commMode').prop('checked');
@@ -34,14 +33,14 @@ function sendGPRS() {
         if (modeFlag) {
             gprs.type = ($('#techRegion').val() === 'true');
         }
-        ws.send(JSON.stringify({type: 'gprs', gprs: gprs}));
+        ws.send(JSON.stringify({type: 'gprs', gprs}));
     }
 }
 
 
 // Проверка несовпадения информации о типе устройства
 function checkTypeDifference() {
-    let devNumInTable = 4;
+    let devNumInTable = 5;
     devicesSave.forEach(device => {
         let cross = checkCross(device.idevice);
         if (switchArrayType(cross.arrayType) !== switchArrayTypeFromDevice(device.device.Model)) {
@@ -67,7 +66,7 @@ function checkTypeDifference() {
 
 // Проверка разницы во времени с устройством, не больше одной минуты
 function checkTimeDifference() {
-    let timeNumInTable = 5;
+    let timeNumInTable = 6;
     devicesSave.forEach(device => {
         if (Math.abs((new Date(device.ltime) - new Date(device.dtime))) > 60 * 1000) {
             let list = $('#table').bootstrapTable('getData');
@@ -259,18 +258,17 @@ function buildTable(crosses, firstLoadFlag) {
         let copy = {
             state: (selected.length !== 0) ? (cross.idevice === selected[0].idevice) : false,
             area: cross.area,
+            subarea: cross.subarea,
             usdk: cross.id,
             sv: devFlag ? (device.scon ? (device.Status.ethernet ? 'L' : '+') : '') : '',
             type: devFlag ? switchArrayTypeFromDevice(device.Model) : switchArrayType(cross.arrayType),
             exTime: devFlag ? timeFormat(device.ltime).substring(0, 15) : '',
             malfDk: cross.status,
             gps: devFlag ? checkGPS(device.GPS) : '',
-            addData: devFlag ? (((mErrorText[device.Status.elc] === undefined)
-                    ? ('Неизвестный код неисправности ' + device.Status.elc) : mErrorText[device.Status.elc])
-                + (', неисправности ' + checkMalfunction(device.Error))) : '',
+            addData: devFlag ? (((mErrorText[device.Status.elc] === undefined) ? ('Неизвестный код неисправности ' + device.Status.elc) : mErrorText[device.Status.elc]) + checkMalfunction(device.Error)) : '',
             traffic: devFlag ? (`${prettyTraffic(device.Traffic.FromDevice1Hour)}Кб / ${prettyTraffic(device.Traffic.LastFromDevice1Hour)}Кб`) : '',
             place: cross.describe,
-            status: cross.StatusCode,
+            status: cross.statuscode,
             idevice: cross.idevice
         };
 
@@ -285,7 +283,7 @@ function buildTable(crosses, firstLoadFlag) {
     devicesSave.forEach(devSave => {
         let id = findDevice(data, devSave);
         if (id !== -1) {
-            $('#table tbody tr')[id].cells[3].style.backgroundColor = devSave.device.StatusCommandDU.IsReqSFDK1 ? 'lightblue' : '';
+            $('#table tbody tr')[id].cells[4].style.backgroundColor = devSave.device.StatusCommandDU.IsReqSFDK1 ? 'lightblue' : '';
         }
     });
 
@@ -319,10 +317,9 @@ function checkCommand(cmd, value) {
 
 // Расшифровка типа устройства
 function switchArrayTypeFromDevice(model) {
-    if (model.C12) return 'С12';
+    if (model.C12) return 'С12УСДК';
     if (model.DKA) return 'ДКА';
-    if (model.DTA) return 'ДТА' +
-        '';
+    if (model.DTA) return 'ДТА';
     return 'УСДК';
 }
 
@@ -496,6 +493,8 @@ function phaseSpellOut(value) {
     switch (Number(value)) {
         case 0:
             return 'ЛР';
+        case 9:
+            return 'Пром. такт';
         case 10:
         case 14:
             return 'ЖМ';
@@ -505,7 +504,7 @@ function phaseSpellOut(value) {
         case 12:
             return 'КК';
         default:
-            break;
+            return Number(value)
     }
 }
 
@@ -552,11 +551,11 @@ const ErrorsText = {
 };
 
 function checkMalfunction(Error) {
-    let retValue = ' ';
+    let retValue = '';
     for (const [key, value] of Object.entries(Error)) {
         if (value) retValue += ErrorsText[key] + ', ';
     }
-    return (retValue.length !== 0) ? retValue.substring(0, retValue.length - 2) : '';
+    return (retValue.length !== 0) ? (', неисправности ' + retValue.substring(0, retValue.length - 2)) : '.';
 }
 
 const GPSText = {
@@ -603,7 +602,11 @@ const mErrorText = {
     29: 'Произошел тайм-аут при установлении соединения',
     50: 'Не было данных от сервера в течение интервала обмена  +1 минута',
     51: 'Был разрыв связи по команде ПСПД',
-    52: 'Модем выдал сообщение об ошибке в процессе обмена'
+    52: 'Модем выдал сообщение об ошибке в процессе обмена',
+    53: "Сброс от контроллера Ethernet",
+    54: "Самопроизвольный сброс",
+    55: "Отказ оборудования",
+    56: "Переполнение стека",
 };
 
 const selectValues = {

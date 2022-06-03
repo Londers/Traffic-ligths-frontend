@@ -4,7 +4,7 @@ let IDs = [];
 let regionInfo;
 let areaInfo;
 // 0 - технология, 1 - по устройству, 2 - двери+лампы
-let type = 0;
+let type = 1;
 
 let dateSave;
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms))
@@ -111,7 +111,7 @@ $(function () {
     $('input[data-field="id"]').parent().remove();
     $('#logsTable').on('reorder-column.bs.table post-body.bs.table', function () {
         makeMergedDesc($('#logsTable').bootstrapTable('getData'))
-        makeMergedOldRecords()
+        // makeMergedOldRecords()
         colorizeCrosses()
     })
 });

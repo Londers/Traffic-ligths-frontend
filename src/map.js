@@ -83,7 +83,8 @@ ymaps.ready(function () {
     const about = 'Предназначена для упрощения процедур наблюдения, управления ' +
         'и контроля за работой дорожных контроллеров и другого ' +
         'оборудования, работающего в системе управления дорожным движением.\n\n' +
-        'ООО "Автоматика-Д" (г.Омск). \n8-3812-370735, 8-3812-394910 \n';
+        'ООО "Автоматика-Д"\n 644042  г. Омск, пр. Карла Маркса, д.18, корпус 28\n' +
+        'тел./факс +7(3812)37-07-35, тел. +7(3812)39-49-10 \n';
 
     function openAbout(closeOnExpiration) {
         // Instantiate new modal
@@ -424,6 +425,10 @@ ymaps.ready(function () {
         (userRegion === '*') ? $('#alarmDialog').dialog('open') : openPage('/alarm?Region=' + userRegion);
     });
 
+    $('#graphButton').on('click', function () {
+        openPage('/graphManage?Region=' + 1);
+    });
+
     //Смена пароля текущего аккаунта
     $('#changeButton').on('click', function () {
         $('#oldPassword').val('');
@@ -445,6 +450,10 @@ ymaps.ready(function () {
 
     $('#techSuppButton').on('click', function () {
         openPage('/techSupp');
+    });
+
+    $('#instructionButton').on('click', function () {
+        window.open("/free/resources/АСУДД Микро-М_АРМ_2022.pdf", '_blank')
     });
 
     $('#aboutButton').on('click', function () {
@@ -493,12 +502,6 @@ ymaps.ready(function () {
 
     $('#charPointsButton').on('click', () => {
         openPage('/charPoints');
-    });
-
-    $('#dropdownConnectionButton').on('click', function () {
-        if ($('#dropdownConnectionButton').attr('aria-expanded') === 'true') {
-            ws.send(JSON.stringify({type: 'checkConn'}));
-        }
     });
 
     //Проверка валидности пароля
@@ -742,8 +745,15 @@ ymaps.ready(function () {
                     createAreasLayout(map);
                 }
 
-                $('#modal')[0].innerText = `АСУДД "Микро-М"\nЛицензия: ${data.license}\n\n` + about;
+                $('#modal')[0].innerText = `АСУДД "Микро-М"\nЛицензия: ${data.license}\nВерсия: 1.00\n\n` + about;
+                $('#modal').append('E-mail: <span id="email">p51@inbox.ru</span><br>');
                 $('#modal').append('<a href="http://asud55.ru/" target="_blank">http://asud55.ru/</a>');
+
+                const email = $('#email');
+                email.on('click', () => {
+                    email.select();
+                    navigator.clipboard.writeText(email[0].innerText);
+                })
 
                 //Заполнение поля выбора регионов для перемещения
                 for (let reg in regionInfo) {
@@ -879,7 +889,7 @@ ymaps.ready(function () {
                             // data: JSON.stringify(toSend),
                             dataType: 'json',
                             success: function (data) {
-                                $('#modal')[0].innerText = `АСУДД "Микро-М"\nЛицензия: ${data.license}\n\n` + about;
+                                $('#modal')[0].innerText = `АСУДД "Микро-М"\nЛицензия: ${data.license}\nВерсия: 1.00\n\n` + about;
                                 $('#modal').append('<a href="http://asud55.ru/" target="_blank">http://asud55.ru/</a>');
                                 openAbout(true);
                             },
@@ -946,20 +956,8 @@ ymaps.ready(function () {
                 $('#password').val('');
                 deleteAreasLayout(map);
                 $('#workPlace')[0].innerText = 'АСУДД "Микро-М" ' + '\nАРМ';
-                if (data.message !== undefined) // alert(data.message);
+                // if (data.message !== undefined) alert(data.message);
                 // location.href = location.origin;
-                break;
-            case 'checkConn':
-                if (data.statusBD !== undefined) {
-                    $('#databaseConnection').children().css({
-                        'background-color': ((data.statusBD) ? 'green' : 'red')
-                    });
-                }
-                if (data.statusS !== undefined) {
-                    $('#serverConnection').children().css({
-                        'background-color': ((data.statusS) ? 'green' : 'red')
-                    });
-                }
                 break;
             case 'checkConn':
                 if (data.statusBD !== undefined) {
@@ -1144,6 +1142,11 @@ ymaps.ready(function () {
         autoOpen: false,
         buttons: {
             'Подтвердить': function () {
+                $('#fragErr').remove()
+                if (fragments.some(fragment => fragment.name === $('#fragmentName').val())) {
+                    $('#fragmentName').parent().append('<h6 style="color: red" id="fragErr">Имя фрагмента занято</h6>')
+                    return
+                }
                 ws.send(
                     JSON.stringify({
                         type: 'createFragment',
@@ -1419,7 +1422,7 @@ ymaps.ready(function () {
             fillTechAreas($('#techArea'), $('#techRegion'), areaInfo);
         } else {
             $('#techRegion').append(new Option(regionInfo[data.region], data.region));
-            $('#techRegion').prop('disabled', true);
+            $('#techRegion').prop('disabled', true).val(userRegion).trigger('change');
             fillTechAreas($('#techArea'), $('#techRegion'), techAreaInfo);
         }
 

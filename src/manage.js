@@ -208,7 +208,7 @@ $(function () {
         }
 
         //костыль, чтобы регадмин не мог редактировать регадмина
-        if ((selectedUser.role.name === 'RegAdmin') && (accInfo.filter(user => user.login === localStorage.getItem('login'))[0].role.name === 'RegAdmin')) {
+        if ((selectedUser.role.name === 'RegAdmin') && (accInfo.filter(user => user.login === localStorage.getItem('login'))[0]?.role.name === 'RegAdmin')) {
             $('#toolbar').append('<div style="color: red;" id="updateMsg"><h5>Невозможно изменить регионального администратора</h5></div>');
             return;
         }

@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>manage</title>
+</head>
+<body>
+<script>
+    const ws = new WebSocket('wss://' + location.host + location.pathname + 'W' + location.search);
+    // let num = -1
+
+    ws.onopen = function () {
+        console.log('connected');
+    };
+
+    ws.onclose = function (evt) {
+        console.log('disconnected', evt);
+        // alert('Ошибка соединения: ' + closeReason);
+    };
+
+    ws.onerror = function (evt) {
+        // alert(`Ошибка соединения WebSocket, ${evt.reason}`);
+    }
+
+    ws.onmessage = function (evt) {
+        console.log(JSON.parse(evt.data))
+    }
+
+    setTimeout(() => ws.send(JSON.stringify({type: "createPoint", data: {position: "1,1", name: "test"}})), 3000)
+    setTimeout(() => ws.send(JSON.stringify({type: "deletePoint", data: {number: 1}})), 6000)
+
+    setTimeout(() => ws.send(JSON.stringify({type: "deleteVertex", data: {region: "1", area: "1", id: 7}})), 3000)
+    setTimeout(() => ws.send(JSON.stringify({type: "createVertex", data: {region: "1", area: "1", id: 7}})), 6000)
+
+    setTimeout(() => ws.send(JSON.stringify({type: "createWay", data: {fromCross: {region: "1", area: "1", id: 1}, toCross: {region: "1", area: "1", id: 11}, length: 500}})), 3000)
+    setTimeout(() => ws.send(JSON.stringify({type: "deleteWay", data: {fromCross: {region: "1", area: "1", id: 1}, toCross: {region: "1", area: "1", id: 11}}})), 6000)
+
+</script>
+</body>
+</html>

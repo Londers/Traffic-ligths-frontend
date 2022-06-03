@@ -544,21 +544,37 @@
                         </div>
                     </div>
                     <div class="row">
-                        <table class="table table-bordered" id="pkTable" data-toggle="table" data-toolbar="#toolbar"
-                               data-single-select="true" data-click-to-select="true" data-height="85vh">
-                            <thead>
-                            <tr style="">
-                                <th data-field="line">№перекл.</th>
-                                <th data-field="start">Вр. вкл</th>
-                                <th data-field="tf">Тип фазы</th>
-                                <th data-field="num">№ фазы</th>
-                                <th data-field="duration">Длительность</th>
-                                <th data-field="plus">+пред.</th>
-                            </tr>
-                            </thead>
-                            <tbody style="">
-                            </tbody>
-                        </table>
+                        <div class="col-md-8">
+                            <table class="table table-bordered" id="pkTable" data-toggle="table" data-toolbar="#toolbar"
+                                   data-single-select="true" data-click-to-select="true" data-height="85vh">
+                                <thead>
+                                <tr style="">
+                                    <th data-field="line">№перекл.</th>
+                                    <th data-field="start">Вр. вкл</th>
+                                    <th data-field="tf">Тип фазы</th>
+                                    <th data-field="num">№ фазы</th>
+                                    <th data-field="duration">Длительность</th>
+                                    <th data-field="plus">+пред.</th>
+                                </tr>
+                                </thead>
+                                <tbody style="">
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="col-md-3 ml-3">
+                            <table class="table table-bordered" id="mgrTable" data-toggle="table" data-toolbar="#toolbar"
+                                   data-height="85vh">
+                                <thead>
+                                <tr style="">
+                                    <th data-field="phase">№ Фазы</th>
+                                    <th data-field="tlen">t мин.</th>
+                                    <th data-field="tmgr">t МГР</th>
+                                </tr>
+                                </thead>
+                                <tbody style="">
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -948,7 +964,6 @@
         <a class="wtrigger" id="workTrigger" href="#" style="display: none;">Список<br>пользователей<br>на странице</a>
     </div>
 </div>
-
 </body>
 
 </html>

@@ -10,6 +10,7 @@ let control;
 let idevice = undefined;
 let ws;
 let model;
+let firstPhaseFlag = true;
 
 $(function () {
     let closeReason = '';
@@ -53,6 +54,8 @@ $(function () {
                 document.title = 'ДК-' + ID;
 
                 $('#connection')[0].innerText = data.scon ? data.eth ? 'LAN' : 'GPRS' : '';
+
+                if (!data.sfdk) $('#connection').parent().append('<div id="sfdk">Отключена передача фаз</div>');
 
                 $('#deviceLog').width($('#ky').width());
                 $(window).resize(() => {
@@ -217,6 +220,11 @@ $(function () {
                 });
 
                 if ($('#expandedTable').length === 0) $('[class~=no-records-found] td').text('Ожидание Пром. такта');
+                if (data.dk.fdk !== 9) {
+                    const copy = JSON.parse(JSON.stringify(data.dk));
+                    copy.fdk = 'Пром. такт'
+                    buildExpandedTable(copy);
+                }
                 buildExpandedTable(data.dk);
 
                 /*
@@ -226,6 +234,7 @@ $(function () {
                 //---------------------------------------------------------------------------------------------------------------------------------------------------
                 $('#status').html('Статус: ' + data.cross.tlsost.description);
                 if (data.techMode !== undefined) $('#techMode').html('Технология: ' + data.techMode);
+                if (data.modeRdk !== undefined) $('#modeRdk').html(data.modeRdk);
 
                 $('#deviceLog').on('click', () => {
                     localStorage.setItem('ID', cross.ID);
@@ -350,41 +359,42 @@ $(function () {
             case 'crossConnection':
                 $('#connection')[0].innerText = data.scon ? data.eth ? 'LAN' : 'GPRS' : '';
                 break;
-            case 'phase':
+            case 'phase': {
                 // TODO сделать вывод в читаемом формате только для нас
                 // console.log('phase ', data);
                 //Обработка таблицы
                 if ($('#expandedTable')[0].style.display === 'none') $('#expandedTable').show();
                 if ($('#phase')[0].style.display === 'none') $('#phase').show();
                 if (data.techMode !== undefined) $('#techMode').html('Технология: ' + data.techMode);
+                if (data.modeRdk !== undefined) $('#modeRdk').html(data.modeRdk);
 
+                if (firstPhaseFlag) {
+                    $('#expandedTable').bootstrapTable('removeAll')
+                    clearInterval(fakeTimer);
+                    currentIndex = 0;
+                    prevIndex = 0;
+                    prevPhase = -1;
+                    firstPhaseFlag = false
+                }
                 buildExpandedTable(data.dk);
 
                 if ($('#ddk').length === 0) $('#phase').append('<br> <label class="mt-3" id="ddk"></label>');
-                if (data.dk.ddk <= 5) {
-                    let ddk = '';
-                    switch (data.dk.ddk) {
-                        case 1:
-                            ddk = 'ДК';
-                            break
-                        case 2:
-                            ddk = 'ВПУ';
-                            break
-                        case 3:
-                            ddk = 'ИП УСДК';
-                            break
-                        case 4:
-                            ddk = "УСДК"
-                            if (model.C12) ddk = "C12"
-                            if (model.DKA) ddk = "ДКА"
-                            if (model.DTA) ddk = "ДТА"
-                            break
-                        case 5:
-                            ddk = 'ИП ДКА';
-                            break
-                    }
-                    $('#ddk').text(ddk);
+                let ddk = '';
+                switch (data.dk.ddk) {
+                    case 1:
+                        ddk = 'С12УСДК';
+                        break;
+                    case 2:
+                        ddk = 'УСДК';
+                        break;
+                    case 4:
+                        ddk = 'ДКА';
+                        break;
+                    case 8:
+                        ddk = 'ДТА';
+                        break;
                 }
+                $('#ddk').text(ddk);
 
                 if (data.dk.edk === 1) {
                     $('#transition').show();
@@ -394,6 +404,7 @@ $(function () {
                     // $('#status').show();
                 }
                 break;
+            }
             case 'error':
                 closeReason = data.message;
                 ws.close(1000);
@@ -607,7 +618,7 @@ function checkConnection(connectionFlag, phase) {
         $('#verificationRow').show();
 
 
-        if (typeof setPhase !== "undefined") {
+        if ((typeof setPhase !== "undefined") && (phase !== undefined)) {
             if (typeof setVisualMode !== "undefined") setVisualMode(0);
             setPhase(phase ?? 0);
         }

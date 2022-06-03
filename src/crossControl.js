@@ -431,7 +431,7 @@ $(() => {
     function validatePk() {
         setDK.forEach((pk, pkIndex) => {
             pk.sts.forEach((sw, swIndex) => {
-                data.state.arrays.SetDK.dk[pkIndex].sts[swIndex].trs = (pk.shift === 0) ? false : (pk.tc === sw.stop);
+                if (data.state.arrays.SetDK.dk[pkIndex]) data.state.arrays.SetDK.dk[pkIndex].sts[swIndex].trs = (pk.shift === 0) ? false : (pk.tc === sw.stop);
             })
         })
     }
@@ -964,6 +964,11 @@ $(() => {
 
 // Функция для загрузки данных с сервера
 function loadData(newData, firstLoadFlag) {
+    if (!newData.state.arrays.mgrs) {
+        newData.state.arrays.mgrs = Array.from(Array(8), (_, i) => {
+            return {phase: i + 1, tlen: 0, tmgr: 0}
+        })
+    }
 
     // console.log(newData);
     let coords = newData.state.dgis.split(',');
@@ -1167,6 +1172,7 @@ function mainTabFill(data, firstLoadFlag) {
 // Верификация массива ПК
 function validatePkArray(data) {
     data.state.arrays.SetDK.dk.forEach(pk => {
+        if (!pk.sts) pk.sts = [];
         while (pk.sts.length !== 12) {
             pk.sts.push({dt: 0, line: pk.sts.length + 1, num: 0, plus: false, start: 0, stop: 0, tf: 0, trs: false})
         }
@@ -2070,6 +2076,35 @@ function buildPkTable(table, tableType, currPK) {
     pkTableDurationFunctional(table, tableType, currPK);
 }
 
+function buildMgrTable() {
+    $('#mgrTable').bootstrapTable('removeAll')
+    for (let i = 0; i < 8; i++) $('#mgrTable').bootstrapTable('append', '')
+    // const tableData = []
+    $('#mgrTable tbody tr').each(function (index) {
+        $(this).find('td').each(function (switchIndex) {
+            if (switchIndex === 0) {
+                $(this).append(data.state.arrays.mgrs[index].phase);
+            } else if (switchIndex === 1) {
+                $(this).append(
+                    `<input class="form-control border-0 tlen${index}" name="number" type="number" ` +
+                    'style="max-width: 55px;" value="' + data.state.arrays.mgrs[index].tlen + '"/>'
+                );
+                $(this).find('input').on('change', function (evt) {
+                    data.state.arrays.mgrs[index].tlen = evt.currentTarget.valueAsNumber
+                })
+            } else if (switchIndex === 2) {
+                $(this).append(
+                    `<input class="form-control border-0 tmgr${index}" name="number" type="number" ` +
+                    'style="max-width: 55px;" value="' + data.state.arrays.mgrs[index].tmgr + '"/>'
+                );
+                $(this).find('input').on('change', function (evt) {
+                    data.state.arrays.mgrs[index].tmgr = evt.currentTarget.valueAsNumber
+                })
+            }
+        })
+    })
+}
+
 // Функция для заполнения вкладки ПК
 function pkTabFill(table) {
     let selected = $('#pkSelect').val();
@@ -2078,6 +2113,7 @@ function pkTabFill(table) {
 
     if (pkFlag) {
         pkTableChange(table);
+        mgrTableChange()
     }
 
     if (currPK.tc > 2) {
@@ -2110,6 +2146,7 @@ function pkTabFill(table) {
     $('#desc').val(currPK.desc);
 
     buildPkTable(table, tableType, currPK);
+    buildMgrTable();
 
     $('#razlen').change();
     data.state.arrays.SetDK.dk[selected] = setDK[selected];
@@ -2485,6 +2522,13 @@ function pkTableChange(table) {
         }
     });
     pkFlag = false;
+}
+
+// Функция для сохранения изменений в таблице МГР
+function mgrTableChange() {
+    $('#mgrTable').on('change', (evt) => {
+        console.log($('#mgrTable').bootstrapTable('getData'))
+    })
 }
 
 // Функция для преобразования вида цифр
