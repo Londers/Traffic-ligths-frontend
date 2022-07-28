@@ -19,6 +19,7 @@ $(function () {
                             `<img class="resizable" style="width: 480px; height: 270px; display: block; 
                             background-color: gray; text-align: center;" 
                             src="${location.origin}/stream?camera=${camera.ip}" alt="Видео недоступно"></div>`
+                            // src="${location.origin}/stream?camera=${camera.ip}" alt="Видео недоступно"></div>`
                         $('#buttons').prepend(`<button id="btn${id}" class="btn btn-secondary m-2" style="height: 50%;">${camera.name}</button>`);
                         $('#btn' + id).on('click', () => cameraControl(cameraDiv, camera.name, id));
                         if (localStorage.getItem('cam') === camera.name) {

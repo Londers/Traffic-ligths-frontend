@@ -1143,7 +1143,7 @@ ymaps.ready(function () {
         buttons: {
             'Подтвердить': function () {
                 $('#fragErr').remove()
-                if (fragments.some(fragment => fragment.name === $('#fragmentName').val())) {
+                if (fragments?.some(fragment => fragment.name === $('#fragmentName').val())) {
                     $('#fragmentName').parent().append('<h6 style="color: red" id="fragErr">Имя фрагмента занято</h6>')
                     return
                 }

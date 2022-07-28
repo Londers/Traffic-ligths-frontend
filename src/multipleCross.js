@@ -38,6 +38,7 @@ $(function () {
                 const $block = $('#block' + (i + 1));
 
                 $block.attr('style', 'display: block;');
+                $block.prepend(`<h5 style="display: inline" id="phase${i+1}"></h5>`)
                 $block.append(outerHTML
                     .replaceAll('document.', `document.getElementById('${svgId}').`));
                 $(`#block${i + 1} svg`).attr('id', svgId);
@@ -78,6 +79,7 @@ $(function () {
                                 break;
                             case 'phase':
                                 console.log(svgId + '-' + data.dk.fdk);
+                                $(`#phase${i + 1}`).html('фаза ' + data.dk.fdk);
                                 setPhases.find(setter => setter.blockId === i+1).setPhase(data.dk.fdk)
                                 break;
                             case 'error':

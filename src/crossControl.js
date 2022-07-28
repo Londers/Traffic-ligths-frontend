@@ -1624,7 +1624,7 @@ function pkTableDurationFunctional(table, tableType, currPK) {
             $('#' + table).show();
 
             // Автоматизированное создание нового ПК
-            if ((prevCycleTime < 3) && (cycleTime > 3)) {
+            if ((prevCycleTime < 3) && (cycleTime > 3) && (currSts[0].start === currSts[0].stop)) {
                 generateNewPk(currSts);
                 return;
             }
@@ -2077,6 +2077,11 @@ function buildPkTable(table, tableType, currPK) {
 }
 
 function buildMgrTable() {
+    if (data.state.arrays.mgrs.length === 0) {
+        $('#mgrTable').hide()
+        return
+    }
+    $('#mgrTable').show()
     $('#mgrTable').bootstrapTable('removeAll')
     for (let i = 0; i < 8; i++) $('#mgrTable').bootstrapTable('append', '')
     // const tableData = []
@@ -2308,9 +2313,7 @@ function generateNewPk(currSts) {
 
 // Добавление переключателя в ПК
 function addPkSwitch(index, tf, num, start, stop) {
-    function sortFunc(a, b) {
-        return a[0] - b[0];
-    }
+    const sortFunc = (a, b) => a[0] - b[0]
 
     let selected = $('#pkSelect').val();
     if (index === undefined) return;

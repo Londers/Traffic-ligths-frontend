@@ -25,27 +25,31 @@ $(function () {
         success: function (data) {
             regionInfo = Object.assign({}, data.regionInfo);
             areaInfo = Object.assign({}, data.areaInfo);
-            devices = data.devices.slice();
-            data.devices.forEach((device, counter) => {
-                if (device.idevice !== -1) {
-                    let region = regionInfo[devices[counter].region];
-                    let area = areaInfo[region][devices[counter].area];
-                    device.region = region;
-                    device.area = area;
-                    IDs.push({ID: device.ID, description: device.description});
-                    devices[counter].ID = '';
-                }
-            });
-            console.log(data);
-
-            $('#table').bootstrapTable('hideLoading');
-            $('#table')
-                .bootstrapTable('removeAll')
-                .bootstrapTable('append', data.devices)
-                .bootstrapTable('scrollTo', 'top')
-                .bootstrapTable('refresh', {
-                    data: data.devices
+            devices = data.devices?.slice();
+            if (devices) {
+                data.devices.forEach((device, counter) => {
+                    if (device.idevice !== -1) {
+                        let region = regionInfo[devices[counter].region];
+                        let area = areaInfo[region][devices[counter].area];
+                        device.region = region;
+                        device.area = area;
+                        IDs.push({ID: device.ID, description: device.description});
+                        devices[counter].ID = '';
+                    }
                 });
+                console.log(data);
+
+                $('#table').bootstrapTable('hideLoading');
+                $('#table')
+                    .bootstrapTable('removeAll')
+                    .bootstrapTable('append', data.devices)
+                    .bootstrapTable('scrollTo', 'top')
+                    .bootstrapTable('refresh', {
+                        data: data.devices
+                    });
+            } else {
+                $('[class~=loading-text]').text('Устройств не найдено');
+            }
 
             let now = new Date();
             $('#dateEnd').attr('value', (now.toISOString().slice(0, 10)));
@@ -70,7 +74,7 @@ $(function () {
                 if ((new Date(timeStart).getTime()) >= (new Date(timeEnd).getTime())) {
                     alert('Неверно задано время');
                     return;
-                } else if (((new Date(timeEnd) - new Date(timeStart)) / (1000 * 60 * 60 * 24)) >= 31)  {
+                } else if (((new Date(timeEnd) - new Date(timeStart)) / (1000 * 60 * 60 * 24)) >= 31) {
                     //Максимальный интервал для запроса 31 день
                     alert('Интервал запроса не может превышать один месяц');
                     return;
@@ -174,7 +178,7 @@ function getLogs(start, end, chosenTimeFlag, remoteOpenFlag) {
             dateSave = new Date();
             buildLogsTable(data, chosenTimeFlag, start, end);
             $('#logsTable').bootstrapTable('hideLoading');
-            if (remoteOpenFlag) {
+            if (remoteOpenFlag && (devices.length !== 0)) {
                 $('input[class$="search-input"]:first').val(localStorage.getItem('description')).trigger('blur');
                 sleep(500).then(() => $('#table').bootstrapTable('check', 0));
                 localStorage.setItem('description', undefined);
@@ -500,4 +504,12 @@ function dateStartSorter(aStart, bStart, aRow, bRow) {
 //Функция для открытия вкладки
 function openPage(url) {
     window.open(location.origin + '/user/' + localStorage.getItem('login') + url);
+}
+
+function customSearch(data, text) {
+    return data.filter(row => {
+        if ((row.dateStart === row.message) || (Object.values(row).some(val => val.toString().toLowerCase().includes(text.toLowerCase())))) {
+            return row
+        }
+    })
 }
