@@ -159,7 +159,7 @@ $(() => {
                 case 'createB':
                     console.log('createB');
                     if (!messageData.status) {
-                        // alert(messageData.result.join('\n'))
+                        alert(messageData.result.join('\n'))
                     } else {
                         location.href = location.pathname + location.search.replace('ID=' + unmodifiedData.state.id, 'ID=' + $('#id').val());
                     }
@@ -1169,7 +1169,7 @@ function mainTabFill(data, firstLoadFlag) {
     anotherTableFill('table', mainTableFlag);
 }
 
-// Верификация массива ПК
+// Валидация массива ПК
 function validatePkArray(data) {
     data.state.arrays.SetDK.dk.forEach(pk => {
         if (!pk.sts) pk.sts = [];

@@ -47,63 +47,15 @@ $(function () {
                     .bootstrapTable('refresh', {
                         data: data.devices
                     });
+
+                if (localStorage.getItem('description') !== 'undefined') {
+                    // $('input[class$="search-input"]:first').val(localStorage.getItem('jump')).trigger('blur');
+                    // sleep(500).then(() => $('#table').bootstrapTable('check', 0));
+                    $("#table").bootstrapTable("check", $("#table").bootstrapTable("getData").findIndex(row => row.description === localStorage.getItem("description")))
+                    localStorage.setItem('description', undefined);
+                }
             } else {
                 $('[class~=loading-text]').text('Устройств не найдено');
-            }
-
-            let now = new Date();
-            $('#dateEnd').attr('value', (now.toISOString().slice(0, 10)));
-            $('#timeEnd').attr('value', (prettyNumbers(now.getHours()) + ':' + prettyNumbers(now.getMinutes())));
-            now = new Date(
-                now.getTime() - (
-                    (((now.getHours() * 60 + now.getMinutes() + now.getTimezoneOffset()) * 60 + now.getSeconds()) * 1000)
-                    + now.getMilliseconds()
-                )
-            );
-            $('#dateStart').attr('value', (now.toISOString().slice(0, 10)));
-            $('#timeStart').attr('value', (prettyNumbers(now.getUTCHours()) + ':' + prettyNumbers(now.getUTCMinutes())));
-            $('#currentDay').on('click', () => {
-                let timeStart = new Date(new Date().setHours(now.getTimezoneOffset() / -60, 0, 0, 0)).toISOString();
-                let timeEnd = new Date(new Date().getTime() - (new Date().getTimezoneOffset() * 60 * 1000)).toISOString();
-                getLogs(timeStart, timeEnd, true);
-            });
-
-            $('#chosenTime').on('click', () => {
-                let timeStart = $('#dateStart')[0].value + 'T' + $('#timeStart')[0].value + ':00Z';
-                let timeEnd = $('#dateEnd')[0].value + 'T' + $('#timeEnd')[0].value + ':00Z';
-                if ((new Date(timeStart).getTime()) >= (new Date(timeEnd).getTime())) {
-                    alert('Неверно задано время');
-                    return;
-                } else if (((new Date(timeEnd) - new Date(timeStart)) / (1000 * 60 * 60 * 24)) >= 31) {
-                    //Максимальный интервал для запроса 31 день
-                    alert('Интервал запроса не может превышать один месяц');
-                    return;
-                }
-                getLogs(timeStart, timeEnd, false);
-            });
-
-            $('#toggleTable').on('click', () => {
-                toggleTable($('.col-md-4').css('display') === 'block');
-                $('#logsTable').bootstrapTable('resetView');
-            });
-
-            $('#type').on('change', () => {
-                type = Number($('#type').val());
-                buildLogsTable(undefined, true);
-            });
-
-            if (localStorage.getItem('jump') !== 'undefined') {
-                $('input[class$="search-input"]:first').val(localStorage.getItem('jump')).trigger('blur');
-                // sleep(500).then(() => $('#table').bootstrapTable('check', 0));
-                localStorage.setItem('jump', undefined);
-            }
-
-            if (localStorage.getItem('region') !== 'undefined') {
-                let now = new Date();
-                now = new Date(now.getTime() - (now.getTimezoneOffset() * 60 * 1000));
-                let timeStart = $('#dateStart')[0].value + 'T' + $('#timeStart')[0].value + ':00Z';
-                let timeEnd = now.toISOString();
-                getLogs(timeStart, timeEnd, true, true);
             }
         },
         error: function (request) {
@@ -111,6 +63,56 @@ $(function () {
             // alert(JSON.parse(request.responseText).message);
         }
     });
+
+    let now = new Date();
+    $('#dateEnd').attr('value', (now.toISOString().slice(0, 10)));
+    $('#timeEnd').attr('value', "00:00");
+    now = new Date(
+        now.getTime() - (
+            (((now.getHours() * 60 + now.getMinutes() + now.getTimezoneOffset()) * 60 + now.getSeconds()) * 1000)
+            + now.getMilliseconds()
+        )
+    );
+    $('#dateStart').attr('value', (now.toISOString().slice(0, 10)));
+    $('#timeStart').attr('value', (prettyNumbers(now.getUTCHours()) + ':' + prettyNumbers(now.getUTCMinutes())));
+    $('#currentDay').on('click', () => {
+        let timeStart = new Date(new Date().setHours(now.getTimezoneOffset() / -60, 0, 0, 0)).toISOString();
+        let timeEnd = new Date(new Date().getTime() - (new Date().getTimezoneOffset() * 60 * 1000)).toISOString();
+        getLogs(timeStart, timeEnd, true);
+    });
+
+    $('#chosenTime').on('click', () => {
+        let timeStart = $('#dateStart')[0].value + 'T' + $('#timeStart')[0].value + ':00Z';
+        let timeEnd = $('#dateEnd')[0].value + 'T' + $('#timeEnd')[0].value + ':00Z';
+        if ((new Date(timeStart).getTime()) >= (new Date(timeEnd).getTime())) {
+            alert('Неверно задано время');
+            return;
+        } else if (((new Date(timeEnd) - new Date(timeStart)) / (1000 * 60 * 60 * 24)) >= 31) {
+            //Максимальный интервал для запроса 31 день
+            alert('Интервал запроса не может превышать один месяц');
+            return;
+        }
+        getLogs(timeStart, timeEnd, false);
+    });
+
+    $('#toggleTable').on('click', () => {
+        toggleTable($('.col-md-4').css('display') === 'block');
+        $('#logsTable').bootstrapTable('resetView');
+    });
+
+    $('#type').on('change', () => {
+        type = Number($('#type').val());
+        buildLogsTable(undefined, true);
+    });
+
+    if (localStorage.getItem('region') !== 'undefined') {
+        let now = new Date();
+        now = new Date(now.getTime() - (now.getTimezoneOffset() * 60 * 1000));
+        let timeStart = $('#dateStart')[0].value + 'T' + $('#timeStart')[0].value + ':00Z';
+        let timeEnd = now.toISOString();
+        getLogs(timeStart, timeEnd, true, true);
+    }
+
     $('input[data-field="time"]').parent().remove();
     $('input[data-field="id"]').parent().remove();
     $('#logsTable').on('reorder-column.bs.table post-body.bs.table', function () {
@@ -153,7 +155,7 @@ function getLogs(start, end, chosenTimeFlag, remoteOpenFlag) {
                 region: localStorage.getItem('region'),
                 description: localStorage.getItem('description')
             });
-            console.log(start);
+            // console.log(start);
             localStorage.setItem('ID', undefined);
             localStorage.setItem('area', undefined);
             localStorage.setItem('region', undefined);
@@ -178,11 +180,10 @@ function getLogs(start, end, chosenTimeFlag, remoteOpenFlag) {
             dateSave = new Date();
             buildLogsTable(data, chosenTimeFlag, start, end);
             $('#logsTable').bootstrapTable('hideLoading');
-            if (remoteOpenFlag && (devices.length !== 0)) {
-                $('input[class$="search-input"]:first').val(localStorage.getItem('description')).trigger('blur');
-                sleep(500).then(() => $('#table').bootstrapTable('check', 0));
-                localStorage.setItem('description', undefined);
-            }
+            // if (remoteOpenFlag && (devices.length !== 0)) {
+                // $('input[class$="search-input"]:first').val(localStorage.getItem('description')).trigger('blur');
+                // sleep(500).then(() => $('#table').bootstrapTable('check', 0));
+            // }
         },
         error: function (request) {
             console.log(request.status + ' ' + request.responseText);
@@ -204,29 +205,30 @@ function filterByType(data) {
     return filteredData;
 }
 
-function collapseDuplicates(data) {
-    let collapsedData = [];
-    for (let dev in data) {
-        collapsedData[dev] = [];
-        data[dev].forEach((log, index) => {
-            if (index < (data[dev].length - 1)) {
-                if (log.time !== data[dev][index + 1].time) {
-                    collapsedData[dev].push(log);
-                }
-            } else {
-                collapsedData[dev].push(log);
-            }
-        })
-    }
-    return collapsedData;
-}
+// function collapseDuplicates(data) {
+//     let collapsedData = [];
+//     for (let dev in data) {
+//         collapsedData[dev] = [];
+//         data[dev].forEach((log, index) => {
+//             if (index < (data[dev].length - 1)) {
+//                 if (log.time !== data[dev][index + 1].time) {
+//                     collapsedData[dev].push(log);
+//                 }
+//             } else {
+//                 collapsedData[dev].push(log);
+//             }
+//         })
+//     }
+//     return collapsedData;
+// }
 
 function buildLogsTable(data, chosenTimeFlag, start, end) {
     (data === undefined) ? data = dataSave : dataSave = data;
 
     let journalFlag = false;
 
-    let filteredData = collapseDuplicates(filterByType(data));
+    // let filteredData = collapseDuplicates(filterByType(data));
+    let filteredData = filterByType(data);
 
     let allData = new Array(filteredData.length);
 

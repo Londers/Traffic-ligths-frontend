@@ -180,16 +180,6 @@ $(function () {
                             }
                         }
 
-                        $('a').each(function () {
-                            let id = $(this).attr('id');
-                            this.className = checkButton(this.className.toString(), controlCrossFlag);
-                            if (!id.includes('p')) {
-                                $('#' + id).on('click', function () {
-                                    buttonClick(id, state.idevice);
-                                })
-                            }
-                        });
-
                         //Начало и остановка отправки фаз на контроллер
                         $('a').each(function () {
                             phaseFlags.push(false);
@@ -216,6 +206,16 @@ $(function () {
                     error: function (request) {
                         console.log(request.status + ' ' + request.responseText);
                         // alert(JSON.parse(request.responseText).message);
+                    }
+                });
+
+                $('a').each(function () {
+                    let id = $(this).attr('id');
+                    this.className = checkButton(this.className.toString(), controlCrossFlag);
+                    if (!id.includes('p')) {
+                        $('#' + id).on('click', function () {
+                            buttonClick(id, state.idevice);
+                        })
                     }
                 });
 
@@ -477,6 +477,7 @@ function buildExpandedTable(data) {
             toWrite.column4 = 'ЛР';
             break;
         case 9:
+        case 13:
             toWrite.column4 = 'Пром. такт';
             toWrite.column2 = data.tdk;
             break;
