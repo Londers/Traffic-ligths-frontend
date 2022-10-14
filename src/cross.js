@@ -204,6 +204,35 @@ $(function () {
                         checkConnection(cross.tlsost.control, data.dk.fdk);
                     },
                     error: function (request) {
+                        const phases = Array.from({length: 8}, (v, i) => 9 - (i + 1))
+                        phases.forEach(phase => {
+                            $('#buttons')
+                                .prepend('<a class="btn btn-light border mt-2 disabled" id="p' + phase + '" data-toggle="tooltip" title="' + phase + '"'
+                                    + ' role="button"><img class="img-fluid" src="/file/static/img/buttons/' + phase + '.svg" height="50"'
+                                    + '  alt="Фаза "' + phase + '></a>');
+                        })
+                        //Начало и остановка отправки фаз на контроллер
+                        $('a').each(function () {
+                            phaseFlags.push(false);
+                            $(this).on('click', function () {
+                                let id = $(this)[0].id;
+                                stopSendingCommands(id);
+                                if (!id.includes('p')) return;
+                                phaseFlags[Number(id.substring(1)) - 1] = !phaseFlags[Number(id.substring(1)) - 1];
+                                let flag = phaseFlags[Number(id.substring(1)) - 1];
+                                flag ? $(this).attr('style', ' background-color: #cccccc;') : $(this).attr('style', ' background-color: #f8f9fa;');
+                                clearInterval(loopFunc);
+                                loopFunc = undefined;
+                                if (flag) {
+                                    buttonClick(id, state.idevice);
+                                    loopFunc = window.setInterval(function () {
+                                        buttonClick(id, state.idevice);
+                                    }, 60000);
+                                }
+                            });
+                        });
+                        checkEdit();
+                        checkConnection(cross.tlsost.control, data.dk.fdk);
                         console.log(request.status + ' ' + request.responseText);
                         // alert(JSON.parse(request.responseText).message);
                     }

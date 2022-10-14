@@ -364,7 +364,6 @@ $(() => {
         data.state.arrays.pointset.pts = [];
         data.state.arrays.useinput.used = [];
         tableData.forEach((enter, index) => {
-
             if (!oldVersion) {
                 if (enter.fazes === '0') enter.fazes = '';
                 if ((enter.type !== 0) || (enter.tvps !== 0) || (enter.dk !== 0) || (enter.fazes !== '') || (enter.long !== 0)) {
@@ -1281,11 +1280,16 @@ function vvTabFill(firstLoadFlag) {
     if (firstLoadFlag) {
         setChange('ite', 'input', 'arrays.SetTimeUse');
     }
+    //не должно быть 0
 
-    $('#tuin').val(
-        //не должно быть 0
-        data.state.arrays.defstatis.lvs[0].period === 0 ? 5 : data.state.arrays.defstatis.lvs[0].period
-    );
+    if (data.state.arrays.defstatis.lvs[0].period === 0) {
+        data.state.arrays.defstatis.lvs[0].period = 5
+        setTimeout(() => {
+            $('#checkButton').prop('disabled', false);
+            alert("Исправлена ошибка Т уср ИН во Внешних входах. Отправьте изменение на контроллер.")
+        }, 500)
+    }
+    $('#tuin').val(data.state.arrays.defstatis.lvs[0].period);
     if (firstLoadFlag) {
         $('#tuin').on('change', () => {
             data.state.arrays.defstatis.lvs[0].period = Number($('#tuin').val());
