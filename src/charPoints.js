@@ -1,6 +1,6 @@
 // let region = "1"
 
-$(function () {
+// $(function () {
     const ws = new WebSocket('wss://' + location.host + location.pathname + 'W' + location.search);
     ws.onmessage = function (evt) {
         let allData = JSON.parse(evt.data);
@@ -196,10 +196,19 @@ $(function () {
         "    ]\n" +
         "}")
 
-    setTimeout(() => ws.send(JSON.stringify({type: "changeXctrl", data: q})), 3000)
+
+    setTimeout(() => ws.send(JSON.stringify({
+        "type": "getCalculation",
+        "region": 1,
+        "area": 3,
+        "subarea": 6,
+        "date": "2023-02-02T00:00:00.000Z"
+    })), 3000)
+    // setTimeout(() => ws.send(JSON.stringify({type: "changeXctrl", data: q})), 3000)
     // setTimeout(() => ws.send(JSON.stringify({type: "getStatistics", region: "1"})), 3000)
     // setTimeout(() => ws.send(JSON.stringify({type: "stopStatistics"})), 6000)
     // setTimeout(() => ws.send(JSON.stringify({type: "getOldStatistics", region: "3", date: new Date(2022,3,4, 12).toISOString()})), 9000)
     // setTimeout(() => ws.send(JSON.stringify({type: "getOldStatistics", region: "3", date: new Date(2022, 3, 16, 12).toISOString()})), 12000)
+    // setTimeout(() => ws.send(JSON.stringify({type: "getStatisticsList", region: "1"})), 3000)
 
-})
+// })

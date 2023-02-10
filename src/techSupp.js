@@ -11,7 +11,7 @@ $(function () {
             contentType: 'application/json',
             success: function (data) {
                 alert('Ваше сообщение успешно отправлено!');
-                window.close();
+                // window.close();
             },
             data: JSON.stringify({text: $('#txt').val()}),
             error: function (request) {

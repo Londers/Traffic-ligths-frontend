@@ -102,7 +102,7 @@ $(function () {
         });
     });
 
-    window.onbeforeunload = function() {
-        localStorage.setItem('multipleCross', JSON.stringify([]));
-    }
+    // window.onbeforeunload = function() {
+    //     localStorage.setItem('multipleCross', JSON.stringify([]));
+    // }
 });

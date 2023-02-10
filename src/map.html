@@ -321,6 +321,35 @@
         </div>
     </form>
 </div>
+<div id="exchangeDialog" title="Информация о лицензии">
+    <form class="needs-validated">
+        <div class="form-group text-center" style="position: relative; top: 50px;">
+            <input type="text" id="newExchangeUser" name="name"/>
+        </div>
+        <div class="form-group text-center" style="margin-top: 70px;">
+            <button id="createExchangeUser" class="btn btn-secondary mt-3" style="position: absolute;
+            left: 50%;-ms-transform: translate(-50%, -50%);transform: translate(-50%, -50%);">
+                Создать пользователя exchange
+            </button>
+        </div>
+        <div class="form-group text-center" style="position: relative; top: 50px;">
+            <input type="text" id="exchangeUser" name="name"/>
+        </div>
+        <div class="form-group text-center" style="margin-top: 70px;">
+            <button id="deleteExchangeUser" class="btn btn-secondary mt-3" style="position: absolute;
+            left: 50%;-ms-transform: translate(-50%, -50%);transform: translate(-50%, -50%);">
+                Удалить пользователя exchange
+            </button>
+        </div>
+    </form>
+</div>
+<div id="showPassDialog">
+    <form class="needs-validated">
+        <div class="form-group">
+            <textarea id="showPass"></textarea>
+        </div>
+    </form>
+</div>
 <div id="createFragmentDialog" title="Создание фрагмента">
     <form class="needs-validated">
         <div class="form-group" id="createFragmentForm">
@@ -412,6 +441,7 @@
                     данных операторов, названий АРМов
                 </button>
                 <button class="dropdown-item" type="button" id="licenseButton">Просмотр лицензии</button>
+                <button class="dropdown-item" type="button" id="exchangeButton" style="display: none">Аккаунты exchange</button>
             </div>
         </div>
         <div class="col-md-1 text-center">

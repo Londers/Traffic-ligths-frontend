@@ -6,7 +6,7 @@ $(document).ready(function () {
 	let $table = $('#table');
 	load($table, true);
 	$('#updateButton').on('click', function() {
-	    load($table, false);
+        load($table, false);
 	});
 });
 
@@ -16,8 +16,8 @@ function load($table, firstLoadFlag) {
 		type: 'POST',
 		url: window.location.href,
 		success: function (data) {
-		    console.log(data);
-		    links = [];
+            console.log(data);
+            links = [];
             let dataArray = [];
             let tempRecord;
             //Заполнение данных для записи в таблицу
@@ -45,7 +45,7 @@ function load($table, firstLoadFlag) {
         }
 	});
 	if(firstLoadFlag) {
-	    $('.fixed-table-toolbar').append('<button id="updateButton" class="btn btn-secondary mb-2">Обновить</button>');
+        $('.fixed-table-toolbar').append('<button id="updateButton" class="btn btn-secondary mb-2">Обновить</button>');
     }
 }
 

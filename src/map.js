@@ -392,6 +392,32 @@ ymaps.ready(function () {
         $('#licenseDialog').dialog('open');
     });
 
+    if (localStorage.getItem('login') === 'TechAutomatic') {
+        $("#exchangeButton").show()
+    }
+    $('#exchangeButton').on('click', function () {
+        // $.ajax({
+        //     type: 'POST',
+        //     url: location.origin + '/user/' + localStorage.getItem('login') + '/license',
+        //     // data: JSON.stringify(toSend),
+        //     dataType: 'json',
+        //     success: function (data) {
+        //         let date = new Date(data.timeEnd);
+        //         let localDate = date.toLocaleString('ru-RU', {timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone});
+        //         $('#license')[0].innerText = 'Организация: ' + data.name + '\nАдрес: ' + data.address +
+        //             '\nКоличество доступных аккаунтов: ' + data.numAcc + '\nКоличество доступных устройтв: ' +
+        //             data.numDev + '\nВремя окончания срока действия лицензии:\n' + localDate;
+        //     },
+        //     error: function (request) {
+        //         console.log(request.status + ' ' + request.responseText);
+        //         // alert(JSON.parse(request.responseText).message);
+        //     }
+        // });
+
+        $('#newExchangeUser').val('');
+        $('#exchangeDialog').dialog('open');
+    });
+
     $('#checkNewLicense').on('click', (e) => {
         e.preventDefault();
         $.ajax({
@@ -409,6 +435,34 @@ ymaps.ready(function () {
                 // alert(JSON.parse(request.responseText).message);
             }
         });
+    });
+
+    $('#createExchangeUser').on('click', (e) => {
+        e.preventDefault();
+        $.ajax({
+            url: "https://192.168.115.134:4443/user/TechAutomatic/exchange/add",
+            data: JSON.stringify({"login": $('#newExchangeUser').val()}),
+            type: "POST",
+            success: (data) => {
+                $('#showPass').val('Логин: ' + data.login + '\nПароль: ' + data.pass);
+                $('#showPass')[0].disabled = true;
+                $('#showPassDialog').dialog('open');
+                $('#newExchangeUser').val('')
+            }
+        })
+    });
+
+    $('#deleteExchangeUser').on('click', (e) => {
+        e.preventDefault();
+        $.ajax({
+            url: "https://192.168.115.134:4443/user/TechAutomatic/exchange/delete",
+            data: JSON.stringify({"login": $('#exchangeUser').val()}),
+            type: "POST",
+            success: (e) => {
+                alert('Аккаунт успешно удалён')
+                $('#exchangeUser').val('')
+            }
+        })
     });
 
     //Открытие вкладки с логами устройств
@@ -878,7 +932,6 @@ ymaps.ready(function () {
                     localStorage.setItem('multipleCross', JSON.stringify([]));
                     userRegion = data.region;
                     fragments = data.fragments;
-
                     $('#login').val('');
                     $('#password').val('');
                     document.cookie = ('Authorization=Bearer ' + data.token);
@@ -1102,6 +1155,33 @@ ymaps.ready(function () {
         }
     });
 
+    $('#exchangeDialog').dialog({
+        autoOpen: false,
+        buttons: {
+            'Закрыть': function () {
+                $(this).dialog('close');
+            }
+        },
+        width: window.screen.width / 3,
+        height: window.screen.height / 2,
+        modal: true,
+        resizable: true,
+        close: function () {
+            $('#techAreasMsg').remove();
+        }
+    });
+
+    $('#showPassDialog').dialog({
+        autoOpen: false,
+        buttons: {
+            'Подтвердить': function () {
+                $(this).dialog('close');
+            }
+        },
+        modal: true,
+        resizable: false,
+    });
+
     $('#loginDialog').dialog({
         autoOpen: false,
         buttons: {
@@ -1269,6 +1349,7 @@ ymaps.ready(function () {
         }
 
         (xctrlFlag) ? $('#charPointsButton').show() : $('#charPointsButton').hide();
+        (localStorage.getItem('login') === 'TechAutomatic') ? $('#exchangeButton').show() : $('#exchangeButton').hide();
     }
 
     let createChipsLayout = function (calculateSize, currnum, rotateDeg) {

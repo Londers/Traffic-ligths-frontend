@@ -3,6 +3,12 @@ let devices;
 let IDs = [];
 let regionInfo;
 let areaInfo;
+
+let remoteRegion = ""
+let remoteArea = ""
+let remoteID = -1
+let remoteDescription = ""
+
 // 0 - технология, 1 - по устройству, 2 - двери+лампы
 let type = 1;
 
@@ -87,9 +93,12 @@ $(function () {
         if ((new Date(timeStart).getTime()) >= (new Date(timeEnd).getTime())) {
             alert('Неверно задано время');
             return;
-        } else if (((new Date(timeEnd) - new Date(timeStart)) / (1000 * 60 * 60 * 24)) >= 31) {
+        } else if (((new Date(timeEnd) - new Date(timeStart)) / (1000 * 60 * 60 * 24)) >= 32) {
             //Максимальный интервал для запроса 31 день
             alert('Интервал запроса не может превышать один месяц');
+            const dateStartStr = $('#dateStart')[0].value;
+            $('#dateEnd').attr('value',
+                (new Date(new Date(new Date().setMonth(new Date(dateStartStr).getMonth())).setDate(new Date(dateStartStr).getDate() + 31)).toISOString().slice(0, 10)));
             return;
         }
         getLogs(timeStart, timeEnd, false);
@@ -149,22 +158,38 @@ function getLogs(start, end, chosenTimeFlag, remoteOpenFlag) {
 
     if (!selected.length) {
         if (remoteOpenFlag) {
-            toSend.devices.push({
-                ID: Number(localStorage.getItem('ID')),
-                area: localStorage.getItem('area'),
-                region: localStorage.getItem('region'),
-                description: localStorage.getItem('description')
-            });
-            // console.log(start);
+            remoteRegion = localStorage.getItem('region')
+            remoteArea = localStorage.getItem('area')
+            remoteID = Number(localStorage.getItem('ID'))
+            remoteDescription = localStorage.getItem('description')
+
             localStorage.setItem('ID', undefined);
             localStorage.setItem('area', undefined);
             localStorage.setItem('region', undefined);
+            toSend.devices.push({
+                ID: remoteID,
+                area: remoteArea,
+                region: remoteRegion,
+                description: remoteDescription
+            });
+
+            $("#toggleTable").hide()
+            // console.log(start);
         } else {
             $('#toolbar0').append('<div style="color: red;" id="toolbar0Msg"><h5>Выберите устройства</h5></div>');
             return;
         }
     } else {
         $('#toolbar0Msg').remove();
+    }
+
+    if (remoteRegion !== "") {
+        toSend.devices.push({
+            ID: remoteID,
+            area: remoteArea,
+            region: remoteRegion,
+            description: remoteDescription
+        });
     }
 
     $('#logsTable').bootstrapTable('showLoading');

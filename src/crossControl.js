@@ -122,7 +122,7 @@ $(() => {
                 case 'sendB':
                     console.log('sendB');
                     if (!messageData.status) {
-                        // alert(messageData.message);
+                        alert(messageData.message);
                         return;
                     }
                     // if (messageData.state.id !== unmodifiedData.state.id) {
@@ -658,6 +658,11 @@ $(() => {
         $('#skTable tbody tr').each(function () {
             oldData.push(getSelectedRowData('skTable', 'lines', counter++));
         });
+
+        if (oldData[index].hour === 24 && index !== 0) {
+            oldData[index - 1].hour = 24
+            oldData[index - 1].min = 0
+        }
 
         counter = 0;
         oldData.splice(index, 1);

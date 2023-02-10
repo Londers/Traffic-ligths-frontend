@@ -143,7 +143,7 @@ $(function () {
                                             `<a class="btn btn-light border disabled" id="p${phase}" 
                                             data-toggle="tooltip" title="Включить ${phase} фазу" role="button">       
                                                 <svg id="example1" width="100%" height="100%" style="max-height: 50px;            
-                                                max-width: 50px; min-height: 30px; min-width: 30px;"           
+                                                max-width: 50px; min-height: 30px; min-width: 30px; margin-left: 5px"           
                                                 xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">           
                                                     <image x="0" y="0" width="100%" height="100%" style="max-height: 50px;            
                                                     max-width: 50px; min-height: 30px; min-width: 30px;"             
@@ -151,6 +151,7 @@ $(function () {
                                                 </svg>
                                             </a>`
                                         );
+                                    $(`#p${phase}`).prepend(`<div style="position: absolute; font-weight: bolder; font-size: smaller">${phase}</div>`)
                                 } else {
                                     $('#buttons')
                                         .prepend('<a class="btn btn-light border disabled" id="p' + phase + '" data-toggle="tooltip" title="Включить ' + phase + ' фазу"'
@@ -360,19 +361,24 @@ $(function () {
             case 'crossUpdate':
                 // console.log('crossUpdate', data);
                 $('#status').html('Статус: ' + data.status.description);
-                $('#pk').find('option').each(function () {
-                    $(this).removeAttr('selected');
-                });
-                $('#sk').find('option').each(function () {
-                    $(this).removeAttr('selected');
-                });
-                $('#nk').find('option').each(function () {
-                    $(this).removeAttr('selected');
-                });
 
-                $('#pk option[value=' + data.state.pk + ']').attr('selected', 'selected');
-                $('#sk option[value=' + data.state.ck + ']').attr('selected', 'selected');
-                $('#nk option[value=' + data.state.nk + ']').attr('selected', 'selected');
+                $("#pk").val(data.state.pk)
+                $("#sk").val(data.state.ck)
+                $("#nk").val(data.state.nk)
+
+                // $('#pk').find('option').each(function () {
+                //     $(this).removeAttr('selected');
+                // });
+                // $('#sk').find('option').each(function () {
+                //     $(this).removeAttr('selected');
+                // });
+                // $('#nk').find('option').each(function () {
+                //     $(this).removeAttr('selected');
+                // });
+
+                // $('#pk option[value=' + data.state.pk + ']').attr('selected', 'selected');
+                // $('#sk option[value=' + data.state.ck + ']').attr('selected', 'selected');
+                // $('#nk option[value=' + data.state.nk + ']').attr('selected', 'selected');
 
                 $('#sfdk').remove();
                 if (!data.sfdk) $('#connection').parent().append('<div id="sfdk">Отключена передача фаз</div>');
@@ -408,21 +414,24 @@ $(function () {
                 buildExpandedTable(data.dk);
 
                 if ($('#ddk').length === 0) $('#phase').append('<br> <label class="mt-3" id="ddk"></label>');
-                let ddk = '';
-                switch (data.dk.ddk) {
-                    case 1:
-                        ddk = 'С12УСДК';
-                        break;
-                    case 2:
-                        ddk = 'УСДК';
-                        break;
-                    case 4:
-                        ddk = 'ДКА';
-                        break;
-                    case 8:
-                        ddk = 'ДТА';
-                        break;
-                }
+                let ddk = 'УСДК';
+                if (data.model.C12) ddk = 'С12УСДК'
+                if (data.model.C12) ddk = 'ДКА'
+                if (data.model.C12) ddk = 'ДТА'
+                // switch (data.dk.ddk) {
+                //     case 1:
+                //         ddk = 'С12УСДК';
+                //         break;
+                //     case 2:
+                //         ddk = 'УСДК';
+                //         break;
+                //     case 4:
+                //         ddk = 'ДКА';
+                //         break;
+                //     case 8:
+                //         ddk = 'ДТА';
+                //         break;
+                // }
                 $('#ddk').text(ddk);
 
                 if (data.dk.edk === 1) {

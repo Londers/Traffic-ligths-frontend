@@ -44,7 +44,6 @@ $(function () {
                 .replace('alarm', 'cross') +
             `?Region=${row.region}&Area=${row.area}&ID=${row.id}`
         );
-
     });
 
     let closeReason = '';

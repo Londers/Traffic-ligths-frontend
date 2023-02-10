@@ -176,8 +176,3 @@ function colorizeCrosses() {
         $(tableRows[index]).attr('style', switchFlag ? 'background-color: lightgray' : '');
     })
 }
-
-//Отправка команды на очищение журнала
-function controlSend(toSend) {
-    ws.send(JSON.stringify({type: 'dispatch', id: toSend.id, cmd: toSend.cmd, param: toSend.param}));
-}
