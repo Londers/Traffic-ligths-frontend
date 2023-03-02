@@ -10,6 +10,16 @@ const soundMap = {
     'woop_woop' : new Audio('/free/resources/woop_woop.mp3')
 };
 
+function sortByTime (a, b) {
+    const aTime = new Date(a.time).getTime()
+    const bTime = new Date(b.time).getTime()
+    if (aTime === bTime) {
+        return a.idevice - b.idevice
+    } else {
+        return bTime - aTime
+    }
+}
+
 $(function () {
     $('#table').bootstrapTable('showLoading');
     $('[class~=loading-text]').text('Загрузка. Пожалуйста, подождите');
@@ -75,7 +85,8 @@ $(function () {
                     if (oldCross?.status !== cross.status) data.alarm.ring = true;
                 })
 
-                tableData = data.alarm.CrossInfo;
+                tableData = data.alarm.CrossInfo.sort(sortByTime);
+                // tableData = data.alarm.CrossInfo.sort((a,b) => new Date(a).getTime() - new Date(b).getTime());
                 tableData.forEach(row => {
                     if (row.idevice === selected) row.state = true;
                     if (row.time.includes('1970')) {

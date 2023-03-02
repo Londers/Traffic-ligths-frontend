@@ -440,7 +440,7 @@ ymaps.ready(function () {
     $('#createExchangeUser').on('click', (e) => {
         e.preventDefault();
         $.ajax({
-            url: "https://192.168.115.134:4443/user/TechAutomatic/exchange/add",
+            url: `${location.origin}/user/TechAutomatic/exchange/add`,
             data: JSON.stringify({"login": $('#newExchangeUser').val()}),
             type: "POST",
             success: (data) => {
@@ -455,7 +455,7 @@ ymaps.ready(function () {
     $('#deleteExchangeUser').on('click', (e) => {
         e.preventDefault();
         $.ajax({
-            url: "https://192.168.115.134:4443/user/TechAutomatic/exchange/delete",
+            url: `${location.origin}/user/TechAutomatic/exchange/delete`,
             data: JSON.stringify({"login": $('#exchangeUser').val()}),
             type: "POST",
             success: (e) => {
