@@ -79,11 +79,11 @@ $(function () {
 
     now = new Date(
         now.getTime() - (
-            (((now.getHours() * 60 + now.getMinutes() + now.getTimezoneOffset()) * 60 + now.getSeconds()) * 1000)
+            (((now.getHours() * 60 + now.getMinutes()) * 60 + now.getSeconds()) * 1000)
             + now.getMilliseconds()
         )
     );
-    $('#dateStart').attr('value', (now.toISOString().slice(0, 10)));
+    $('#dateStart').attr('value', (new Date(now.getTime() - now.getTimezoneOffset() * 60 * 1000).toISOString().slice(0, 10)));
     $('#timeStart').attr('value', "00:00");
     // $('#timeStart').attr('value', (prettyNumbers(now.getUTCHours()) + ':' + prettyNumbers(now.getUTCMinutes())));
     $('#currentDay').on('click', () => {
@@ -95,7 +95,7 @@ $(function () {
     $('#chosenTime').on('click', () => {
         let timeStart = $('#dateStart')[0].value + 'T' + $('#timeStart')[0].value + ':00Z';
         let timeEnd = $('#dateEnd')[0].value + 'T' + $('#timeEnd')[0].value + ':00Z';
-        if (((new Date(timeStart).getTime()) >= (new Date(timeEnd).getTime())) || new Date(timeEnd).getTime() > new Date().getTime()) {
+        if (((new Date(timeStart).getTime()) >= (new Date(timeEnd).getTime())) || (new Date(timeEnd).getTime() - new Date(new Date().toISOString()).getTime() > new Date().getTimezoneOffset() * -60 * 1000)) {
             alert('Неверно задано время');
             return;
         } else if (((new Date(timeEnd) - new Date(timeStart)) / (1000 * 60 * 60 * 24)) >= 32) {
