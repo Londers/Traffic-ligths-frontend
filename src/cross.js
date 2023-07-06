@@ -416,8 +416,8 @@ $(function () {
                 if ($('#ddk').length === 0) $('#phase').append('<br> <label class="mt-3" id="ddk"></label>');
                 let ddk = 'УСДК';
                 if (data.model.C12) ddk = 'С12УСДК'
-                if (data.model.C12) ddk = 'ДКА'
-                if (data.model.C12) ddk = 'ДТА'
+                if (data.model.DKA) ddk = 'ДКА'
+                if (data.model.DTA) ddk = 'ДТА'
                 // switch (data.dk.ddk) {
                 //     case 1:
                 //         ddk = 'С12УСДК';

@@ -330,7 +330,7 @@ function buildBottom() {
     const cross = checkCross(selected[0].idevice);
     const deviceInfo = checkDevice(selected[0].idevice);
     const device = deviceInfo?.device;
-    const armInfo = JSON.parse(cross.Arm)
+    // const armInfo = JSON.parse(cross.Arm)
 
     if (errorRows.includes(selected[0].idevice)) {
         $('#type').attr('style', 'background-color: red;');
@@ -398,13 +398,13 @@ function buildBottom() {
 
         $('#status').text(deviceInfo.modeRdk);
 
-        if (armInfo.length === 0) {
-            $('#type2').text(
-                switchArrayTypeFromDevice(device.Model)
-            );
-        } else {
-            $('#type2').text(armInfo);
-        }
+        // if (armInfo.length === 0) {
+        $('#type2').text(
+            switchArrayTypeFromDevice(device.Model)
+        );
+        // } else {
+        //     $('#type2').text(armInfo);
+        // }
 
         $('#phase').text(phaseSpellOut(device.DK.fdk));
         $('#state').text((checkMalfunction(device.Error) === '') ? '-' : checkMalfunction(device.Error));

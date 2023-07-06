@@ -281,6 +281,32 @@ $(function () {
         openPage('/stateTest');
     });
 
+
+    if (localStorage.getItem('login') !== 'TechAutomatic') {
+        $('#makeRemote').hide()
+    }
+    //Открыте вкладки с проверкой БД
+    $('#makeRemote').on('click', function () {
+        let login = $.map($table.bootstrapTable('getSelections'), function (row) {
+            return row.login;
+        })[0];
+
+        $.ajax({
+            url: window.location.href + '/makeRemote',
+            type: 'post',
+            dataType: 'json',
+            contentType: 'application/json',
+            success: function (data) {
+                console.log(data.msg)
+            },
+            data: JSON.stringify({login}),
+            error: function (request) {
+                console.log(request.status + ' ' + request.responseText);
+                // alert(JSON.parse(request.responseText).message);
+            }
+        });
+    });
+
     $('#resetButton').on('click', () => {
         let currPrivileges;
         let currRegion;

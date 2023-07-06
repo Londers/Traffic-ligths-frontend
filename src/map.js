@@ -84,7 +84,7 @@ ymaps.ready(function () {
         'и контроля за работой дорожных контроллеров и другого ' +
         'оборудования, работающего в системе управления дорожным движением.\n\n' +
         'ООО "Автоматика-Д"\n 644042  г. Омск, пр. Карла Маркса, д.18, корпус 28\n' +
-        'тел./факс +7(3812)37-07-35, тел. +7(3812)39-49-10 \n';
+        'тел./ тел. +7(3812)39-49-10 \n';
 
     function openAbout(closeOnExpiration) {
         // Instantiate new modal
@@ -132,6 +132,8 @@ ymaps.ready(function () {
             }
         });
         placemark.tf = trafficLight;
+        placemark.tf = trafficLight;
+
 
         return placemark
     }
@@ -481,6 +483,10 @@ ymaps.ready(function () {
 
     $('#graphButton').on('click', function () {
         openPage('/graphManage?Region=' + 1);
+    });
+
+    $('#chatButton').on('click', function () {
+        openPage('/chat');
     });
 
     //Смена пароля текущего аккаунта
@@ -1690,7 +1696,6 @@ ymaps.ready(function () {
       </i>`,
                     Constants.html.inputGroups[1]
                 ].join(''))[placementFuc](this.$text).css('cursor', 'pointer')
-
                 // events
                 this.$text.off('keyup').on('keyup', $.proxy(function () {
                     if (!this.isShown) return

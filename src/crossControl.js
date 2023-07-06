@@ -161,7 +161,7 @@ $(() => {
                     if (!messageData.status) {
                         alert(messageData.result.join('\n'))
                     } else {
-                        location.href = location.pathname + location.search.replace('ID=' + unmodifiedData.state.id, 'ID=' + $('#id').val());
+                        // location.href = location.pathname + location.search.replace('ID=' + unmodifiedData.state.id, 'ID=' + $('#id').val());
                     }
                     break;
                 case 'controlInfo':
@@ -1141,7 +1141,7 @@ function mainTabFill(data, firstLoadFlag) {
     setChange('name', 'input');
     $('#phone').val(data.state.phone);
     setChange('phone', 'input');
-    $('#ip')[0].innerText = 'IP: ' + data.deviceIP;
+    $('#ip')[0].innerText = 'IP: ' + (data.deviceIP ?? '');
     $('#tz').val(data.state.arrays.timedev.tz);
     setChange('tz', 'input', 'arrays.timedev');
     $('#summer').prop('checked', data.state.arrays.timedev.summer);
@@ -2085,39 +2085,39 @@ function buildPkTable(table, tableType, currPK) {
     pkTableDurationFunctional(table, tableType, currPK);
 }
 
-function buildMgrTable() {
-    if (data.state.arrays.mgrs.length === 0) {
-        $('#mgrTable').hide()
-        return
-    }
-    $('#mgrTable').show()
-    $('#mgrTable').bootstrapTable('removeAll')
-    for (let i = 0; i < 8; i++) $('#mgrTable').bootstrapTable('append', '')
-    // const tableData = []
-    $('#mgrTable tbody tr').each(function (index) {
-        $(this).find('td').each(function (switchIndex) {
-            if (switchIndex === 0) {
-                $(this).append(data.state.arrays.mgrs[index].phase);
-            } else if (switchIndex === 1) {
-                $(this).append(
-                    `<input class="form-control border-0 tlen${index}" name="number" type="number" ` +
-                    'style="max-width: 55px;" value="' + data.state.arrays.mgrs[index].tlen + '"/>'
-                );
-                $(this).find('input').on('change', function (evt) {
-                    data.state.arrays.mgrs[index].tlen = evt.currentTarget.valueAsNumber
-                })
-            } else if (switchIndex === 2) {
-                $(this).append(
-                    `<input class="form-control border-0 tmgr${index}" name="number" type="number" ` +
-                    'style="max-width: 55px;" value="' + data.state.arrays.mgrs[index].tmgr + '"/>'
-                );
-                $(this).find('input').on('change', function (evt) {
-                    data.state.arrays.mgrs[index].tmgr = evt.currentTarget.valueAsNumber
-                })
-            }
-        })
-    })
-}
+// function buildMgrTable() {
+//     if (data.state.arrays.mgrs.length === 0) {
+//         $('#mgrTable').hide()
+//         return
+//     }
+//     $('#mgrTable').show()
+//     $('#mgrTable').bootstrapTable('removeAll')
+//     for (let i = 0; i < 8; i++) $('#mgrTable').bootstrapTable('append', '')
+//     // const tableData = []
+//     $('#mgrTable tbody tr').each(function (index) {
+//         $(this).find('td').each(function (switchIndex) {
+//             if (switchIndex === 0) {
+//                 $(this).append(data.state.arrays.mgrs[index].phase);
+//             } else if (switchIndex === 1) {
+//                 $(this).append(
+//                     `<input class="form-control border-0 tlen${index}" name="number" type="number" ` +
+//                     'style="max-width: 55px;" value="' + data.state.arrays.mgrs[index].tlen + '"/>'
+//                 );
+//                 $(this).find('input').on('change', function (evt) {
+//                     data.state.arrays.mgrs[index].tlen = evt.currentTarget.valueAsNumber
+//                 })
+//             } else if (switchIndex === 2) {
+//                 $(this).append(
+//                     `<input class="form-control border-0 tmgr${index}" name="number" type="number" ` +
+//                     'style="max-width: 55px;" value="' + data.state.arrays.mgrs[index].tmgr + '"/>'
+//                 );
+//                 $(this).find('input').on('change', function (evt) {
+//                     data.state.arrays.mgrs[index].tmgr = evt.currentTarget.valueAsNumber
+//                 })
+//             }
+//         })
+//     })
+// }
 
 // Функция для заполнения вкладки ПК
 function pkTabFill(table) {
@@ -2127,7 +2127,7 @@ function pkTabFill(table) {
 
     if (pkFlag) {
         pkTableChange(table);
-        mgrTableChange()
+        // mgrTableChange()
     }
 
     if (currPK.tc > 2) {
@@ -2160,7 +2160,7 @@ function pkTabFill(table) {
     $('#desc').val(currPK.desc);
 
     buildPkTable(table, tableType, currPK);
-    buildMgrTable();
+    // buildMgrTable();
 
     $('#razlen').change();
     data.state.arrays.SetDK.dk[selected] = setDK[selected];
@@ -2536,12 +2536,12 @@ function pkTableChange(table) {
     pkFlag = false;
 }
 
-// Функция для сохранения изменений в таблице МГР
-function mgrTableChange() {
-    $('#mgrTable').on('change', (evt) => {
-        console.log($('#mgrTable').bootstrapTable('getData'))
-    })
-}
+// // Функция для сохранения изменений в таблице МГР
+// function mgrTableChange() {
+//     $('#mgrTable').on('change', (evt) => {
+//         console.log($('#mgrTable').bootstrapTable('getData'))
+//     })
+// }
 
 // Функция для преобразования вида цифр
 function handsomeNumbers(num) {
