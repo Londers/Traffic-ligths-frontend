@@ -74,7 +74,7 @@ $(function () {
     $('#dateEnd').attr('value', (new Date(now.getTime() - now.getTimezoneOffset() * 60 * 1000).toISOString().slice(0, 10)));
     // $('#timeEnd').attr('value', "00:00");
     $('#timeEnd').attr('value', (
-        prettyNumbers(now.getUTCHours() - Math.round(now.getTimezoneOffset()/60), true) +
+        prettyNumbers(now.getUTCHours() - Math.round(now.getTimezoneOffset() / 60), true) +
         ':' + prettyNumbers(now.getUTCMinutes())));
 
     now = new Date(
@@ -211,8 +211,8 @@ function getLogs(start, end, chosenTimeFlag, remoteOpenFlag) {
             buildLogsTable(data, chosenTimeFlag, start, end);
             $('#logsTable').bootstrapTable('hideLoading');
             // if (remoteOpenFlag && (devices.length !== 0)) {
-                // $('input[class$="search-input"]:first').val(localStorage.getItem('description')).trigger('blur');
-                // sleep(500).then(() => $('#table').bootstrapTable('check', 0));
+            // $('input[class$="search-input"]:first').val(localStorage.getItem('description')).trigger('blur');
+            // sleep(500).then(() => $('#table').bootstrapTable('check', 0));
             // }
         },
         error: function (request) {

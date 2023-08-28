@@ -390,6 +390,7 @@ ymaps.ready(function () {
         })
         $($('#navTable tbody tr')[0]).trigger('click');
         if (demoMode) {
+            demoStartRoute()
             simulateTable(true)
             return
         }
@@ -399,6 +400,7 @@ ymaps.ready(function () {
     $('#endRouteButton').on('click', () => {
         executionFlag = false
         if (lastRoute !== undefined) {
+            map.geoObjects.remove(lastRoute);
             map.geoObjects.remove(lastRoute);
             lastRoute = undefined;
             routeTFLights = [];
@@ -415,6 +417,7 @@ ymaps.ready(function () {
         $('#createModeButton')[0].disabled = false;
         if (demoMode) {
             simulateTable(false)
+            startDemo()
             return
         }
         ws.send(JSON.stringify({type: 'route', devices: [], turnOn: false}));
@@ -1392,9 +1395,14 @@ ymaps.ready(function () {
                 area: trafficLight.area.num,
                 id: trafficLight.ID
             };
+            placemark.idevice = trafficLight.idevice
+            placemark.status = 1
             //Функция для вызова АРМ нажатием на контроллер
             placemark.events.add('click', function () {
-                handlePlacemarkClick(map, trafficLight, placemark);
+                handlePlacemarkClick(map, trafficLight, placemark)
+                // setTimeout(() => {
+                //     demoTFLightSwitch(trafficLight)
+                // }, 5000)
             });
             //Добавление метки контроллера на карту
             map.geoObjects.add(placemark);
@@ -1430,6 +1438,96 @@ ymaps.ready(function () {
         });
     }
 
+    let demoStartRoute = function () {
+        map.geoObjects.removeAll();
+        IDs = []
+        createAddObjects();
+        //Разбор полученной от сервера информации
+        tflights.forEach(trafficLight => {
+            IDs.push(trafficLight.region.num + '-' + trafficLight.area.num + '-' + trafficLight.ID);
+            //Создание меток контроллеров на карте
+            let placemark = new ymaps.Placemark([trafficLight.points.Y, trafficLight.points.X], {
+                hintContent: trafficLight.description
+            }, {
+                iconLayout: createChipsLayout(function (zoom) {
+                    // Размер метки будет определяться функией с оператором switch.
+                    return calculate(zoom);
+                }, 1),
+            });
+            placemark.pos = {
+                region: trafficLight.region.num,
+                area: trafficLight.area.num,
+                id: trafficLight.ID
+            };
+            placemark.idevice = trafficLight.idevice
+            placemark.status = 1
+            //Функция для вызова АРМ нажатием на контроллер
+            placemark.events.add('click', function () {
+                handlePlacemarkClick(map, trafficLight, placemark)
+                setTimeout(() => {
+                    demoTFLightSwitch(trafficLight)
+                }, 5000)
+            });
+            //Добавление метки контроллера на карту
+            map.geoObjects.add(placemark);
+        });
+    }
+
+    let demoTFLightSwitch = function (trafficLight) {
+        let first = false
+        map.geoObjects.each(obj => {
+            if (obj.idevice === trafficLight.idevice) {
+                if (first) {
+                    return
+                }
+                map.geoObjects.remove(obj);
+                first = !first
+
+                demoStatuses.set(trafficLight.idevice, obj.status === 1 ? 2 : 1)
+
+                let placemark = new ymaps.Placemark([trafficLight.points.Y, trafficLight.points.X], {
+                    hintContent: trafficLight.description
+                }, {
+                    iconLayout: createChipsLayout(function (zoom) {
+                        // Размер метки будет определяться функией с оператором switch.
+                        return calculate(zoom);
+                    }, demoStatuses.get(trafficLight.idevice)),
+                });
+                placemark.pos = {
+                    region: trafficLight.region.num,
+                    area: trafficLight.area.num,
+                    id: trafficLight.ID
+                };
+                placemark.idevice = trafficLight.idevice
+                placemark.status = demoStatuses.get(trafficLight.idevice)
+
+                //Функция для вызова АРМ нажатием на контроллер
+                placemark.events.add('click', function () {
+                    handlePlacemarkClick(map, trafficLight, placemark)
+                    setTimeout(() => {
+                        demoTFLightSwitch(trafficLight)
+                    }, 5000)
+                });
+                //Добавление метки контроллера на карту
+                map.geoObjects.add(placemark);
+
+
+
+                let tableIndex = executionFlag ? $('#navTable').bootstrapTable('getData').findIndex(row => row.idevice === trafficLight.idevice) : -1;
+                if (tableIndex !== -1) {
+                    $('#navTable tbody tr').each((i, tr) => {
+                        if (i === tableIndex) {
+                            $(tr.cells[1]).children().closest('div').css('background-image',
+                                `url('${location.origin}/free/img/trafficLights/${demoStatuses.get(trafficLight.idevice)}.svg')`)
+                        }
+                    });
+                }
+            }
+        })
+    }
+
+    let demoStatuses = new Map()
+    let demoPhases = new Map()
     let phaseSimulator = -1
     let simulateTable = function (start) {
         if (!start) {
@@ -1439,22 +1537,56 @@ ymaps.ready(function () {
         let data = [...$('#navTable').bootstrapTable('getData')]
         phaseSimulator = setInterval(() => {
             let phases = []
-            data.forEach(row => {
-                if (row.status === 1) {
-                    if (row.fromPhase !== '1' && row.fromPhase !== '2') row.fromPhase = '1'
-                    if (row.fromPhase === '1') {
-                        row.fromPhase = '2'
-                    } else {
-                        row.fromPhase = '1'
-                    }
+            data.forEach((row, index) => {
+                if (demoStatuses.get(row.idevice) === undefined) {
+                    demoStatuses.set(row.idevice, 1)
                 }
-                phases.push({device: row.idevice, phase: Number(row.fromPhase)})
+                if (demoStatuses.get(row.idevice) === 1) {
+                    let phase = demoPhases.get(row.idevice)
+                    if (phase !== '1' && phase !== '2') phase = '1'
+                    if (phase === '1') {
+                        phase = '2'
+                    } else {
+                        phase = '1'
+                    }
+                    // }
+
+                    let tableIndex = executionFlag ? $('#navTable').bootstrapTable('getData').findIndex(row => row.id === index + 1) : -1;
+                    if (tableIndex !== -1) {
+                        $('#navTable tbody tr').each((i, tr) => {
+                            if (i === tableIndex) {
+                                $(tr.cells[3]).text(phase)
+                            }
+                        });
+                    }
+                    phases.push({device: row.idevice, phase: Number(phase)})
+
+                    demoPhases.set(row.idevice, phase)
+                    // demoPhases.push({idevice: 123, phase: phase})
+                } else {
+                    let tableIndex = executionFlag ? $('#navTable').bootstrapTable('getData').findIndex(row => row.id === index + 1) : -1;
+                    const routeIndex = routeTFLights.findIndex(q => JSON.stringify(q.idevice) === JSON.stringify(row.idevice))
+                    const phase = getPhase(
+                        getUniqueId(routeTFLights[routeIndex - 1]),
+                        getUniqueId(routeTFLights[routeIndex]),
+                        getUniqueId(routeTFLights[routeIndex + 1])
+                    )
+
+                    if (tableIndex !== -1) {
+                        $('#navTable tbody tr').each((i, tr) => {
+                            if (i === tableIndex) {
+                                $(tr.cells[3]).text(phase)
+                            }
+                        });
+                    }
+                    phases.push({device: row.idevice, phase: Number(phase)})
+                }
             })
-            $('#navTable').bootstrapTable('load', data)
-            fillStatuses()
+            // $('#navTable').bootstrapTable('load', data)
+            // fillStatuses()
             replacePhasesWithSvg(false)
             fillPhases(phases)
-        }, 5000)
+        }, 10000)
 
     }
 })

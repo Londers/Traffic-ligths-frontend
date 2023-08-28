@@ -351,8 +351,9 @@ ymaps.ready(function () {
                 });
                 placemark.events.add('balloonclose', function () {
                     // Выключение передачи фаз предыдущего перекрёстка
-                    controlSend(trafficLight.idevice, 4, 0);
                     ideviceSave = -1;
+                    // if (sendedMap[trafficLight.idevice] !== 9) return
+                    controlSend(trafficLight.idevice, 4, 0);
                     clearInterval(phaseSender);
                 });
                 placemark.events.add('balloonopen', function () {
@@ -460,8 +461,11 @@ function colorControl(idevice, cmd, num) {
     phaseSender = setInterval(() => controlSend(idevice, cmd, num), 60000)
 }
 
+// const sendedMap = new Map()
+
 //Отправка выбранной команды на сервер
 function controlSend(idevice, cmd, num) {
+    // sendedMap[idevice] = num
     ws.send(JSON.stringify({type: 'dispatch', id: idevice, cmd: cmd, param: num}));
 }
 
