@@ -160,6 +160,12 @@ function getUniqueId(trafficLight, custom) {
 }
 
 function getPhase(from, curr, to) {
+    if (from.includes('-')) {
+        from = from.split('-')[2]
+    }
+    if (to.includes('-')) {
+        to = to.split('-')[2]
+    }
     if (tfLinksArray.find(tfl => tfl.id === curr) === undefined) {
         alert('Отсутствует массив связности на перкрёстке ' + curr)
         return undefined;
@@ -362,6 +368,8 @@ ymaps.ready(function () {
     $('#controlModeButton')[0].disabled = true;
     $('#startRouteButton')[0].hidden = true
     $('#endRouteButton')[0].hidden = true
+    $('#demoModeButton')[0].disabled = true;
+
 
     $('#startRouteButton').on('click', () => {
         executionFlag = true
@@ -605,6 +613,7 @@ ymaps.ready(function () {
                     //Добавление метки контроллера на карту
                     map.geoObjects.add(placemark);
                 });
+                $('#demoModeButton')[0].disabled = false;
                 // .append(new Option(regionInfo[reg], reg));
                 break;
             case 'tflight':
